@@ -1,0 +1,156 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Student Lifecycle Dashboard
+{% endblock %}
+
+{% block page_title %}
+Student Lifecycle Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Row 1 : Identity + Academic Snapshot -->
+    <!-- ========================================= -->
+
+    <div class="row g-4">
+
+        <div class="col-lg-5">
+
+            {% include "components/card_identity.html" %}
+            
+
+        </div>
+
+        <div class="col-lg-7">
+
+            {% include "components/card_academic_snapshot.html" %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Row 2 : KPI Cards -->
+    <!-- ========================================= -->
+
+    <div class="row mt-4">
+
+        <div class="col">
+
+            {% include "components/card_kpi.html" %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Row 3 : School Information -->
+    <!-- ========================================= -->
+
+    <div class="row mt-4">
+
+        <div class="col-lg-12">
+
+            {% include "components/card_school_information.html" %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Row 4 : SSC + Merit -->
+    <!-- ========================================= -->
+
+    <div class="row mt-4">
+
+        <div class="col-lg-6">
+
+            {% include "components/card_ssc_performance.html" %}
+
+        </div>
+
+        <div class="col-lg-6">
+
+            {% include "components/card_merit_summary.html" %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Row 5 : Higher Education -->
+    <!-- ========================================= -->
+
+    <div class="row mt-4">
+
+        <div class="col-lg-12">
+
+            {% include "components/card_higher_education.html" %}
+
+        </div>
+
+    </div>
+
+
+<!-- ========================================= -->
+<!-- Row 6 : Educational Journey -->
+<!-- ========================================= -->
+
+    <div class="row mt-4">
+
+        <div class="col-lg-12">
+
+            {% include "components/card_student_journey.html" %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Row 7 : Awards + Achievements -->
+    <!-- ========================================= -->
+
+    <div class="row mt-4">
+
+        <div class="col-lg-6">
+
+            {% include "components/card_awards.html" %}
+
+        </div>
+
+        <div class="col-lg-6">
+
+            {% include "components/card_achievements.html" %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Row 8 : Employment -->
+    <!-- ========================================= -->
+
+    <div class="row mt-4 mb-5">
+
+        <div class="col-lg-12">
+
+            {% include "components/card_employment.html" %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

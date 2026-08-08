@@ -1,0 +1,42 @@
+
+<div class="dashboard-card">
+
+    <div class="dashboard-header">
+        <i class="bi bi-trophy-fill me-2"></i>
+        Awards
+    </div>
+
+    <div class="card-body">
+
+        <div class="info-row">
+            <div class="info-label">Award Count</div>
+            <div class="info-value">{{ student.award_count }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Award Names</div>
+            <div class="info-value">{{ student.awards }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Total Amount</div>
+            <div class="info-value">
+                ₹ {{ student.total_award_amount }}
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Highest Award</div>
+            <div class="info-value">
+                ₹ {{ student.highest_award_amount }}
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Latest Award</div>
+            <div class="info-value">{{ student.latest_award_date }}</div>
+        </div>
+
+    </div>
+
+</div>

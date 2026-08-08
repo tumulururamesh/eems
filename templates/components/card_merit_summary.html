@@ -1,0 +1,43 @@
+
+
+<div class="dashboard-card">
+
+    <div class="dashboard-header">
+        <i class="bi bi-award-fill me-2"></i>
+        Merit Summary
+    </div>
+
+    <div class="card-body">
+
+        <div class="info-row">
+            <div class="info-label">School Rank</div>
+            <div class="info-value">{{ student.school_rank }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Mandal Rank</div>
+            <div class="info-value">{{ student.mandal_rank }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">District Rank</div>
+            <div class="info-value">{{ student.district_rank }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">State Rank</div>
+            <div class="info-value">{{ student.state_rank }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Merit Category</div>
+            <div class="info-value">
+                <span class="badge bg-success">
+                    {{ student.merit_category }}
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,142 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Login
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+
+<div class="container mt-5 mb-5">
+
+    <div class="row align-items-center">
+
+        <!-- LEFT SIDE -->
+
+        <div class="col-lg-7 pe-5">
+
+            <h1 class="text-primary fw-bold mb-4">
+                Ekalavya Education Management System (EEMS)
+            </h1>
+
+            <p class="lead">
+
+                EEMS captures and presents the lifelong educational
+                and career journey of every student associated with
+                Ekalavya Foundation.
+
+            </p>
+            <br>
+            </br>
+
+            <p>
+
+                The platform enables the Foundation to understand,
+                support and demonstrate the long-term impact of its
+                educational interventions—from school education
+                through higher education, employment and career
+                progression.
+
+            </p>
+
+            <div class="mt-5">
+
+                <h4 class="text-success">
+
+                    "Transforming Lives Through Education"
+
+                </h4>
+
+                <p class="text-muted">
+
+                    One Student • One Journey • One Future
+
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+
+        <div class="col-lg-5">
+
+            <div class="card shadow-lg border-0">
+
+                <div class="card-body p-5">
+
+                    <h3 class="text-center mb-4">
+
+                        User Login
+
+                    </h3>
+
+                    <form>
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+
+                                User ID
+
+                            </label>
+
+                            <input type="text"
+                                   class="form-control">
+
+                        </div>
+
+                        <div class="mb-4">
+
+                            <label class="form-label">
+
+                                Password
+
+                            </label>
+
+                            <input type="password"
+                                   class="form-control">
+
+                        </div>
+
+                        <a href="/dashboard" class="btn btn-primary w-100">
+                            Login
+                        </a>
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="container-fluid">
+
+    <div class="row">
+
+        <!-- Left Panel -->
+
+        <div class="col-lg-7">
+
+        </div>
+
+        <!-- Right Panel -->
+
+        <div class="col-lg-5">
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,190 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Vidya Vahini
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<!-- ===================================================== -->
+<!-- PROGRAMME HEADER -->
+<!-- ===================================================== -->
+
+<div class="programme-header">
+
+    <h2 class="programme-title">
+        Vidya Vahini
+    </h2>
+
+    <h3 class="programme-subtitle">
+        Lifecycle Management
+    </h3>
+
+</div>  
+
+<div class="row mb-4">
+
+    <div class="col-md-8">
+    </div>
+
+    <div class="col-md-4 text-end">
+
+        <small class="text-muted">
+
+            Academic Year
+
+        </small>
+
+        <h5 class="mb-0 text-secondary">
+
+            2026–27
+
+        </h5>
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- KPI CARDS -->
+<!-- ===================================================== -->
+
+<div class="row mb-4">
+
+    <div class="col-md-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-number">
+
+                2400
+
+            </div>
+
+            <div class="kpi-label">
+
+                Students
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-number">
+
+                180
+
+            </div>
+
+            <div class="kpi-label">
+
+                Villages
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-number">
+
+                112
+
+            </div>
+
+            <div class="kpi-label">
+
+                Schools
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="kpi-card">
+
+            <div class="kpi-number">
+
+                84
+
+            </div>
+
+            <div class="kpi-label">
+
+                Higher Education
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- STUDENT SEARCH -->
+<!-- ===================================================== -->
+
+<div class="dashboard-card">
+
+    <div class="dashboard-header">
+
+        <i class="bi bi-search me-2"></i>
+
+        Student Search
+
+    </div>
+
+    <div class="card-body">
+
+        <form action="/search" method="get">
+
+            <div class="row">
+
+                <div class="col-md-10">
+
+                    <input
+                        type="text"
+                        class="form-control form-control-lg"
+                        name="search"
+                        placeholder="Search by Student ID, Name, Village or School">
+
+                </div>
+
+                <div class="col-md-2 d-grid">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary btn-lg">
+
+                        Search
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

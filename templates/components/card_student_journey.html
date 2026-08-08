@@ -1,0 +1,109 @@
+
+<div class="dashboard-card">
+
+    <div class="dashboard-header">
+        <i class="bi bi-signpost-split-fill me-2"></i>
+        Educational Journey
+    </div>
+
+    <div class="table-responsive">
+
+<table class="table table-bordered table-hover align-middle">
+
+    <thead class="table-primary">
+
+        <tr>
+
+            <th>Education Level</th>
+            <th>Institution</th>
+            <th>Course</th>
+            <th>Academic Period</th>
+            <th>Performance</th>
+            <th>Status</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for item in journey_events %}
+
+    <tr>
+
+        <td>
+            <strong>{{ item.education_level }}</strong>
+        </td>
+
+        <td>
+            {{ item.institution_name }}
+        </td>
+
+        <td>
+            {{ item.course or "—" }}
+        </td>
+
+        <td>
+
+            {{ item.admission_date.strftime("%b %Y") }}
+
+            -
+
+            {% if item.education_status == "Studying" %}
+                Present
+            {% else %}
+                {{ item.completion_date.strftime("%b %Y") }}
+            {% endif %}
+
+        </td>
+
+        <td>
+
+            {% if item.percentage %}
+                {{ item.percentage }}%
+            {% elif item.cgpa %}
+                CGPA {{ item.cgpa }}
+            {% elif item.current_study_year %}
+                {{ item.current_study_year }}
+            {% else %}
+                —
+            {% endif %}
+
+        </td>
+
+        <td>
+
+            {% if item.education_status == "Completed" %}
+
+                <span class="badge bg-success">
+                    Completed
+                </span>
+
+            {% elif item.education_status == "Studying" %}
+
+                <span class="badge bg-primary">
+                    Studying
+                </span>
+
+            {% else %}
+
+                {{ item.education_status }}
+
+            {% endif %}
+
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+    </table>
+
+</div>
+    </tbody>
+
+</table>
+
+</div>

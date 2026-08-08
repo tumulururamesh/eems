@@ -1,0 +1,84 @@
+<div class="dashboard-card">
+
+    <div class="dashboard-header">
+        <i class="bi bi-mortarboard-fill me-2"></i>
+        Academic Snapshot
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <!-- LEFT COLUMN -->
+            <div class="col-md-6">
+
+                <div class="info-row">
+                    <span class="info-label">SSC Percentage</span>
+                    <span class="info-value">
+                        {{ student.ssc_percentage }}%
+                    </span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">SSC Grade</span>
+                    <span class="info-value">
+                        {{ student.ssc_grade }}
+                    </span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">SSC Year</span>
+                    <span class="info-value">
+                        {{ student.ssc_year }}
+                    </span>
+                </div>
+
+                <div class="info-row align-items-start">
+                    <span class="info-label">Merit Category</span>
+
+                    <div class="badge badge-merit">
+                        {{ student.merit_category }}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN -->
+
+            <div class="col-md-6">
+
+                <div class="info-row">
+                    <span class="info-label">School Rank</span>
+                    <span class="info-value">
+                        {{ student.school_rank }}
+                    </span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Mandal Rank</span>
+                    <span class="info-value">
+                        {{ student.mandal_rank }}
+                    </span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">District Rank</span>
+                    <span class="info-value">
+                        {{ student.district_rank }}
+                    </span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">State Rank</span>
+                    <span class="info-value">
+                        {{ student.state_rank }}
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

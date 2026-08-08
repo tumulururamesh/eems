@@ -1,0 +1,61 @@
+<div class="dashboard-card">
+
+    <div class="dashboard-header">
+        <i class="bi bi-briefcase-fill me-2"></i>
+        Employment
+    </div>
+
+    <div class="card-body">
+
+        <div class="info-row">
+            <div class="info-label">Employment Status</div>
+            <div class="info-value">{{ student.employment_status }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Company</div>
+            <div class="info-value">{{ student.company_name }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Designation</div>
+            <div class="info-value">{{ student.designation }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Employment Category</div>
+            <div class="info-value">{{ student.employment_category }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Work Location</div>
+            <div class="info-value">
+            {{ student.employment_location }}
+        </div>
+</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Joining Date</div>
+            <div class="info-value">{{ student.joining_date }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Annual Salary</div>
+            <div class="info-value">
+                {% if student.annual_salary == "—" %}
+                —
+                {% else %}
+                    ₹ {{ student.annual_salary }}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">Placement Source</div>
+            <div class="info-value">{{ student.placement_source }}</div>
+        </div>
+
+    </div>
+
+</div>

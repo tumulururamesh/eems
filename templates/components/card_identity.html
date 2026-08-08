@@ -1,0 +1,101 @@
+<div class="card dashboard-card shadow-sm">
+
+    <div class="card-header dashboard-card-header">
+
+        <i class="bi bi-person-badge-fill"></i>
+        Student Identity
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="text-center mb-4">
+
+            <img src="{{ url_for('static',
+                    filename='images/default_student.png') }}"
+                 class="student-photo"
+                 alt="Student Photograph">
+
+        </div>
+
+        <h3 class="student-name text-center">
+
+            {{ student.student_name }}
+
+        </h3>
+
+        <p class="student-code text-center">
+
+            {{ student.student_code }}
+
+        </p>
+
+        <hr>
+
+        <div class="info-row">
+
+            <span class="info-label">
+                Gender
+            </span>
+
+            <span class="info-value">
+                {{ student.gender }}
+            </span>
+
+        </div>
+
+        <div class="info-row">
+
+            <span class="info-label">
+                Date of Birth
+            </span>
+
+            <span class="info-value">
+                {{ student.date_of_birth }}
+            </span>
+
+        </div>
+
+        <div class="info-row">
+
+            <span class="info-label">
+                Age
+            </span>
+
+            <span class="info-value">
+                {{ student.age }} Years
+            </span>
+
+        </div>
+
+        <div class="info-row">
+
+            <span class="info-label">
+                Current Stage
+            </span>
+
+            <span class="badge bg-success">
+
+                {{ student.current_stage }}
+
+            </span>
+
+        </div>
+
+        <div class="info-row">
+
+            <span class="info-label">
+                Student Status
+            </span>
+
+            <span class="badge bg-primary">
+
+                {{ student.student_status }}
+
+            </span>
+
+        </div>
+
+    </div>
+
+</div>

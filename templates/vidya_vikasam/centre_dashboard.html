@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+
+{% block title %}
+Centre Dashboard
+{% endblock %}
+
+{% block page_title %}
+Centre Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Page Heading -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+            Rampur Tuition Centre
+        </h1>
+
+        <p class="text-muted">
+            Vidya Vikasam • Centre Performance Dashboard
+        </p>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- Centre Identity Card -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-house-door-fill me-2"></i>
+
+            Student Demographics
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- Left Side -->
+
+                <div class="col-md-3 text-center">
+
+                    <img
+                        src="{{ url_for('static', filename='images/centre.png') }}"
+                        class="img-fluid rounded mb-3"
+                        style="max-width:180px;">
+
+                    <h5 class="fw-bold">
+
+                        VV-012
+
+                    </h5>
+
+                    <p class="text-muted">
+
+                        Centre Code
+
+                    </p>
+
+                </div>
+
+                <!-- Right Side -->
+
+                <div class="col-md-9">
+
+                    <table class="table table-borderless">
+
+                        <tr>
+                            <th width="30%">Centre Name</th>
+                            <td>Rampur Tuition Centre</td>
+                        </tr>
+
+                        <tr>
+                            <th>Village</th>
+                            <td>Rampur</td>
+                        </tr>
+
+                        <tr>
+                            <th>Mandal</th>
+                            <td>Adilabad Rural</td>
+                        </tr>
+
+                        <tr>
+                            <th>District</th>
+                            <td>Adilabad</td>
+                        </tr>
+
+                        <tr>
+                            <th>Tutor</th>
+                            <td>Smt. Lakshmi</td>
+                        </tr>
+
+                        <tr>
+                            <th>Students</th>
+                            <td>28</td>
+                        </tr>
+
+                        <tr>
+                            <th>Classes</th>
+                            <td>I to V</td>
+                        </tr>
+
+                        <tr>
+                            <th>Academic Year</th>
+                            <td>2026–27</td>
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================================= -->
+<!-- Centre KPI Cards -->
+<!-- ========================================= -->
+
+<div class="row mt-4 mb-4">
+
+    <!-- Students -->
+
+    <div class="col-md-3">
+
+        <div class="dashboard-card text-center h-100">
+
+            <div class="card-body py-4">
+
+                <i class="bi bi-people-fill display-5 text-primary"></i>
+
+                <h2 class="mt-3">28</h2>
+
+                <h6 class="text-muted">
+
+                    Students
+
+                </h6>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Attendance -->
+
+    <div class="col-md-3">
+
+        <div class="dashboard-card text-center h-100">
+
+            <div class="card-body py-4">
+
+                <i class="bi bi-calendar-check-fill display-5 text-success"></i>
+
+                <h2 class="mt-3">91%</h2>
+
+                <h6 class="text-muted">
+
+                    Attendance
+
+                </h6>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Fee Collection -->
+
+    <div class="col-md-3">
+
+        <div class="dashboard-card text-center h-100">
+
+            <div class="card-body py-4">
+
+                <i class="bi bi-cash-stack display-5 text-warning"></i>
+
+                <h2 class="mt-3">88%</h2>
+
+                <h6 class="text-muted">
+
+                    Fee Collection
+
+                </h6>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Assessment -->
+
+    <div class="col-md-3">
+
+        <div class="dashboard-card text-center h-100">
+
+            <div class="card-body py-4">
+
+                <i class="bi bi-journal-check display-5 text-danger"></i>
+
+                <h2 class="mt-3">72%</h2>
+
+                <h6 class="text-muted">
+
+                    Avg Assessment
+
+                </h6>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<!-- ===================================================== -->
+<!-- CENTRE OPERATIONS -->
+<!-- ===================================================== -->
+
+<div class="dashboard-card mt-4 mb-4">
+
+    <div class="dashboard-header">
+        <i class="bi bi-bar-chart-fill me-2"></i>
+        Centre Operations
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-hover align-middle">
+
+            <thead class="table-light">
+
+                <tr>
+
+                    <th>Class</th>
+                    <th class="text-center">Students</th>
+                    <th class="text-center">Boys</th>
+                    <th class="text-center">Girls</th>
+                    <th class="text-center">ST</th>
+                    <th class="text-center">SC</th>
+                    <th class="text-center">BC</th>
+                    <th class="text-center">OC</th>
+                    <th class="text-center">Attendance</th>
+                    <th class="text-center">Fee Collection</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>I</td>
+                    <td class="text-center">6</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">0</td>
+                    <td class="text-center">95%</td>
+                    <td class="text-center">6 / 6</td>
+                </tr>
+
+                <tr>
+                    <td>II</td>
+                    <td class="text-center">5</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">0</td>
+                    <td class="text-center">91%</td>
+                    <td class="text-center">5 / 5</td>
+                </tr>
+
+                <tr>
+                    <td>III</td>
+                    <td class="text-center">6</td>
+                    <td class="text-center">4</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">89%</td>
+                    <td class="text-center">5 / 6</td>
+                </tr>
+
+                <tr>
+                    <td>IV</td>
+                    <td class="text-center">5</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">0</td>
+                    <td class="text-center">93%</td>
+                    <td class="text-center">5 / 5</td>
+                </tr>
+
+                <tr>
+                    <td>V</td>
+                    <td class="text-center">6</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">3</td>
+                    <td class="text-center">2</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">0</td>
+                    <td class="text-center">87%</td>
+                    <td class="text-center">5 / 6</td>
+                </tr>
+
+            </tbody>
+
+            <tfoot class="table-light fw-bold">
+
+                <tr>
+
+                    <td>Total</td>
+
+                    <td class="text-center">28</td>
+
+                    <td class="text-center">15</td>
+
+                    <td class="text-center">13</td>
+
+                    <td class="text-center">14</td>
+
+                    <td class="text-center">6</td>
+
+                    <td class="text-center">7</td>
+
+                    <td class="text-center">1</td>
+
+                    <td class="text-center">91%</td>
+
+                    <td class="text-center">26 / 28</td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- ACADEMIC PERFORMANCE -->
+<!-- ===================================================== -->
+
+<div class="dashboard-card mt-4 mb-4">
+
+    <div class="dashboard-header">
+
+        <i class="bi bi-journal-check me-2"></i>
+
+        Academic Performance
+
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-hover align-middle">
+
+            <thead class="table-light">
+
+                <tr>
+
+                    <th>Class</th>
+                    <th class="text-center">Reading</th>
+                    <th class="text-center">Writing</th>
+                    <th class="text-center">Mathematics</th>
+                    <th class="text-center">Overall</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>I</td>
+                    <td class="text-center">74%</td>
+                    <td class="text-center">72%</td>
+                    <td class="text-center">76%</td>
+                    <td class="text-center fw-bold">74%</td>
+                </tr>
+
+                <tr>
+                    <td>II</td>
+                    <td class="text-center">70%</td>
+                    <td class="text-center">68%</td>
+                    <td class="text-center">71%</td>
+                    <td class="text-center fw-bold">70%</td>
+                </tr>
+
+                <tr>
+                    <td>III</td>
+                    <td class="text-center">76%</td>
+                    <td class="text-center">75%</td>
+                    <td class="text-center">77%</td>
+                    <td class="text-center fw-bold">76%</td>
+                </tr>
+
+                <tr>
+                    <td>IV</td>
+                    <td class="text-center">73%</td>
+                    <td class="text-center">71%</td>
+                    <td class="text-center">74%</td>
+                    <td class="text-center fw-bold">73%</td>
+                </tr>
+
+                <tr>
+                    <td>V</td>
+                    <td class="text-center">69%</td>
+                    <td class="text-center">68%</td>
+                    <td class="text-center">70%</td>
+                    <td class="text-center fw-bold">69%</td>
+                </tr>
+
+            </tbody>
+
+            <tfoot class="table-light fw-bold">
+
+                <tr>
+
+                    <td>Overall</td>
+
+                    <td class="text-center">72%</td>
+                    <td class="text-center">71%</td>
+                    <td class="text-center">74%</td>
+                    <td class="text-center text-success">72%</td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- STUDENT OUTCOMES -->
+<!-- ===================================================== -->
+
+<div class="dashboard-card mb-5">
+
+    <div class="dashboard-header">
+
+        <i class="bi bi-trophy-fill me-2"></i>
+
+        Student Outcomes
+
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered align-middle">
+
+            <thead class="table-light">
+
+                <tr>
+
+                    <th>Outcome Indicator</th>
+                    <th class="text-center">Count</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>Class V Students</td>
+                    <td class="text-center">6</td>
+                </tr>
+
+                <tr>
+                    <td>Eligible for Entrance Tests</td>
+                    <td class="text-center">6</td>
+                </tr>
+
+                <tr>
+                    <td>Appeared</td>
+                    <td class="text-center">6</td>
+                </tr>
+
+                <tr>
+                    <td>Qualified</td>
+                    <td class="text-center">2</td>
+                </tr>
+
+                <tr>
+                    <td>Joined Residential Schools</td>
+                    <td class="text-center">2</td>
+                </tr>
+
+                <tr class="table-success fw-bold">
+
+                    <td>Success Rate</td>
+
+                    <td class="text-center">
+
+                        33.3%
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+        <small class="text-muted">
+
+            Residential Schools include Navodaya, Gurukul and other Government Residential Schools.
+
+        </small>
+
+    </div>
+
+</div>
+
+{% endblock %}

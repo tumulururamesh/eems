@@ -1,0 +1,322 @@
+
+
+{% extends "base.html" %}
+
+{% block title %}
+Student Lifecycle Profile
+{% endblock %}
+
+{% block page_title %}
+Student Lifecycle Profile
+{% endblock %}
+
+{% block content %}
+
+
+<!-- ================================================= -->
+<!-- STUDENT SNAPSHOT                                  -->
+<!-- ================================================= -->
+
+<h2 class="section-title">
+    Student Snapshot
+</h2>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>Student Code</b></td>
+    <td>{{ student.student_code }}</td>
+</tr>
+
+<tr>
+    <td><b>Student Name</b></td>
+    <td>{{ student.student_name }}</td>
+</tr>
+
+<tr>
+    <td><b>Gender</b></td>
+    <td>{{ student.gender }}</td>
+</tr>
+
+<tr>
+    <td><b>Date of Birth</b></td>
+    <td>{{ student.date_of_birth }}</td>
+</tr>
+
+<tr>
+    <td><b>Age</b></td>
+    <td>{{ student.age }}</td>
+</tr>
+
+<tr>
+    <td><b>Current Stage</b></td>
+    <td>{{ student.current_stage }}</td>
+</tr>
+
+<tr>
+    <td><b>Student Status</b></td>
+    <td>{{ student.student_status }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- SCHOOL INFORMATION                                -->
+<!-- ================================================= -->
+
+<h3>School Information</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>School</b></td>
+    <td>{{ student.school_name }}</td>
+</tr>
+
+<tr>
+    <td><b>Village</b></td>
+    <td>{{ student.village_name }}</td>
+</tr>
+
+<tr>
+    <td><b>Mandal</b></td>
+    <td>{{ student.mandal_name }}</td>
+</tr>
+
+<tr>
+    <td><b>District</b></td>
+    <td>{{ student.district_name }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- SSC PERFORMANCE                                   -->
+<!-- ================================================= -->
+
+<h3>SSC Performance</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>SSC Year</b></td>
+    <td>{{ student.ssc_year }}</td>
+</tr>
+
+<tr>
+    <td><b>Hall Ticket No</b></td>
+    <td>{{ student.ssc_hallticket_no }}</td>
+</tr>
+
+<tr>
+    <td><b>Percentage</b></td>
+    <td>{{ student.ssc_percentage }}</td>
+</tr>
+
+<tr>
+    <td><b>Grade</b></td>
+    <td>{{ student.ssc_grade }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- MERIT SUMMARY                                     -->
+<!-- ================================================= -->
+
+<h3>Merit Summary</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>School Rank</b></td>
+    <td>{{ student.school_rank }}</td>
+</tr>
+
+<tr>
+    <td><b>Mandal Rank</b></td>
+    <td>{{ student.mandal_rank }}</td>
+</tr>
+
+<tr>
+    <td><b>District Rank</b></td>
+    <td>{{ student.district_rank }}</td>
+</tr>
+
+<tr>
+    <td><b>State Rank</b></td>
+    <td>{{ student.state_rank }}</td>
+</tr>
+
+<tr>
+    <td><b>Merit Category</b></td>
+    <td>{{ student.merit_category }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- HIGHER EDUCATION                                  -->
+<!-- ================================================= -->
+
+<h3>Higher Education</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>Qualification</b></td>
+    <td>{{ student.highest_qualification }}</td>
+</tr>
+
+<tr>
+    <td><b>Course</b></td>
+    <td>{{ student.highest_course }}</td>
+</tr>
+
+<tr>
+    <td><b>Specialization</b></td>
+    <td>{{ student.highest_specialization }}</td>
+</tr>
+
+<tr>
+    <td><b>Institution</b></td>
+    <td>{{ student.highest_institution }}</td>
+</tr>
+
+<tr>
+    <td><b>Status</b></td>
+    <td>{{ student.highest_education_status }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- AWARDS                                             -->
+<!-- ================================================= -->
+
+<h3>Awards</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>Award Count</b></td>
+    <td>{{ student.award_count }}</td>
+</tr>
+
+<tr>
+    <td><b>Awards</b></td>
+    <td>{{ student.awards }}</td>
+</tr>
+
+<tr>
+    <td><b>Total Award Amount</b></td>
+    <td>{{ student.total_award_amount }}</td>
+</tr>
+
+<tr>
+    <td><b>Highest Award Amount</b></td>
+    <td>{{ student.highest_award_amount }}</td>
+</tr>
+
+<tr>
+    <td><b>Latest Award</b></td>
+    <td>{{ student.latest_award_date }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- ACHIEVEMENTS                                       -->
+<!-- ================================================= -->
+
+<h3>Achievements</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>Achievement Count</b></td>
+    <td>{{ student.achievement_count }}</td>
+</tr>
+
+<tr>
+    <td><b>Achievements</b></td>
+    <td>{{ student.achievements }}</td>
+</tr>
+
+<tr>
+    <td><b>Latest Achievement</b></td>
+    <td>{{ student.latest_achievement_date }}</td>
+</tr>
+
+</table>
+
+<br>
+
+<!-- ================================================= -->
+<!-- CURRENT EMPLOYMENT                                -->
+<!-- ================================================= -->
+
+<h3>Current Employment</h3>
+
+<table border="1" cellpadding="5">
+
+<tr>
+    <td><b>Currently Employed</b></td>
+    <td>{{ student.employment_status }}</td>
+</tr>
+
+<tr>
+    <td><b>Company</b></td>
+    <td>{{ student.company_name }}</td>
+</tr>
+
+<tr>
+    <td><b>Designation</b></td>
+    <td>{{ student.designation }}</td>
+</tr>
+
+<tr>
+    <td><b>Employment Category</b></td>
+    <td>{{ student.employment_category }}</td>
+</tr>
+
+<tr>
+    <td><b>City</b></td>
+    <td>{{ student.employment_location }}</td>
+</tr>
+
+<tr>
+    <td><b>State</b></td>
+    <td>{{ student.employment_location }}</td>
+</tr>
+
+<tr>
+    <td><b>Joining Date</b></td>
+    <td>{{ student.joining_date }}</td>
+</tr>
+
+<tr>
+    <td><b>Annual Salary</b></td>
+    <td>{{ student.annual_salary }}</td>
+</tr>
+
+<tr>
+    <td><b>Placement Source</b></td>
+    <td>{{ student.placement_source }}</td>
+</tr>
+
+</table>
+
+{% endblock %}

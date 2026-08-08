@@ -1,0 +1,178 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- Report Header -->
+
+    <div class="text-center mb-4">
+
+        <h1 class="page-title">
+
+            {{ programme_name }}
+
+        </h1>
+
+        <h2 class="page-subtitle">
+
+            {{ report_title }}
+
+        </h2>
+
+    </div>
+
+    <!-- Report Information -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="row">
+
+            <div class="col-md-3">
+
+                <strong>Academic Year</strong><br>
+
+                {{ academic_year }}
+
+            </div>
+
+            <div class="col-md-3">
+
+                <strong>Total Records</strong><br>
+
+                {{ record_count }}
+
+            </div>
+
+            <div class="col-md-3">
+
+                <strong>Generated On</strong><br>
+
+                {{ generated_on }}
+
+            </div>
+
+            <div class="col-md-3">
+
+                <strong>Category</strong><br>
+
+                {{ report_category }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Report Results -->
+
+    <div class="dashboard-card">
+
+        <div class="table-responsive">
+
+            <!-- Table comes here -->
+
+        </div>
+
+    </div>
+
+
+<!-- ======================================== -->
+<!-- REPORT DATA -->
+<!-- ======================================== -->
+
+<div class="dashboard-card mt-4">
+
+    <div class="table-responsive">
+
+        <table class="table table-striped table-hover align-middle">
+
+            <thead class="table-primary">
+
+                <tr>
+
+                    <th style="width:5%">#</th>
+
+                    <th style="width:8%">Centre ID</th>
+
+                    <th style="width:26%">Centre Name</th>
+
+                    <th style="width:20%">Village</th>
+
+                    <th style="width:20%">Tutor</th>
+
+                    <th style="width:8%">Status</th>
+
+                    <th style="width:13%">Start Date</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for row in rows %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>{{ row.center_id }}</td>
+
+                    <td>{{ row.center_name }}</td>
+
+                    <td>{{ row.village_name }}</td>
+
+                    <td>{{ row.tutor_name }}</td>
+
+                    <td>{{ row.status }}</td>
+
+                    <td>{{ row.start_date }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+    <!-- Report Actions -->
+
+    <div class="text-end mt-4">
+
+        <a href="{{ export_url }}?year={{ academic_year }}"
+            class="btn btn-success">
+
+            <i class="bi bi-file-earmark-excel"></i>
+
+            Export Excel
+
+        </a>
+
+        <button class="btn btn-secondary">
+
+            <i class="bi bi-printer"></i>
+
+            Print
+
+        </button>
+
+        <a href="/vv-reports"
+            class="btn btn-outline-primary">
+
+            Back
+
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

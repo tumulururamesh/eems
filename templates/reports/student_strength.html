@@ -1,0 +1,200 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- Report Header -->
+
+    <div class="text-center mb-4">
+
+        <h1 class="page-title">
+
+            {{ programme_name }}
+
+        </h1>
+
+        <h2 class="page-subtitle">
+
+            {{ report_title }}
+
+        </h2>
+
+    </div>
+
+    <!-- Report Information -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="row">
+
+            <div class="col-md-3">
+
+                <strong>Academic Year</strong><br>
+
+                {{ academic_year }}
+
+            </div>
+
+            <div class="col-md-3">
+
+                <strong>Total Records</strong><br>
+
+                {{ record_count }}
+
+            </div>
+
+            <div class="col-md-3">
+
+                <strong>Generated On</strong><br>
+
+                {{ generated_on }}
+
+            </div>
+
+            <div class="col-md-3">
+
+                <strong>Category</strong><br>
+
+                {{ report_category }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Report Results -->
+
+    <div class="dashboard-card">
+
+        <div class="table-responsive">
+
+            <!-- Table comes here -->
+
+        </div>
+
+    </div>
+
+
+<!-- ======================================== -->
+<!-- REPORT DATA -->
+<!-- ======================================== -->
+
+<div class="dashboard-card mt-4">
+
+    <div class="table-responsive">
+
+    <table class="table table-striped table-hover report-table">
+
+        <thead>
+
+            <tr>
+
+                <th>Sl No.</th>
+                <th>Centre</th>
+                <th>Village</th>
+                <th>Tutor</th>
+                <th>Boys</th>
+                <th>Girls</th>
+                <th>Total</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for row in rows %}
+
+            <tr>
+
+                <td>{{ loop.index }}</td>
+
+                <td><strong>{{ row.center_name }}</strong></td>
+
+                <td>{{ row.village_name }}</td>
+
+                <td>{{ row.tutor_name }}</td>
+
+                <td class="text-end">{{ row.boys }}</td>
+
+                <td class="text-end">{{ row.girls }}</td>
+
+                <td class="text-end fw-bold">
+
+                    {{ row.total_students }}
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+</div>
+
+
+    <!-- Report Actions -->
+
+    <div class="text-end mt-4">
+
+        <a href="/export/student-strength?year={{ academic_year }}"
+            class="btn btn-success">
+
+            <i class="bi bi-file-earmark-excel"></i>
+
+            Export Excel
+
+        </a>
+
+        <button class="btn btn-secondary">
+
+            <i class="bi bi-printer"></i>
+
+            Print
+
+        </button>
+
+        <a href="/vv-reports"
+            class="btn btn-outline-primary">
+
+            Back
+
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<div class="report-summary">
+
+    <strong>Grand Total</strong>
+
+    <span>
+        Centres : <strong>{{ record_count }}</strong>
+    </span>
+
+    <span>
+        Boys : <strong>{{ total_boys }}</strong>
+    </span>
+
+    <span>
+        Girls : <strong>{{ total_girls }}</strong>
+    </span>
+
+    <span>
+        Students : <strong>{{ total_students }}</strong>
+    </span>
+
+</div>
+
+{% endblock %}

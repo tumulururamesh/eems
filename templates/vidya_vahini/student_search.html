@@ -1,0 +1,64 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Student Search
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="dashboard-card p-5">
+
+                <h2 class="text-center mb-4">
+                    Student Lifecycle Management System
+                </h2>
+
+                <p class="text-center text-muted mb-4">
+                    Search for a student to view the complete lifecycle dashboard.
+                </p>
+
+                <form action="{{ url_for('search_students') }}" method="GET">
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Search Student
+                        </label>
+
+                        <input
+                            type="text"
+                            name="search"
+                            class="form-control form-control-lg"
+                            placeholder="Search by Student ID, Name, Village or School..."
+                            required>
+                    </div>
+
+                    <div class="text-center">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary btn-lg">
+
+                            Search
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

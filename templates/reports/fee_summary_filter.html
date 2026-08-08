@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3 class="section-title mb-4">
+        Centre-wise Fee Collection Summary
+    </h3>
+
+    <form method="GET"
+          action="/vv-report-category/fee-summary">
+
+        <div class="mb-3">
+
+            <label class="form-label fw-bold">
+                Academic Year
+            </label>
+
+            <select
+                name="year"
+                class="form-select">
+
+                <option value="2026-2027">2026-27</option>
+                <option value="2025-2026" selected>2025-26</option>
+                <option value="2024-2025">2024-25</option>
+
+            </select>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label class="form-label fw-bold">
+                Fee Month
+            </label>
+
+            <input
+                type="month"
+                name="fee_month"
+                class="form-control"
+                value="2025-06">
+
+        </div>
+
+        <button
+            class="btn btn-primary"
+            type="submit">
+
+            Generate Report
+
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}
