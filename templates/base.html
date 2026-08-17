@@ -154,6 +154,13 @@
                     </a>
                 </li>
 
+                {% if session.get("username") %}
+                    <a href="/logout" class="btn btn-outline-danger btn-sm ms-2">
+                        <i class="bi bi-box-arrow-right me-1"></i>
+                        Logout
+                    </a>
+                {% endif %}
+
             </ul>
 
         </div>

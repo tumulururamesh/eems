@@ -3,7 +3,9 @@ from flask import (
     render_template,
     redirect,
     request,
-    send_file
+    send_file,
+    session,
+    url_for
 )
 from io import BytesIO
 
@@ -29,20 +31,88 @@ from datetime import datetime
 from excel_export import export_report_to_excel
 
 app = Flask(__name__)
+app.secret_key = "aems-demo-secret-key"
 
+
+# =====================================================
+# AEMS DEMO USERS
+# =====================================================
+
+AEMS_USERS = {
+
+    "cluster1": {
+        "password": "demo123",
+        "role": "cluster_incharge",
+        "name": "Cluster Incharge",
+        "centres": [1, 2, 3, 4, 5, 6]
+    },
+
+    "director": {
+        "password": "demo123",
+        "role": "programme_director",
+        "name": "Programme Director",
+        "centres": "all"
+    }
+
+}
+
+from functools import wraps
+
+
+def login_required(view):
+
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+
+        if "username" not in session:
+            return redirect(url_for("login"))
+
+        return view(*args, **kwargs)
+
+    return wrapped_view
 
 # =====================================================
 # LOGIN
 # =====================================================
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+
+    if request.method == "POST":
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        user = AEMS_USERS.get(username)
+
+        if user and user["password"] == password:
+
+            session["username"] = username
+            session["role"] = user["role"]
+            session["name"] = user["name"]
+            session["centres"] = user["centres"]
+
+            return redirect("/dashboard")
+
+        return render_template(
+            "auth/login.html",
+            error="Invalid username or password."
+        )
 
     return render_template(
         "auth/login.html"
     )
 
+
+@app.route("/logout")
+def logout():
+
+    session.clear()
+
+    return redirect("/login")
+
 @app.route("/dashboard")
+@login_required
 def dashboard():
 
     programme_snapshot = {

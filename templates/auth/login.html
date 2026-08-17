@@ -75,7 +75,13 @@ Login
 
                     </h3>
 
-                    <form>
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST">
 
                         <div class="mb-3">
 
@@ -86,7 +92,10 @@ Login
                             </label>
 
                             <input type="text"
-                                   class="form-control">
+                                class="form-control"
+                                name="username"
+                                autocomplete="username"
+                                required>
 
                         </div>
 
@@ -99,13 +108,18 @@ Login
                             </label>
 
                             <input type="password"
-                                   class="form-control">
+                                class="form-control"
+                                name="password"
+                                autocomplete="current-password"
+                                required>
 
                         </div>
 
-                        <a href="/dashboard" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100">
                             Login
-                        </a>
+                        </button>
+
+                       
                     </form>
 
                 </div>
