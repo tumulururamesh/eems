@@ -92,6 +92,9 @@ def login():
             session["name"] = user["name"]
             session["centres"] = user["centres"]
 
+            if user["role"] == "cluster_incharge":
+                return redirect("/cluster-dashboard")
+
             return redirect("/dashboard")
 
         return render_template(
@@ -126,6 +129,80 @@ def dashboard():
         "platform/home.html",
         programme_snapshot=programme_snapshot,
         active_page="home"
+    )
+
+
+@app.route("/cluster-dashboard")
+@login_required
+def cluster_dashboard():
+
+    if session.get("role") != "cluster_incharge":
+        return redirect("/dashboard")
+
+    cluster = {
+        "name": "Cluster 1",
+        "centres": 6,
+        "students": 168,
+        "attendance": "91%",
+        "assessment": "74%"
+    }
+
+    centres = [
+        {
+            "id": 1,
+            "name": "Rasoolpura Learning Centre",
+            "students": 28,
+            "attendance": "91%",
+            "assessment": "72%",
+            "gurukul": 6
+        },
+        {
+            "id": 2,
+            "name": "Learning Centre 02",
+            "students": 31,
+            "attendance": "89%",
+            "assessment": "75%",
+            "gurukul": 5
+        },
+        {
+            "id": 3,
+            "name": "Learning Centre 03",
+            "students": 26,
+            "attendance": "94%",
+            "assessment": "78%",
+            "gurukul": 7
+        },
+        {
+            "id": 4,
+            "name": "Learning Centre 04",
+            "students": 30,
+            "attendance": "90%",
+            "assessment": "71%",
+            "gurukul": 4
+        },
+        {
+            "id": 5,
+            "name": "Learning Centre 05",
+            "students": 24,
+            "attendance": "92%",
+            "assessment": "76%",
+            "gurukul": 6
+        },
+        {
+            "id": 6,
+            "name": "Learning Centre 06",
+            "students": 29,
+            "attendance": "88%",
+            "assessment": "73%",
+            "gurukul": 5
+        }
+    ]
+
+    return render_template(
+        "cluster/cluster_dashboard.html",
+        cluster=cluster,
+        centres=centres,
+        active_page="cluster"
     )
 
 
