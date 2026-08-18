@@ -1,0 +1,550 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+My Zone
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Page Heading -->
+    <!-- ========================================= -->
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+
+        <div>
+
+            <h1 class="display-6 fw-bold text-primary">
+                My Zone
+            </h1>
+
+            <p class="text-muted mb-1">
+                {{ zone.name }}
+                • Operational Head: {{ zone.head }}
+            </p>
+
+            <small class="text-muted">
+                Reporting Month: <strong>July 2026</strong>
+                &nbsp;•&nbsp;
+                Academic Year: <strong>2026–27</strong>
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Zone KPI Cards -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- Segments -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-diagram-3-fill
+                              display-5 text-primary"></i>
+
+                    <h2 class="mt-3">
+                        {{ zone.segments }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Segments
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Clusters -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-diagram-2-fill
+                              display-5 text-success"></i>
+
+                    <h2 class="mt-3">
+                        {{ zone.clusters }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Clusters
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Centres -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-house-fill
+                              display-5 text-info"></i>
+
+                    <h2 class="mt-3">
+                        {{ zone.centres }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Learning Centres
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Students -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-people-fill
+                              display-5 text-warning"></i>
+
+                    <h2 class="mt-3">
+                        {{ zone.students }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Students
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Zone Performance KPIs -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- Attendance -->
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body py-4">
+
+                    <div class="fs-2">
+                        🟢
+                    </div>
+
+                    <h2 class="mt-2">
+                        {{ zone.attendance }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Zone Average Attendance
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Assessment -->
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body py-4">
+
+                    <div class="fs-2">
+                        🟠
+                    </div>
+
+                    <h2 class="mt-2">
+                        {{ zone.assessment }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Zone Average Assessment
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Segment Performance Comparison -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mt-4 mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-bar-chart-fill me-2"></i>
+
+            Segment Performance Comparison
+
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted mb-4">
+
+                Compare attendance and assessment performance
+                across the five Segments in the Zone.
+
+            </p>
+
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Rank
+                            </th>
+
+                            <th>
+                                Segment
+                            </th>
+
+                            <th class="text-center">
+                                Clusters
+                            </th>
+
+                            <th class="text-center">
+                                Centres
+                            </th>
+
+                            <th class="text-center">
+                                Students
+                            </th>
+
+                            <th class="text-center">
+                                Attendance
+                            </th>
+
+                            <th class="text-center">
+                                RAG
+                            </th>
+
+                            <th class="text-center">
+                                Avg. Marks
+                            </th>
+
+                            <th class="text-center">
+                                RAG
+                            </th>
+
+                            <th class="text-center">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for segment in segments %}
+
+                        <tr>
+
+                            <!-- Rank -->
+
+                            <td class="fw-bold">
+                                {{ loop.index }}
+                            </td>
+
+
+                            <!-- Segment -->
+
+                            <td>
+
+                                <a href="/segment/{{ segment.id }}"
+                                   class="text-decoration-none fw-semibold">
+
+                                    {{ segment.name }}
+
+                                </a>
+
+                            </td>
+
+
+                            <!-- Clusters -->
+
+                            <td class="text-center">
+                                {{ segment.clusters }}
+                            </td>
+
+
+                            <!-- Centres -->
+
+                            <td class="text-center">
+                                {{ segment.centres }}
+                            </td>
+
+
+                            <!-- Students -->
+
+                            <td class="text-center">
+                                {{ segment.students }}
+                            </td>
+
+
+                            <!-- Attendance -->
+
+                            <td class="text-center fw-bold">
+                                {{ segment.attendance }}
+                            </td>
+
+
+                            <!-- Attendance RAG -->
+
+                            <td class="text-center">
+
+                                {% if segment.attendance_value >= 90 %}
+
+                                    <span class="rag-dot rag-green"></span>
+
+                                {% elif segment.attendance_value >= 80 %}
+
+                                    <span class="rag-dot rag-amber"></span>
+
+                                {% else %}
+
+                                    <span class="rag-dot rag-red"></span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Assessment -->
+
+                            <td class="text-center fw-bold">
+                                {{ segment.assessment }}
+                            </td>
+
+
+                            <!-- Assessment RAG -->
+
+                            <td class="text-center">
+
+                                {% if segment.assessment_value >= 75 %}
+
+                                    <span class="rag-dot rag-green"></span>
+
+                                {% elif segment.assessment_value >= 65 %}
+
+                                    <span class="rag-dot rag-amber"></span>
+
+                                {% else %}
+
+                                    <span class="rag-dot rag-red"></span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Action -->
+
+                            <td class="text-center">
+
+                                <a href="/segment/{{ segment.id }}"
+                                   class="btn btn-sm btn-outline-primary">
+
+                                    View Segment
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+
+                    <!-- ================================= -->
+                    <!-- Zone Average -->
+                    <!-- ================================= -->
+
+                    <tfoot class="table-light fw-bold">
+
+                        <tr>
+
+                            <td colspan="2">
+                                Zone Average
+                            </td>
+
+                            <td class="text-center">
+                                20
+                            </td>
+
+                            <td class="text-center">
+                                {{ zone.centres }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ zone.students }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ zone.attendance }}
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                            <td class="text-center">
+                                {{ zone.assessment }}
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                        </tr>
+
+                    </tfoot>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Zone Performance Summary -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-5">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-lightbulb-fill me-2"></i>
+
+            Zone Performance Summary
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row text-center">
+
+                <div class="col-md-4">
+
+                    <h2 class="fw-bold text-success">
+                        2
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Segments performing well
+                    </p>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <h2 class="fw-bold text-warning">
+                        2
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Segments requiring attention
+                    </p>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <h2 class="fw-bold text-danger">
+                        1
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Segment requiring immediate attention
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Prototype Note -->
+    <!-- ========================================= -->
+
+    <div class="text-center text-muted small mb-4">
+
+        Illustrative performance data for demonstration.
+
+    </div>
+
+</div>
+
+{% endblock %}

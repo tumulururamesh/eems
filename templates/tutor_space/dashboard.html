@@ -1,0 +1,299 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Tutor Space
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Programme Header -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+            Tutor Space
+        </h1>
+
+        <p class="text-muted">
+            Tutor Education & Career Journey
+        </p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Introductory Message -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="card-body text-center py-4">
+
+            <h3 class="mb-3">
+                From teaching children to building their own future.
+            </h3>
+
+            <p class="text-muted mb-0">
+                Tutor Space follows the educational and career journey
+                of young people who contribute to AVF as tutors.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Tutor KPIs -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center">
+
+                <div class="card-body">
+
+                    <i class="bi bi-person-workspace display-5 text-primary"></i>
+
+                    <h2 class="mt-3">
+                        {{ tutor_summary.active_tutors }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Active Tutors
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center">
+
+                <div class="card-body">
+
+                    <i class="bi bi-mortarboard-fill display-5 text-success"></i>
+
+                    <h2 class="mt-3">
+                        {{ tutor_summary.higher_education }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Pursuing Higher Education
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center">
+
+                <div class="card-body">
+
+                    <i class="bi bi-award-fill display-5 text-warning"></i>
+
+                    <h2 class="mt-3">
+                        {{ tutor_summary.graduated }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Graduated
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center">
+
+                <div class="card-body">
+
+                    <i class="bi bi-briefcase-fill display-5 text-info"></i>
+
+                    <h2 class="mt-3">
+                        {{ tutor_summary.former_employed }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Employed
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Tutor Journey -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-signpost-split-fill me-2"></i>
+
+            Tutor Journey
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row text-center">
+
+                <div class="col">
+
+                    <i class="bi bi-person-fill display-5 text-primary"></i>
+
+                    <h5 class="mt-2">
+                        Student
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-person-workspace display-5 text-success"></i>
+
+                    <h5 class="mt-2">
+                        Tutor
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-mortarboard-fill display-5 text-warning"></i>
+
+                    <h5 class="mt-2">
+                        Higher Education
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-briefcase-fill display-5 text-info"></i>
+
+                    <h5 class="mt-2">
+                        Employment
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-graph-up-arrow display-5 text-success"></i>
+
+                    <h5 class="mt-2">
+                        Career
+                    </h5>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Tutor Success Stories -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-5">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-stars me-2"></i>
+
+            Tutor Success Stories
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                {% for story in tutor_stories %}
+
+                <div class="col-md-4">
+
+                    <div class="border rounded p-4 h-100">
+
+                        <h5 class="text-primary">
+                            {{ story.name }}
+                        </h5>
+
+                        <p class="fw-semibold">
+                            {{ story.journey }}
+                        </p>
+
+                        <p class="text-muted">
+                            {{ story.highlight }}
+                        </p>
+
+                        <span class="badge bg-success">
+                            {{ story.status }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

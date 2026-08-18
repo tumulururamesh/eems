@@ -903,6 +903,42 @@ REPORT COLUMN WIDTHS
 }
 
 
+/* =========================================
+   RAG STATUS INDICATORS
+   ========================================= */
+
+.rag-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.rag-green {
+    background-color: #198754;
+}
+
+.rag-amber {
+    background-color: #ffc107;
+}
+
+.rag-red {
+    background-color: #dc3545;
+}
+
+
+/* =========================================
+   USER CONTEXT BAR
+   ========================================= */
+
+.user-context-bar {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+}
+
 /***********************************************************************
 DEVELOPER NOTES
 

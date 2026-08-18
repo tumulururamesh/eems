@@ -1,0 +1,511 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+My Segment
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Page Heading -->
+    <!-- ========================================= -->
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+
+        <div>
+
+            <h1 class="display-6 fw-bold text-primary">
+                My Segment
+            </h1>
+
+            <p class="text-muted mb-1">
+                {{ segment.name }}
+                • Incharge: {{ segment.incharge }}
+            </p>
+
+            <small class="text-muted">
+                Reporting Month: <strong>July 2026</strong>
+                &nbsp;•&nbsp;
+                Academic Year: <strong>2026–27</strong>
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Segment KPI Cards -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- Clusters -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-diagram-3-fill
+                              display-5 text-primary"></i>
+
+                    <h2 class="mt-3">
+                        {{ segment.clusters }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Clusters
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Centres -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-house-fill
+                              display-5 text-success"></i>
+
+                    <h2 class="mt-3">
+                        {{ segment.centres }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Learning Centres
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Students -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-people-fill
+                              display-5 text-info"></i>
+
+                    <h2 class="mt-3">
+                        {{ segment.students }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Students
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Attendance -->
+
+        <div class="col-md-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-bar-chart-fill
+                              display-5 text-warning"></i>
+
+                    <h2 class="mt-3">
+                        {{ segment.attendance }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Average Attendance
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Assessment Summary -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card text-center">
+
+                <div class="card-body py-4">
+
+                    <i class="bi bi-check2-square
+                              display-5 text-success"></i>
+
+                    <h2 class="mt-3">
+                        {{ segment.assessment }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Average Assessment Marks
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card text-center">
+
+                <div class="card-body py-4">
+
+                    <i class="bi bi-calendar-check-fill
+                              display-5 text-primary"></i>
+
+                    <h2 class="mt-3">
+                        July 2026
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Current Reporting Period
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Cluster Performance Comparison -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mt-4 mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-bar-chart-fill me-2"></i>
+
+            Cluster Performance Comparison
+
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted mb-4">
+
+                Compare attendance and assessment performance
+                across the four clusters in the Segment.
+
+            </p>
+
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Rank
+                            </th>
+
+                            <th>
+                                Cluster
+                            </th>
+
+                            <th class="text-center">
+                                Centres
+                            </th>
+
+                            <th class="text-center">
+                                Students
+                            </th>
+
+                            <th class="text-center">
+                                Attendance
+                            </th>
+
+                            <th class="text-center">
+                                RAG
+                            </th>
+
+                            <th class="text-center">
+                                Avg. Marks
+                            </th>
+
+                            <th class="text-center">
+                                RAG
+                            </th>
+
+                            <th class="text-center">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for cluster in clusters %}
+
+                        <tr>
+
+                            <td class="fw-bold">
+                                {{ loop.index }}
+                            </td>
+
+
+                            <td>
+
+                                <a href="/cluster-dashboard"
+                                   class="text-decoration-none fw-semibold">
+
+                                    {{ cluster.name }}
+
+                                </a>
+
+                            </td>
+
+
+                            <td class="text-center">
+                                {{ cluster.centres }}
+                            </td>
+
+
+                            <td class="text-center">
+                                {{ cluster.students }}
+                            </td>
+
+
+                            <td class="text-center fw-bold">
+                                {{ cluster.attendance }}
+                            </td>
+
+
+                            <td class="text-center">
+
+                                {% if cluster.attendance_value >= 90 %}
+
+                                    <span class="rag-dot rag-green"></span>
+
+                                {% elif cluster.attendance_value >= 80 %}
+
+                                    <span class="rag-dot rag-amber"></span>
+
+                                {% else %}
+
+                                    <span class="rag-dot rag-red"></span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="text-center fw-bold">
+                                {{ cluster.assessment }}
+                            </td>
+
+
+                            <td class="text-center">
+
+                                {% if cluster.assessment_value >= 75 %}
+
+                                    <span class="rag-dot rag-green"></span>
+
+                                {% elif cluster.assessment_value >= 65 %}
+
+                                    <span class="rag-dot rag-amber"></span>
+
+                                {% else %}
+
+                                    <span class="rag-dot rag-red"></span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="text-center">
+
+                                <a href="/cluster-dashboard"
+                                   class="btn btn-sm btn-outline-primary">
+
+                                    View Cluster
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+
+                    <!-- ================================= -->
+                    <!-- Segment Average -->
+                    <!-- ================================= -->
+
+                    <tfoot class="table-light fw-bold">
+
+                        <tr>
+
+                            <td colspan="2">
+                                Segment Average
+                            </td>
+
+                            <td class="text-center">
+                                20
+                            </td>
+
+                            <td class="text-center">
+                                {{ segment.students }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ segment.attendance }}
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                            <td class="text-center">
+                                {{ segment.assessment }}
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                        </tr>
+
+                    </tfoot>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Segment Performance Summary -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-5">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-lightbulb-fill me-2"></i>
+
+            Segment Performance Summary
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row text-center">
+
+                <div class="col-md-4">
+
+                    <h2 class="fw-bold text-success">
+                        2
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Clusters performing well
+                    </p>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <h2 class="fw-bold text-warning">
+                        1
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Cluster requires attention
+                    </p>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <h2 class="fw-bold text-danger">
+                        1
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Cluster requires immediate attention
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Prototype Note -->
+    <!-- ========================================= -->
+
+    <div class="text-center text-muted small mb-4">
+
+        Illustrative performance data for demonstration.
+
+    </div>
+
+</div>
+
+{% endblock %}

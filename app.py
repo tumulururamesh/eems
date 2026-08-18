@@ -40,22 +40,73 @@ app.secret_key = "aems-demo-secret-key"
 
 AEMS_USERS = {
 
-    "cluster1": {
-        "password": "demo123",
-        "role": "cluster_incharge",
-        "name": "Cluster Incharge",
-        "centres": [1, 2, 3, 4, 5, 6]
-    },
+    # =========================================
+    # AVF MANAGEMENT
+    # =========================================
 
     "director": {
         "password": "demo123",
-        "role": "programme_director",
+        "role": "management",
         "name": "Programme Director",
         "centres": "all"
+    },
+
+
+    # =========================================
+    # OPERATIONAL HEAD
+    # =========================================
+
+    "operations": {
+        "password": "demo123",
+        "role": "operational_head",
+        "name": "Operational Head",
+        "zone": 1
+    },
+
+
+    # =========================================
+    # SEGMENT INCHARGE
+    # =========================================
+
+    "segment1": {
+        "password": "demo123",
+        "role": "segment_incharge",
+        "name": "Segment Incharge",
+        "zone": 1,
+        "segment": 1
+    },
+
+
+    # =========================================
+    # CLUSTER COORDINATOR
+    # =========================================
+
+    "cluster1": {
+        "password": "demo123",
+        "role": "cluster_incharge",
+        "name": "Cluster Coordinator",
+        "zone": 1,
+        "segment": 1,
+        "cluster": 1,
+        "centres": [1, 2, 3, 4, 5]
+    },
+
+
+    # =========================================
+    # TUTOR
+    # =========================================
+
+    "tutor2": {
+        "password": "demo123",
+        "role": "tutor",
+        "name": "Centre 2 Tutor",
+        "zone": 1,
+        "segment": 1,
+        "cluster": 1,
+        "centre": 2
     }
 
 }
-
 from functools import wraps
 
 
@@ -90,10 +141,28 @@ def login():
             session["username"] = username
             session["role"] = user["role"]
             session["name"] = user["name"]
-            session["centres"] = user["centres"]
 
-            if user["role"] == "cluster_incharge":
+            session["zone"] = user.get("zone")
+            session["segment"] = user.get("segment")
+            session["cluster"] = user.get("cluster")
+            session["centre"] = user.get("centre")
+            session["centres"] = user.get("centres")
+
+
+            if user["role"] == "management":
+                return redirect("/dashboard")
+
+            elif user["role"] == "operational_head":
+                return redirect("/zone-dashboard")
+
+            elif user["role"] == "segment_incharge":
+                return redirect(f"/segment/{user['segment']}")
+
+            elif user["role"] == "cluster_incharge":
                 return redirect("/cluster-dashboard")
+
+            elif user["role"] == "tutor":
+                return redirect("/centre/2")
 
             return redirect("/dashboard")
 
@@ -141,62 +210,78 @@ def cluster_dashboard():
 
     cluster = {
         "name": "Cluster 1",
-        "centres": 6,
+        "centres": 5,
         "students": 168,
         "attendance": "91%",
         "assessment": "74%"
     }
 
     centres = [
-        {
-            "id": 1,
-            "name": "Rasoolpura Learning Centre",
-            "students": 28,
-            "attendance": "91%",
-            "assessment": "72%",
-            "gurukul": 6
-        },
-        {
-            "id": 2,
-            "name": "Learning Centre 02",
-            "students": 31,
-            "attendance": "89%",
-            "assessment": "75%",
-            "gurukul": 5
-        },
-        {
-            "id": 3,
-            "name": "Learning Centre 03",
-            "students": 26,
-            "attendance": "94%",
-            "assessment": "78%",
-            "gurukul": 7
-        },
-        {
-            "id": 4,
-            "name": "Learning Centre 04",
-            "students": 30,
-            "attendance": "90%",
-            "assessment": "71%",
-            "gurukul": 4
-        },
-        {
-            "id": 5,
-            "name": "Learning Centre 05",
-            "students": 24,
-            "attendance": "92%",
-            "assessment": "76%",
-            "gurukul": 6
-        },
-        {
-            "id": 6,
-            "name": "Learning Centre 06",
-            "students": 29,
-            "attendance": "88%",
-            "assessment": "73%",
-            "gurukul": 5
-        }
-    ]
+    {
+        "id": 1,
+        "name": "Centre 1",
+        "students": 31,
+        "attendance": "94%",
+        "attendance_value": 94,
+        "assessment": "78%",
+        "assessment_value": 78,
+        "group_a": "80%",
+        "group_b": "76%",
+        "gurukul": 7
+    },
+
+    {
+        "id": 2,
+        "name": "Centre 2",
+        "students": 28,
+        "attendance": "91%",
+        "attendance_value": 91,
+        "assessment": "72%",
+        "assessment_value": 72,
+        "group_a": "74%",
+        "group_b": "70%",
+        "gurukul": 6
+    },
+
+    {
+        "id": 3,
+        "name": "Centre 3",
+        "students": 29,
+        "attendance": "89%",
+        "attendance_value": 89,
+        "assessment": "74%",
+        "assessment_value": 74,
+        "group_a": "77%",
+        "group_b": "71%",
+        "gurukul": 5
+    },
+
+    {
+        "id": 4,
+        "name": "Centre 4",
+        "students": 35,
+        "attendance": "82%",
+        "attendance_value": 82,
+        "assessment": "65%",
+        "assessment_value": 65,
+        "group_a": "69%",
+        "group_b": "61%",
+        "gurukul": 4
+    },
+
+    {
+        "id": 5,
+        "name": "Centre 5",
+        "students": 27,
+        "attendance": "76%",
+        "attendance_value": 76,
+        "assessment": "62%",
+        "assessment_value": 62,
+        "group_a": "66%",
+        "group_b": "58%",
+        "gurukul": 3
+    }
+]
 
     return render_template(
         "cluster/cluster_dashboard.html",
@@ -1205,6 +1290,249 @@ def smartlabs_dashboard():
         title="SmartLabs Dashboard",
         active_page="smartlabs"
     )
+
+# --------------- TUTOR SPACE ---------------
+
+@app.route("/tutor-space")
+@login_required
+def tutor_space():
+
+    role = session.get("role")
+
+    # =========================================
+    # INDIVIDUAL TUTOR VIEW
+    # =========================================
+
+    if role == "tutor":
+
+        tutor_profile = {
+            "name": session.get("name"),
+            "centre": session.get("centre"),
+            "role": "Tutor",
+            "classes": "I to VI"
+        }
+
+        return render_template(
+            "tutor_space/my_tutor_space.html",
+            tutor_profile=tutor_profile,
+            active_page="tutor_space"
+        )
+
+
+    # =========================================
+    # MANAGEMENT / SUPERVISORY VIEW
+    # =========================================
+
+    tutor_summary = {
+
+        # Current workforce
+        "active_tutors": 127,
+
+        # Tutor outcomes - current + former tutors
+        "higher_education": 94,
+        "graduated": 61,
+        "former_employed": 28,
+
+        # Education profile
+        "intermediate": 32,
+        "graduation": 61,
+        "post_graduation": 18,
+        "professional": 16,
+
+        # Academic performance
+        "avg_performance": "78%",
+        "above_80": 38,
+        "between_70_79": 43,
+        "between_60_69": 28,
+        "below_60": 12,
+
+        # AVF education support
+        "supported_tutors": 94,
+        "institutions": 31,
+        "education_support": "₹18.6L"
+    }
+
+    tutor_centres = [
+
+        {
+            "name": "Rasoolpura Learning Centre",
+            "tutors": 2,
+            "experience": "2.8 yrs",
+            "students": 28
+        },
+
+        {
+            "name": "Rampur Learning Centre",
+            "tutors": 1,
+            "experience": "3.2 yrs",
+            "students": 31
+        },
+
+        {
+            "name": "Learning Centre 03",
+            "tutors": 2,
+            "experience": "1.9 yrs",
+            "students": 35
+        },
+
+        {
+            "name": "Learning Centre 04",
+            "tutors": 1,
+            "experience": "4.1 yrs",
+            "students": 29
+        }
+    ]
+
+    return render_template(
+        "tutor_space/dashboard.html",
+        tutor_summary=tutor_summary,
+        tutor_centres=tutor_centres,
+        active_page="tutor_space"
+    )
+
+@app.route("/segment/<int:segment_id>")
+@login_required
+def segment_dashboard(segment_id):
+
+    segment = {
+        "name": "Segment 1",
+        "incharge": "Smt. Anitha",
+        "clusters": 4,
+        "centres": 20,
+        "students": 600,
+        "attendance": "87%",
+        "assessment": "71%"
+    }
+
+    clusters = [
+        {
+            "id": 1,
+            "name": "Cluster 1",
+            "centres": 5,
+            "students": 168,
+            "attendance": "91%",
+            "attendance_value": 91,
+            "assessment": "74%",
+            "assessment_value": 74
+        },
+        {
+            "id": 2,
+            "name": "Cluster 2",
+            "centres": 5,
+            "students": 152,
+            "attendance": "88%",
+            "attendance_value": 88,
+            "assessment": "72%",
+            "assessment_value": 72
+        },
+        {
+            "id": 3,
+            "name": "Cluster 3",
+            "centres": 5,
+            "students": 141,
+            "attendance": "84%",
+            "attendance_value": 84,
+            "assessment": "69%",
+            "assessment_value": 69
+        },
+        {
+            "id": 4,
+            "name": "Cluster 4",
+            "centres": 5,
+            "students": 139,
+            "attendance": "81%",
+            "attendance_value": 81,
+            "assessment": "65%",
+            "assessment_value": 65
+        }
+    ]
+
+    return render_template(
+        "segment/segment_dashboard.html",
+        segment=segment,
+        clusters=clusters,
+        active_page="vidya_vikasam"
+    )
+
+@app.route("/zone-dashboard")
+def zone_dashboard():
+
+    zone = {
+        "name": "Zone 1",
+        "head": "Smt. Anitha",
+        "segments": 5,
+        "clusters": 20,
+        "centres": 100,
+        "students": 3000,
+        "attendance": "85%",
+        "assessment": "69%"
+    }
+
+    segments = [
+        {
+            "id": 1,
+            "name": "Segment 1",
+            "clusters": 4,
+            "centres": 20,
+            "students": 620,
+            "attendance": "90%",
+            "attendance_value": 90,
+            "assessment": "75%",
+            "assessment_value": 75
+        },
+        {
+            "id": 2,
+            "name": "Segment 2",
+            "clusters": 4,
+            "centres": 20,
+            "students": 605,
+            "attendance": "88%",
+            "attendance_value": 88,
+            "assessment": "72%",
+            "assessment_value": 72
+        },
+        {
+            "id": 3,
+            "name": "Segment 3",
+            "clusters": 4,
+            "centres": 20,
+            "students": 590,
+            "attendance": "86%",
+            "attendance_value": 86,
+            "assessment": "70%",
+            "assessment_value": 70
+        },
+        {
+            "id": 4,
+            "name": "Segment 4",
+            "clusters": 4,
+            "centres": 20,
+            "students": 610,
+            "attendance": "82%",
+            "attendance_value": 82,
+            "assessment": "66%",
+            "assessment_value": 66
+        },
+        {
+            "id": 5,
+            "name": "Segment 5",
+            "clusters": 4,
+            "centres": 20,
+            "students": 575,
+            "attendance": "79%",
+            "attendance_value": 79,
+            "assessment": "63%",
+            "assessment_value": 63
+        }
+    ]
+
+    return render_template(
+        "zone/zone_dashboard.html",
+        zone=zone,
+        segments=segments,
+        active_page="vidya_vikasam"
+    )
+
 
 
 if __name__ == "__main__":

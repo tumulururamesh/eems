@@ -1,0 +1,238 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+My Tutor Space
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Page Heading -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+            My Tutor Space
+        </h1>
+
+        <p class="text-muted">
+            Tutor Education & Career Journey
+        </p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Tutor Profile -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-person-workspace me-2"></i>
+
+            Tutor Profile
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                <div class="col-md-4">
+
+                    <div class="text-center p-3">
+
+                        <i class="bi bi-person-circle display-3 text-primary"></i>
+
+                        <h3 class="mt-3">
+                            {{ tutor_profile.name }}
+                        </h3>
+
+                        <p class="text-muted mb-0">
+                            {{ tutor_profile.role }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-8">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+
+                            <strong>Learning Centre</strong>
+
+                            <div class="text-muted mt-1">
+                                Centre {{ tutor_profile.centre }}
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <strong>Classes</strong>
+
+                            <div class="text-muted mt-1">
+                                {{ tutor_profile.classes }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- My Teaching Responsibility -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-people-fill me-2"></i>
+
+            My Teaching Responsibility
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="alert alert-info mb-0">
+
+                <strong>Centre {{ tutor_profile.centre }}</strong>
+
+                <br>
+
+                You are responsible for teaching and supporting
+                students from Classes {{ tutor_profile.classes }}.
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- My Journey -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-signpost-split-fill me-2"></i>
+
+            My Journey
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row text-center">
+
+                <div class="col">
+
+                    <i class="bi bi-person-fill display-5 text-primary"></i>
+
+                    <h5 class="mt-2">
+                        Student
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-person-workspace display-5 text-success"></i>
+
+                    <h5 class="mt-2">
+                        Tutor
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-mortarboard-fill display-5 text-warning"></i>
+
+                    <h5 class="mt-2">
+                        Higher Education
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-briefcase-fill display-5 text-info"></i>
+
+                    <h5 class="mt-2">
+                        Employment
+                    </h5>
+
+                </div>
+
+                <div class="col d-flex align-items-center justify-content-center">
+
+                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+
+                </div>
+
+                <div class="col">
+
+                    <i class="bi bi-graph-up-arrow display-5 text-success"></i>
+
+                    <h5 class="mt-2">
+                        Career
+                    </h5>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+{% endblock %}
