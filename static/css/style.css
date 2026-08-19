@@ -939,6 +939,18 @@ REPORT COLUMN WIDTHS
     font-size: 0.9rem;
 }
 
+.centre-photo {
+    width: 100%;
+    max-width: 280px;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+
+
+
 /***********************************************************************
 DEVELOPER NOTES
 

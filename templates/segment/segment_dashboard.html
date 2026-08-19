@@ -364,8 +364,8 @@ My Segment
 
                             <td class="text-center">
 
-                                <a href="/cluster-dashboard"
-                                   class="btn btn-sm btn-outline-primary">
+                                <a href="{{ url_for('cluster_dashboard', cluster_id=cluster.id) }}"
+                                class="btn btn-sm btn-outline-primary">
 
                                     View Cluster
 

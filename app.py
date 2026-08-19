@@ -159,7 +159,7 @@ def login():
                 return redirect(f"/segment/{user['segment']}")
 
             elif user["role"] == "cluster_incharge":
-                return redirect("/cluster-dashboard")
+                return redirect(f"/cluster-dashboard/{user['cluster']}")
 
             elif user["role"] == "tutor":
                 return redirect("/centre/2")
@@ -201,13 +201,23 @@ def dashboard():
     )
 
 
-@app.route("/cluster-dashboard")
+@app.route("/cluster-dashboard/<int:cluster_id>")
 @login_required
-def cluster_dashboard():
+def cluster_dashboard(cluster_id):
 
-    if session.get("role") != "cluster_incharge":
+    allowed_roles = [
+        "management",
+        "programme_director",
+        "operational_head",
+        "segment_incharge",
+        "cluster_incharge"
+    ]
+
+    if session.get("role") not in allowed_roles:
         return redirect("/dashboard")
 
+
+    
     cluster = {
         "name": "Cluster 1",
         "centres": 5,
