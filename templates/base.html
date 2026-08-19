@@ -128,8 +128,7 @@
                 {% if session.get("role") == "management" %}
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                           href="/dashboard">
+                        <a class="nav-link" href="/dashboard">
 
                             <i class="bi bi-speedometer2"></i>
                             Dashboard
@@ -140,8 +139,7 @@
                 {% elif session.get("role") == "operational_head" %}
 
                     <li class="nav-item">
-                        <a class="nav-link"
-                           href="/zone-dashboard">
+                        <a class="nav-link" href="/zone-dashboard">
 
                             <i class="bi bi-speedometer2"></i>
                             Dashboard
@@ -153,7 +151,7 @@
 
                     <li class="nav-item">
                         <a class="nav-link"
-                           href="/segment/{{ session.get('segment') }}">
+                        href="/segment/{{ session.get('segment') }}">
 
                             <i class="bi bi-speedometer2"></i>
                             Dashboard
@@ -165,7 +163,7 @@
 
                     <li class="nav-item">
                         <a class="nav-link"
-                           href="/cluster-dashboard">
+                        href="/cluster-dashboard/{{ session.get('cluster') }}">
 
                             <i class="bi bi-speedometer2"></i>
                             Dashboard
@@ -177,7 +175,7 @@
 
                     <li class="nav-item">
                         <a class="nav-link"
-                           href="/centre/{{ session.get('centre') }}">
+                        href="/centre/{{ session.get('centre') }}">
 
                             <i class="bi bi-speedometer2"></i>
                             Dashboard
@@ -186,7 +184,6 @@
                     </li>
 
                 {% endif %}
-
 
                 <!-- ===================================== -->
                 <!-- TUITION CENTRES -->
@@ -218,19 +215,18 @@
                     "cluster_incharge",
                     "tutor"
                 ] %}
+                {% if session.get("role") != "tutor" %}
+                <li class="nav-item">
+                    <a class="nav-link"
+                    href="/tutor-space">
 
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="/tutor-space">
+                        <i class="bi bi-person-workspace"></i>
+                        Tutor Space
 
-                            <i class="bi bi-person-workspace"></i>
-                            Tutor Space
-
-                        </a>
-                    </li>
-
+                    </a>
+                </li>
                 {% endif %}
-
+                {% endif %}
 
                 <!-- ===================================== -->
                 <!-- SCIENCE CENTRES -->
@@ -259,7 +255,7 @@
 
                     <li class="nav-item">
                         <a class="nav-link"
-                           href="#">
+                            href="/students/{{ session.get('centre') }}">
 
                             <i class="bi bi-people-fill"></i>
                             Students
@@ -269,7 +265,7 @@
 
                     <li class="nav-item">
                         <a class="nav-link"
-                           href="#">
+                        href="/attendance/{{ session.get('centre') }}">
 
                             <i class="bi bi-calendar-check-fill"></i>
                             Attendance
@@ -279,7 +275,7 @@
 
                     <li class="nav-item">
                         <a class="nav-link"
-                           href="#">
+                        href="/performance/{{ session.get('centre') }}">
 
                             <i class="bi bi-clipboard-data-fill"></i>
                             Assessments

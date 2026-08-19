@@ -1,0 +1,323 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Performance
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- Header -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h1 class="display-6 fw-bold text-primary mb-1">
+                Centre {{ centre_id }} — Performance
+            </h1>
+
+            <p class="text-muted mb-0">
+                Monthly Learning Performance • July 2026
+            </p>
+
+        </div>
+
+        <a href="javascript:history.back()"
+           class="btn btn-outline-secondary">
+
+            <i class="bi bi-arrow-left me-1"></i>
+            Back
+
+        </a>
+
+    </div>
+
+
+    <!-- Class Cards -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-clipboard-data-fill me-2"></i>
+
+            Performance by Class
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                {% for class_name, count in class_counts.items() %}
+
+                <div class="col-md-4 col-lg-2">
+
+                    <button
+                        type="button"
+                        class="class-card w-100"
+                        data-class="{{ class_name }}">
+
+                        <i class="bi bi-people-fill"></i>
+
+                        <div class="class-name">
+                            Class {{ class_name }}
+                        </div>
+
+                        <div class="class-count">
+                            {{ count }} Students
+                        </div>
+
+                    </button>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Performance Table -->
+
+    <div class="dashboard-card">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-bar-chart-line-fill me-2"></i>
+
+            <span id="performance-table-title">
+                Select a class to view performance
+            </span>
+
+        </div>
+
+        <div class="card-body">
+
+            <div id="performance-table">
+
+                <div class="text-center text-muted py-5">
+
+                    <i class="bi bi-hand-index-thumb display-5"></i>
+
+                    <p class="mt-3 mb-0">
+                        Select a class above to view student performance.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.class-card {
+
+    border: 1px solid #dee2e6;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 18px 10px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+
+}
+
+.class-card:hover {
+
+    border-color: #0d6efd;
+
+    transform: translateY(-2px);
+
+}
+
+.class-card.active {
+
+    border: 2px solid #0d6efd;
+
+    background: #f4f8ff;
+
+}
+
+.class-card i {
+
+    font-size: 1.8rem;
+
+    color: #0d6efd;
+
+}
+
+.class-name {
+
+    font-size: 1.05rem;
+
+    font-weight: 600;
+
+    color: #0d6efd;
+
+    margin-top: 8px;
+
+}
+
+.class-count {
+
+    font-size: 0.85rem;
+
+    color: #6c757d;
+
+    margin-top: 3px;
+
+}
+
+</style>
+
+
+<script>
+
+const performanceByClass =
+    {{ performance_by_class | tojson }};
+
+
+function showPerformance(className) {
+
+    const students = performanceByClass[className];
+
+    document.querySelectorAll(".class-card").forEach(
+        function(card) {
+
+            card.classList.remove("active");
+
+        }
+    );
+
+    document
+        .querySelector('[data-class="' + className + '"]')
+        .classList.add("active");
+
+
+    document.getElementById(
+        "performance-table-title"
+    ).textContent =
+        "Student Performance — Class " + className;
+
+
+    let html = `
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle mb-0">
+
+                <thead>
+
+                    <tr>
+                        <th>Student Name</th>
+                        <th>English</th>
+                        <th>Mathematics</th>
+                        <th>Science</th>
+                        <th>Overall</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+    `;
+
+
+    students.forEach(function(student) {
+
+        const overall =
+            Math.round(
+                (
+                    student.english +
+                    student.mathematics +
+                    student.science
+                ) / 3
+            );
+
+        html += `
+
+            <tr>
+
+                <td class="fw-semibold">
+                    ${student.name}
+                </td>
+
+                <td>
+                    ${student.english}%
+                </td>
+
+                <td>
+                    ${student.mathematics}%
+                </td>
+
+                <td>
+                    ${student.science}%
+                </td>
+
+                <td class="fw-semibold">
+                    ${overall}%
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+
+    html += `
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+
+    document.getElementById(
+        "performance-table"
+    ).innerHTML = html;
+
+}
+
+
+document.querySelectorAll(".class-card").forEach(
+    function(card) {
+
+        card.addEventListener(
+            "click",
+            function() {
+
+                showPerformance(
+                    this.dataset.class
+                );
+
+            }
+        );
+
+    }
+);
+
+</script>
+
+{% endblock %}

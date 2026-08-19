@@ -1310,95 +1310,69 @@ def tutor_space():
     role = session.get("role")
 
     # =========================================
-    # INDIVIDUAL TUTOR VIEW
+    # SEGMENT INCHARGE
     # =========================================
 
-    if role == "tutor":
+    if role == "segment_incharge":
 
-        tutor_profile = {
-            "name": session.get("name"),
-            "centre": session.get("centre"),
-            "role": "Tutor",
-            "classes": "I to VI"
-        }
+        segment_id = session.get("segment")
+
+        clusters = [
+            {
+                "id": 1,
+                "name": "Cluster 1",
+                "tutors": 5
+            },
+            {
+                "id": 2,
+                "name": "Cluster 2",
+                "tutors": 5
+            },
+            {
+                "id": 3,
+                "name": "Cluster 3",
+                "tutors": 5
+            },
+            {
+                "id": 4,
+                "name": "Cluster 4",
+                "tutors": 5
+            }
+        ]
 
         return render_template(
-            "tutor_space/my_tutor_space.html",
-            tutor_profile=tutor_profile,
+            "tutor_space/segment_tutor_space.html",
+            segment_id=segment_id,
+            clusters=clusters,
             active_page="tutor_space"
         )
 
 
     # =========================================
-    # MANAGEMENT / SUPERVISORY VIEW
+    # CLUSTER COORDINATOR
     # =========================================
 
-    tutor_summary = {
+    if role == "cluster_incharge":
 
-        # Current workforce
-        "active_tutors": 127,
+        cluster_id = session.get("cluster")
 
-        # Tutor outcomes - current + former tutors
-        "higher_education": 94,
-        "graduated": 61,
-        "former_employed": 28,
+        return render_template(
+            "tutor_space/dashboard.html",
+            cluster_id=cluster_id,
+            active_page="tutor_space"
+        )
 
-        # Education profile
-        "intermediate": 32,
-        "graduation": 61,
-        "post_graduation": 18,
-        "professional": 16,
 
-        # Academic performance
-        "avg_performance": "78%",
-        "above_80": 38,
-        "between_70_79": 43,
-        "between_60_69": 28,
-        "below_60": 12,
+    # =========================================
+    # OTHER ROLES — NOT YET AVAILABLE
+    # =========================================
 
-        # AVF education support
-        "supported_tutors": 94,
-        "institutions": 31,
-        "education_support": "₹18.6L"
-    }
+    return redirect("/dashboard")
+    # =========================================
+    # OTHER ROLES
+    # =========================================
 
-    tutor_centres = [
-
-        {
-            "name": "Rasoolpura Learning Centre",
-            "tutors": 2,
-            "experience": "2.8 yrs",
-            "students": 28
-        },
-
-        {
-            "name": "Rampur Learning Centre",
-            "tutors": 1,
-            "experience": "3.2 yrs",
-            "students": 31
-        },
-
-        {
-            "name": "Learning Centre 03",
-            "tutors": 2,
-            "experience": "1.9 yrs",
-            "students": 35
-        },
-
-        {
-            "name": "Learning Centre 04",
-            "tutors": 1,
-            "experience": "4.1 yrs",
-            "students": 29
-        }
-    ]
-
-    return render_template(
-        "tutor_space/dashboard.html",
-        tutor_summary=tutor_summary,
-        tutor_centres=tutor_centres,
-        active_page="tutor_space"
-    )
+    return redirect("/dashboard")
 
 @app.route("/segment/<int:segment_id>")
 @login_required
@@ -1542,6 +1516,238 @@ def zone_dashboard():
         segments=segments,
         active_page="vidya_vikasam"
     )
+
+
+@app.route("/students/<int:centre_id>")
+@login_required
+def centre_students(centre_id):
+
+    students_by_class = {
+
+        "I": [
+            {"name": "Anjali", "age": 6, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Rahul", "age": 6, "gender": "Male", "village": "Rampur"},
+            {"name": "Sravani", "age": 6, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Kiran", "age": 7, "gender": "Male", "village": "Rampur"},
+            {"name": "Divya", "age": 6, "gender": "Female", "village": "Rasoolpura"}
+        ],
+
+        "II": [
+            {"name": "Kavya", "age": 7, "gender": "Female", "village": "Rampur"},
+            {"name": "Rohit", "age": 7, "gender": "Male", "village": "Rasoolpura"},
+            {"name": "Pooja", "age": 7, "gender": "Female", "village": "Rampur"},
+            {"name": "Arjun", "age": 8, "gender": "Male", "village": "Rasoolpura"},
+            {"name": "Lakshmi", "age": 7, "gender": "Female", "village": "Rampur"},
+            {"name": "Manoj", "age": 8, "gender": "Male", "village": "Rasoolpura"}
+        ],
+
+        "III": [
+            {"name": "Swathi", "age": 8, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Vijay", "age": 8, "gender": "Male", "village": "Rampur"},
+            {"name": "Keerthi", "age": 9, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Naveen", "age": 8, "gender": "Male", "village": "Rampur"},
+            {"name": "Harika", "age": 9, "gender": "Female", "village": "Rasoolpura"}
+        ],
+
+        "IV": [
+            {"name": "Anusha", "age": 9, "gender": "Female", "village": "Rampur"},
+            {"name": "Ramesh", "age": 9, "gender": "Male", "village": "Rasoolpura"},
+            {"name": "Bhavya", "age": 10, "gender": "Female", "village": "Rampur"},
+            {"name": "Suresh", "age": 9, "gender": "Male", "village": "Rasoolpura"},
+            {"name": "Meena", "age": 10, "gender": "Female", "village": "Rampur"},
+            {"name": "Ajay", "age": 10, "gender": "Male", "village": "Rasoolpura"}
+        ],
+
+        "V": [
+            {"name": "Sandhya", "age": 10, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Praveen", "age": 10, "gender": "Male", "village": "Rampur"},
+            {"name": "Deepa", "age": 11, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Mahesh", "age": 11, "gender": "Male", "village": "Rampur"},
+            {"name": "Jyothi", "age": 10, "gender": "Female", "village": "Rasoolpura"}
+        ],
+
+        "VI": [
+            {"name": "Sravani", "age": 11, "gender": "Female", "village": "Rampur"},
+            {"name": "Anjali", "age": 11, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Karthik", "age": 11, "gender": "Male", "village": "Rampur"},
+            {"name": "Divya", "age": 12, "gender": "Female", "village": "Rasoolpura"},
+            {"name": "Ravi", "age": 12, "gender": "Male", "village": "Rampur"},
+            {"name": "Pavani", "age": 11, "gender": "Female", "village": "Rasoolpura"}
+        ]
+    }
+
+    class_counts = {
+        "I": 5,
+        "II": 6,
+        "III": 5,
+        "IV": 6,
+        "V": 5,
+        "VI": 6
+    }
+
+    return render_template(
+        "students/centre_students.html",
+        centre_id=centre_id,
+        students_by_class=students_by_class,
+        class_counts=class_counts,
+        active_page="students"
+    )
+
+
+
+@app.route("/attendance/<int:centre_id>")
+@login_required
+def centre_attendance(centre_id):
+
+    attendance_by_class = {
+
+        "I": [
+            {"name": "Anjali", "present": 23, "absent": 2},
+            {"name": "Rahul", "present": 21, "absent": 4},
+            {"name": "Sravani", "present": 24, "absent": 1},
+            {"name": "Kiran", "present": 22, "absent": 3},
+            {"name": "Divya", "present": 23, "absent": 2}
+        ],
+
+        "II": [
+            {"name": "Kavya", "present": 22, "absent": 3},
+            {"name": "Rohit", "present": 21, "absent": 4},
+            {"name": "Pooja", "present": 24, "absent": 1},
+            {"name": "Arjun", "present": 20, "absent": 5},
+            {"name": "Lakshmi", "present": 23, "absent": 2},
+            {"name": "Manoj", "present": 22, "absent": 3}
+        ],
+
+        "III": [
+            {"name": "Swathi", "present": 23, "absent": 2},
+            {"name": "Vijay", "present": 21, "absent": 4},
+            {"name": "Keerthi", "present": 24, "absent": 1},
+            {"name": "Naveen", "present": 22, "absent": 3},
+            {"name": "Harika", "present": 23, "absent": 2}
+        ],
+
+        "IV": [
+            {"name": "Anusha", "present": 23, "absent": 2},
+            {"name": "Ramesh", "present": 21, "absent": 4},
+            {"name": "Bhavya", "present": 24, "absent": 1},
+            {"name": "Suresh", "present": 20, "absent": 5},
+            {"name": "Meena", "present": 22, "absent": 3},
+            {"name": "Ajay", "present": 23, "absent": 2}
+        ],
+
+        "V": [
+            {"name": "Sandhya", "present": 22, "absent": 3},
+            {"name": "Praveen", "present": 21, "absent": 4},
+            {"name": "Deepa", "present": 24, "absent": 1},
+            {"name": "Mahesh", "present": 20, "absent": 5},
+            {"name": "Jyothi", "present": 23, "absent": 2}
+        ],
+
+        "VI": [
+            {"name": "Sravani", "present": 23, "absent": 2},
+            {"name": "Anjali", "present": 22, "absent": 3},
+            {"name": "Karthik", "present": 21, "absent": 4},
+            {"name": "Divya", "present": 24, "absent": 1},
+            {"name": "Ravi", "present": 22, "absent": 3},
+            {"name": "Pavani", "present": 23, "absent": 2}
+        ]
+    }
+
+    class_counts = {
+        "I": 5,
+        "II": 6,
+        "III": 5,
+        "IV": 6,
+        "V": 5,
+        "VI": 6
+    }
+
+    return render_template(
+        "attendance/centre_attendance.html",
+        centre_id=centre_id,
+        attendance_by_class=attendance_by_class,
+        class_counts=class_counts,
+        active_page="attendance"
+    )
+
+
+@app.route("/performance/<int:centre_id>")
+@login_required
+def centre_performance(centre_id):
+
+    performance_by_class = {
+
+        "I": [
+            {"name": "Anjali", "english": 78, "mathematics": 82, "science": 80},
+            {"name": "Rahul", "english": 72, "mathematics": 76, "science": 74},
+            {"name": "Sravani", "english": 84, "mathematics": 86, "science": 82},
+            {"name": "Kiran", "english": 69, "mathematics": 74, "science": 71},
+            {"name": "Divya", "english": 81, "mathematics": 79, "science": 83}
+        ],
+
+        "II": [
+            {"name": "Kavya", "english": 82, "mathematics": 85, "science": 80},
+            {"name": "Rohit", "english": 74, "mathematics": 71, "science": 76},
+            {"name": "Pooja", "english": 88, "mathematics": 91, "science": 86},
+            {"name": "Arjun", "english": 68, "mathematics": 72, "science": 70},
+            {"name": "Lakshmi", "english": 80, "mathematics": 84, "science": 82},
+            {"name": "Manoj", "english": 76, "mathematics": 78, "science": 75}
+        ],
+
+        "III": [
+            {"name": "Swathi", "english": 84, "mathematics": 86, "science": 82},
+            {"name": "Vijay", "english": 72, "mathematics": 75, "science": 74},
+            {"name": "Keerthi", "english": 89, "mathematics": 92, "science": 88},
+            {"name": "Naveen", "english": 76, "mathematics": 79, "science": 77},
+            {"name": "Harika", "english": 86, "mathematics": 88, "science": 85}
+        ],
+
+        "IV": [
+            {"name": "Anusha", "english": 78, "mathematics": 82, "science": 80},
+            {"name": "Ramesh", "english": 72, "mathematics": 76, "science": 74},
+            {"name": "Bhavya", "english": 88, "mathematics": 91, "science": 86},
+            {"name": "Suresh", "english": 68, "mathematics": 72, "science": 70},
+            {"name": "Meena", "english": 84, "mathematics": 86, "science": 82},
+            {"name": "Ajay", "english": 76, "mathematics": 79, "science": 75}
+        ],
+
+        "V": [
+            {"name": "Sandhya", "english": 82, "mathematics": 85, "science": 83},
+            {"name": "Praveen", "english": 74, "mathematics": 77, "science": 72},
+            {"name": "Deepa", "english": 90, "mathematics": 92, "science": 89},
+            {"name": "Mahesh", "english": 71, "mathematics": 74, "science": 70},
+            {"name": "Jyothi", "english": 85, "mathematics": 88, "science": 84}
+        ],
+
+        "VI": [
+            {"name": "Sravani", "english": 86, "mathematics": 89, "science": 84},
+            {"name": "Anjali", "english": 82, "mathematics": 85, "science": 81},
+            {"name": "Karthik", "english": 74, "mathematics": 78, "science": 76},
+            {"name": "Divya", "english": 91, "mathematics": 94, "science": 90},
+            {"name": "Ravi", "english": 77, "mathematics": 80, "science": 75},
+            {"name": "Pavani", "english": 88, "mathematics": 91, "science": 87}
+        ]
+    }
+
+    class_counts = {
+        "I": 5,
+        "II": 6,
+        "III": 5,
+        "IV": 6,
+        "V": 5,
+        "VI": 6
+    }
+
+    return render_template(
+        "performance/centre_performance.html",
+        centre_id=centre_id,
+        performance_by_class=performance_by_class,
+        class_counts=class_counts,
+        active_page="performance"
+    )
+
+
+
 
 
 

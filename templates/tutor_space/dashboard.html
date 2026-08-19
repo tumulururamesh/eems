@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}
@@ -13,225 +12,146 @@ Tutor Space
 <div class="container-fluid">
 
     <!-- ========================================= -->
-    <!-- Programme Header -->
+    <!-- Page Header -->
     <!-- ========================================= -->
 
     <div class="mb-4">
 
         <h1 class="display-6 fw-bold text-primary">
+            <i class="bi bi-people-fill me-2"></i>
             Tutor Space
         </h1>
 
-        <p class="text-muted">
-            Tutor Education & Career Journey
+        <p class="text-muted mb-0">
+            <strong>Cluster {{ cluster_id }}</strong>
+            &nbsp;•&nbsp;
+            Tutor Development & Education Support
         </p>
 
     </div>
 
 
     <!-- ========================================= -->
-    <!-- Introductory Message -->
-    <!-- ========================================= -->
-
-    <div class="dashboard-card mb-4">
-
-        <div class="card-body text-center py-4">
-
-            <h3 class="mb-3">
-                From teaching children to building their own future.
-            </h3>
-
-            <p class="text-muted mb-0">
-                Tutor Space follows the educational and career journey
-                of young people who contribute to AVF as tutors.
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <!-- ========================================= -->
-    <!-- Tutor KPIs -->
-    <!-- ========================================= -->
-
-    <div class="row g-4 mb-4">
-
-        <div class="col-md-3">
-
-            <div class="dashboard-card text-center">
-
-                <div class="card-body">
-
-                    <i class="bi bi-person-workspace display-5 text-primary"></i>
-
-                    <h2 class="mt-3">
-                        {{ tutor_summary.active_tutors }}
-                    </h2>
-
-                    <p class="text-muted mb-0">
-                        Active Tutors
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3">
-
-            <div class="dashboard-card text-center">
-
-                <div class="card-body">
-
-                    <i class="bi bi-mortarboard-fill display-5 text-success"></i>
-
-                    <h2 class="mt-3">
-                        {{ tutor_summary.higher_education }}
-                    </h2>
-
-                    <p class="text-muted mb-0">
-                        Pursuing Higher Education
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3">
-
-            <div class="dashboard-card text-center">
-
-                <div class="card-body">
-
-                    <i class="bi bi-award-fill display-5 text-warning"></i>
-
-                    <h2 class="mt-3">
-                        {{ tutor_summary.graduated }}
-                    </h2>
-
-                    <p class="text-muted mb-0">
-                        Graduated
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3">
-
-            <div class="dashboard-card text-center">
-
-                <div class="card-body">
-
-                    <i class="bi bi-briefcase-fill display-5 text-info"></i>
-
-                    <h2 class="mt-3">
-                        {{ tutor_summary.former_employed }}
-                    </h2>
-
-                    <p class="text-muted mb-0">
-                        Employed
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- ========================================= -->
-    <!-- Tutor Journey -->
+    <!-- Tutor Selector -->
     <!-- ========================================= -->
 
     <div class="dashboard-card mb-4">
 
         <div class="dashboard-header">
-
-            <i class="bi bi-signpost-split-fill me-2"></i>
-
-            Tutor Journey
-
+            <i class="bi bi-person-vcard-fill me-2"></i>
+            Tutors in Cluster {{ cluster_id }}
         </div>
 
         <div class="card-body">
 
-            <div class="row text-center">
+            <div class="row g-3">
 
-                <div class="col">
+                <!-- Tutor 1 -->
+                <div class="col-xl col-lg-4 col-md-6">
 
-                    <i class="bi bi-person-fill display-5 text-primary"></i>
+                    <button
+                        type="button"
+                        class="tutor-selector active"
+                        onclick="showTutor(0)"
+                        id="tutor-card-0">
 
-                    <h5 class="mt-2">
-                        Student
-                    </h5>
+                        <span class="tutor-centre">
+                            Centre 1
+                        </span>
 
-                </div>
+                        <span class="tutor-name">
+                            Anitha
+                        </span>
 
-                <div class="col d-flex align-items-center justify-content-center">
-                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
-                </div>
-
-                <div class="col">
-
-                    <i class="bi bi-person-workspace display-5 text-success"></i>
-
-                    <h5 class="mt-2">
-                        Tutor
-                    </h5>
+                    </button>
 
                 </div>
 
-                <div class="col d-flex align-items-center justify-content-center">
-                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
-                </div>
 
-                <div class="col">
+                <!-- Tutor 2 -->
+                <div class="col-xl col-lg-4 col-md-6">
 
-                    <i class="bi bi-mortarboard-fill display-5 text-warning"></i>
+                    <button
+                        type="button"
+                        class="tutor-selector"
+                        onclick="showTutor(1)"
+                        id="tutor-card-1">
 
-                    <h5 class="mt-2">
-                        Higher Education
-                    </h5>
+                        <span class="tutor-centre">
+                            Centre 2
+                        </span>
 
-                </div>
+                        <span class="tutor-name">
+                            Sravani
+                        </span>
 
-                <div class="col d-flex align-items-center justify-content-center">
-                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
-                </div>
-
-                <div class="col">
-
-                    <i class="bi bi-briefcase-fill display-5 text-info"></i>
-
-                    <h5 class="mt-2">
-                        Employment
-                    </h5>
+                    </button>
 
                 </div>
 
-                <div class="col d-flex align-items-center justify-content-center">
-                    <i class="bi bi-arrow-right fs-3 text-muted"></i>
+
+                <!-- Tutor 3 -->
+                <div class="col-xl col-lg-4 col-md-6">
+
+                    <button
+                        type="button"
+                        class="tutor-selector"
+                        onclick="showTutor(2)"
+                        id="tutor-card-2">
+
+                        <span class="tutor-centre">
+                            Centre 3
+                        </span>
+
+                        <span class="tutor-name">
+                            Lakshmi
+                        </span>
+
+                    </button>
+
                 </div>
 
-                <div class="col">
 
-                    <i class="bi bi-graph-up-arrow display-5 text-success"></i>
+                <!-- Tutor 4 -->
+                <div class="col-xl col-lg-4 col-md-6">
 
-                    <h5 class="mt-2">
-                        Career
-                    </h5>
+                    <button
+                        type="button"
+                        class="tutor-selector"
+                        onclick="showTutor(3)"
+                        id="tutor-card-3">
+
+                        <span class="tutor-centre">
+                            Centre 4
+                        </span>
+
+                        <span class="tutor-name">
+                            Divya
+                        </span>
+
+                    </button>
+
+                </div>
+
+
+                <!-- Tutor 5 -->
+                <div class="col-xl col-lg-4 col-md-6">
+
+                    <button
+                        type="button"
+                        class="tutor-selector"
+                        onclick="showTutor(4)"
+                        id="tutor-card-4">
+
+                        <span class="tutor-centre">
+                            Centre 5
+                        </span>
+
+                        <span class="tutor-name">
+                            Jyothi
+                        </span>
+
+                    </button>
 
                 </div>
 
@@ -243,16 +163,16 @@ Tutor Space
 
 
     <!-- ========================================= -->
-    <!-- Tutor Success Stories -->
+    <!-- Selected Tutor Details -->
     <!-- ========================================= -->
 
     <div class="dashboard-card mb-5">
 
         <div class="dashboard-header">
 
-            <i class="bi bi-stars me-2"></i>
+            <i class="bi bi-person-lines-fill me-2"></i>
 
-            Tutor Success Stories
+            Tutor Profile
 
         </div>
 
@@ -260,33 +180,187 @@ Tutor Space
 
             <div class="row g-4">
 
-                {% for story in tutor_stories %}
+                <!-- Tutor Identity -->
+                <div class="col-lg-4">
 
-                <div class="col-md-4">
+                    <div class="tutor-profile-intro">
 
-                    <div class="border rounded p-4 h-100">
+                        <div class="tutor-avatar">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
 
-                        <h5 class="text-primary">
-                            {{ story.name }}
-                        </h5>
+                        <h2 id="profile-name">
+                            Anitha
+                        </h2>
 
-                        <p class="fw-semibold">
-                            {{ story.journey }}
+                        <p class="text-muted mb-1" id="profile-centre">
+                            Centre 1
                         </p>
 
-                        <p class="text-muted">
-                            {{ story.highlight }}
+                        <p class="text-muted" id="profile-village">
+                            Rampur Village
                         </p>
 
-                        <span class="badge bg-success">
-                            {{ story.status }}
+                        <span class="badge bg-primary" id="profile-experience">
+                            Tutor since 2024
                         </span>
 
                     </div>
 
                 </div>
 
-                {% endfor %}
+
+                <!-- Education Journey -->
+                <div class="col-lg-4">
+
+                    <div class="profile-section">
+
+                        <h5>
+                            <i class="bi bi-mortarboard-fill me-2 text-primary"></i>
+                            Education Journey
+                        </h5>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                Highest qualification
+                            </span>
+
+                            <span class="profile-value"
+                                  id="profile-qualification">
+                                Class 10
+                            </span>
+
+                        </div>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                Currently studying
+                            </span>
+
+                            <span class="profile-value"
+                                  id="profile-course">
+                                Intermediate — 2nd Year
+                            </span>
+
+                        </div>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                College
+                            </span>
+
+                            <span class="profile-value"
+                                  id="profile-college">
+                                Government Junior College
+                            </span>
+
+                        </div>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                Academic year
+                            </span>
+
+                            <span class="profile-value"
+                                  id="profile-year">
+                                2026–27
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Education Support -->
+                <div class="col-lg-4">
+
+                    <div class="profile-section">
+
+                        <h5>
+                            <i class="bi bi-heart-fill me-2 text-success"></i>
+                            AVF Education Support
+                        </h5>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                College fee
+                            </span>
+
+                            <span class="profile-value"
+                                  id="profile-fee">
+                                ₹18,000
+                            </span>
+
+                        </div>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                Fee status
+                            </span>
+
+                            <span id="profile-status"
+                                  class="badge bg-success">
+                                Paid
+                            </span>
+
+                        </div>
+
+                        <div class="profile-item">
+
+                            <span class="profile-label">
+                                Tutor since
+                            </span>
+
+                            <span class="profile-value"
+                                  id="profile-since">
+                                2024
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- Education Goal -->
+            <!-- ================================= -->
+
+            <div class="education-goal mt-4">
+
+                <div class="row align-items-center">
+
+                    <div class="col-md-2 text-center">
+
+                        <i class="bi bi-star-fill"></i>
+
+                    </div>
+
+                    <div class="col-md-10">
+
+                        <h5>
+                            My Education Goal
+                        </h5>
+
+                        <p id="profile-goal">
+                            Complete Intermediate and pursue
+                            a degree in teaching.
+                        </p>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -295,5 +369,400 @@ Tutor Space
     </div>
 
 </div>
+
+
+<!-- ========================================= -->
+<!-- Page Styles -->
+<!-- ========================================= -->
+
+<style>
+
+.tutor-selector {
+
+    width: 100%;
+
+    border: 1px solid #dee2e6;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 16px 12px;
+
+    text-align: center;
+
+    transition: all 0.2s ease;
+
+    cursor: pointer;
+
+}
+
+.tutor-selector:hover {
+
+    border-color: #0d6efd;
+
+    transform: translateY(-2px);
+
+}
+
+.tutor-selector.active {
+
+    border: 2px solid #0d6efd;
+
+    background: #f4f8ff;
+
+}
+
+.tutor-centre {
+
+    display: block;
+
+    font-size: 0.78rem;
+
+    color: #6c757d;
+
+    margin-bottom: 5px;
+
+}
+
+.tutor-name {
+
+    display: block;
+
+    font-size: 1.15rem;
+
+    font-weight: 600;
+
+    color: #0d6efd;
+
+}
+
+
+.tutor-profile-intro {
+
+    text-align: center;
+
+    padding: 20px;
+
+    height: 100%;
+
+    background: #f8f9fa;
+
+    border-radius: 10px;
+
+}
+
+
+.tutor-avatar {
+
+    width: 82px;
+
+    height: 82px;
+
+    margin: 0 auto 15px auto;
+
+    border-radius: 50%;
+
+    background: #e8f0fe;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 2.5rem;
+
+    color: #0d6efd;
+
+}
+
+
+.tutor-profile-intro h2 {
+
+    margin-bottom: 5px;
+
+}
+
+
+.profile-section {
+
+    height: 100%;
+
+    padding: 20px;
+
+    border: 1px solid #e9ecef;
+
+    border-radius: 10px;
+
+}
+
+
+.profile-section h5 {
+
+    margin-bottom: 20px;
+
+    color: #212529;
+
+}
+
+
+.profile-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 9px 0;
+
+    border-bottom: 1px solid #f0f0f0;
+
+}
+
+
+.profile-item:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.profile-label {
+
+    color: #6c757d;
+
+    font-size: 0.9rem;
+
+}
+
+
+.profile-value {
+
+    font-weight: 600;
+
+    text-align: right;
+
+}
+
+
+.education-goal {
+
+    padding: 20px;
+
+    border-radius: 10px;
+
+    background: #f4f8ff;
+
+    border-left: 4px solid #0d6efd;
+
+}
+
+
+.education-goal i {
+
+    font-size: 2rem;
+
+    color: #0d6efd;
+
+}
+
+
+.education-goal h5 {
+
+    margin-bottom: 6px;
+
+    color: #0d6efd;
+
+}
+
+
+.education-goal p {
+
+    margin-bottom: 0;
+
+    font-size: 1.05rem;
+
+    font-style: italic;
+
+}
+
+</style>
+
+
+<!-- ========================================= -->
+<!-- Tutor Data & Interaction -->
+<!-- ========================================= -->
+
+<script>
+
+const tutors = [
+
+    {
+        name: "Anitha",
+        centre: "Centre 1",
+        village: "Rampur Village",
+        qualification: "Class 10",
+        course: "Intermediate — 2nd Year",
+        college: "Government Junior College",
+        year: "2026–27",
+        fee: "₹18,000",
+        status: "Paid",
+        statusClass: "bg-success",
+        since: "2024",
+        experience: "Tutor since 2024",
+        goal: "Complete Intermediate and pursue a degree in teaching."
+    },
+
+    {
+        name: "Sravani",
+        centre: "Centre 2",
+        village: "Rasoolpura Village",
+        qualification: "Intermediate",
+        course: "B.A. — 1st Year",
+        college: "Government Degree College",
+        year: "2026–27",
+        fee: "₹22,000",
+        status: "Paid",
+        statusClass: "bg-success",
+        since: "2025",
+        experience: "Tutor since 2025",
+        goal: "Complete graduation and become a school teacher."
+    },
+
+    {
+        name: "Lakshmi",
+        centre: "Centre 3",
+        village: "Lakshmipur Village",
+        qualification: "Class 10",
+        course: "Intermediate — 1st Year",
+        college: "Government Junior College",
+        year: "2026–27",
+        fee: "₹16,000",
+        status: "Paid",
+        statusClass: "bg-success",
+        since: "2025",
+        experience: "Tutor since 2025",
+        goal: "Complete Intermediate and continue into higher education."
+    },
+
+    {
+        name: "Divya",
+        centre: "Centre 4",
+        village: "Kothapalli Village",
+        qualification: "Intermediate",
+        course: "B.Com. — 2nd Year",
+        college: "Government Degree College",
+        year: "2026–27",
+        fee: "₹24,000",
+        status: "Pending",
+        statusClass: "bg-warning text-dark",
+        since: "2024",
+        experience: "Tutor since 2024",
+        goal: "Complete graduation and pursue a career in banking."
+    },
+
+    {
+        name: "Jyothi",
+        centre: "Centre 5",
+        village: "Madhapur Village",
+        qualification: "Intermediate",
+        course: "B.Sc. — 1st Year",
+        college: "Government Degree College",
+        year: "2026–27",
+        fee: "₹25,000",
+        status: "Paid",
+        statusClass: "bg-success",
+        since: "2025",
+        experience: "Tutor since 2025",
+        goal: "Complete my degree and pursue a career in healthcare."
+    }
+
+];
+
+
+function showTutor(index) {
+
+    const tutor = tutors[index];
+
+    /* ----------------------------------------- */
+    /* Highlight selected tutor                  */
+    /* ----------------------------------------- */
+
+    document.querySelectorAll(".tutor-selector").forEach(
+        function(card) {
+
+            card.classList.remove("active");
+
+        }
+    );
+
+    document
+        .getElementById("tutor-card-" + index)
+        .classList.add("active");
+
+
+    /* ----------------------------------------- */
+    /* Update profile                            */
+    /* ----------------------------------------- */
+
+    document.getElementById("profile-name").textContent =
+        tutor.name;
+
+    document.getElementById("profile-centre").textContent =
+        tutor.centre;
+
+    document.getElementById("profile-village").textContent =
+        tutor.village;
+
+    document.getElementById("profile-experience").textContent =
+        tutor.experience;
+
+    document.getElementById("profile-qualification").textContent =
+        tutor.qualification;
+
+    document.getElementById("profile-course").textContent =
+        tutor.course;
+
+    document.getElementById("profile-college").textContent =
+        tutor.college;
+
+    document.getElementById("profile-year").textContent =
+        tutor.year;
+
+    document.getElementById("profile-fee").textContent =
+        tutor.fee;
+
+    const status = document.getElementById("profile-status");
+
+    status.textContent = tutor.status;
+
+    status.className =
+        "badge " + tutor.statusClass;
+
+    document.getElementById("profile-since").textContent =
+        tutor.since;
+
+    document.getElementById("profile-goal").textContent =
+        tutor.goal;
+
+}
+
+
+/* --------------------------------------------- */
+/* Display first tutor on page load             */
+/* --------------------------------------------- */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        showTutor(0);
+
+    }
+);
+
+</script>
 
 {% endblock %}
