@@ -1,0 +1,239 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Class Performance Comparison
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Header -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+
+            <i class="bi bi-bar-chart-line-fill me-2"></i>
+
+            Class Performance Comparison
+
+        </h1>
+
+        <p class="text-muted mb-0">
+
+            <strong>{{ centre.name }}</strong>
+
+            &nbsp;•&nbsp;
+
+            Tutor:
+            <strong>{{ centre.tutor }}</strong>
+
+            &nbsp;•&nbsp;
+
+            Academic Year:
+            <strong>{{ centre.academic_year }}</strong>
+
+        </p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Comparison Table -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-table me-2"></i>
+
+            Class-wise Attendance & Performance
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered
+                          table-hover align-middle mb-0">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>
+                            Class
+                        </th>
+
+                        <th class="text-center">
+                            Students
+                        </th>
+
+                        <th class="text-center">
+                            Average Attendance
+                        </th>
+
+                        <th class="text-center">
+                            Average Performance
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for item in class_summary %}
+
+                    <tr>
+
+                        <td class="fw-semibold text-primary">
+
+                            {{ item.name }}
+
+                        </td>
+
+                        <td class="text-center">
+
+                            {{ item.students }}
+
+                        </td>
+
+                        <td class="text-center">
+
+                            {{ item.attendance }}%
+
+                        </td>
+
+                        <td class="text-center">
+
+                            {{ item.performance }}%
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+
+                <!-- ================================= -->
+                <!-- Centre Average -->
+                <!-- ================================= -->
+
+                <tfoot class="table-light fw-bold">
+
+                    <tr>
+
+                        <td>
+                            Centre Average
+                        </td>
+
+                        <td class="text-center">
+
+                            {{ centre_average.students }}
+
+                        </td>
+
+                        <td class="text-center">
+
+                            {{ centre_average.attendance }}%
+
+                        </td>
+
+                        <td class="text-center">
+
+                            {{ centre_average.performance }}%
+
+                        </td>
+
+                    </tr>
+
+                </tfoot>
+
+            </table>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- Actions -->
+        <!-- ========================================= -->
+
+        <div class="p-3 d-flex justify-content-end gap-2">
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+
+                <i class="bi bi-printer me-1"></i>
+
+                Print
+
+            </button>
+
+            <a href="/tutor-reports/export/class-performance-comparison"
+                class="btn btn-success">
+
+                <i class="bi bi-file-earmark-excel me-1"></i>
+
+                Export Excel
+
+            </a>
+
+            <a href="/tutor-reports"
+               class="btn btn-outline-primary">
+
+                Back
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Information -->
+    <!-- ========================================= -->
+
+    <div class="alert alert-light border mt-4">
+
+        <i class="bi bi-info-circle text-primary me-2"></i>
+
+        Class averages are calculated from the attendance and
+        assessment records of students in each class.
+
+    </div>
+
+</div>
+
+
+<style>
+
+@media print {
+
+    .btn,
+    .alert,
+    .user-context-bar,
+    nav,
+    footer {
+        display: none !important;
+    }
+
+}
+
+</style>
+
+
+{% endblock %}

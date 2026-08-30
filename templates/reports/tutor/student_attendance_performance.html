@@ -1,0 +1,286 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Student Attendance & Performance
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Header -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+
+            <i class="bi bi-people-fill me-2"></i>
+
+            Student Attendance & Performance
+
+        </h1>
+
+        <p class="text-muted mb-0">
+
+            <strong>{{ centre.name }}</strong>
+
+            &nbsp;•&nbsp;
+
+            Tutor:
+            <strong>{{ centre.tutor }}</strong>
+
+            &nbsp;•&nbsp;
+
+            Academic Year:
+            <strong>{{ centre.academic_year }}</strong>
+
+        </p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Class Selection -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="card-body">
+
+            <form method="GET"
+                  action="/tutor-reports/student-attendance-performance">
+
+                <div class="row align-items-end">
+
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-semibold">
+                            Select Class
+                        </label>
+
+                        <select name="class_name"
+                                class="form-select"
+                                onchange="this.form.submit()">
+
+                            {% for class_name in classes %}
+
+                                <option value="{{ class_name }}"
+                                    {% if class_name == selected_class %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ class_name }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Report -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-table me-2"></i>
+
+            {{ selected_class }}
+            — Monthly Attendance & Performance
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover
+                          align-middle mb-0 tutor-report-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th rowspan="2"
+                            class="student-column">
+
+                            Student
+
+                        </th>
+
+                        {% for month in months %}
+
+                            <th colspan="2"
+                                class="text-center">
+
+                                {{ month }}
+
+                            </th>
+
+                        {% endfor %}
+
+                    </tr>
+
+                    <tr>
+
+                        {% for month in months %}
+
+                            <th class="text-center small">
+                                Attendance
+                            </th>
+
+                            <th class="text-center small">
+                                Performance
+                            </th>
+
+                        {% endfor %}
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for student in students %}
+
+                        <tr>
+
+                            <td class="fw-semibold">
+
+                                {{ student.name }}
+
+                            </td>
+
+
+                            {% for attendance, performance
+                               in student.months %}
+
+                                <td class="text-center">
+
+                                    {{ attendance }}
+
+                                </td>
+
+                                <td class="text-center">
+
+                                    {{ performance }}
+
+                                </td>
+
+                            {% endfor %}
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- Actions -->
+        <!-- ========================================= -->
+
+        <div class="p-3 d-flex justify-content-end gap-2">
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="window.print()">
+
+                <i class="bi bi-printer me-1"></i>
+
+                Print
+
+            </button>
+
+            <a href="#"
+               class="btn btn-success">
+
+                <i class="bi bi-file-earmark-excel me-1"></i>
+
+                Export Excel
+
+            </a>
+
+            <a href="/tutor-reports"
+               class="btn btn-outline-primary">
+
+                Back
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Information -->
+    <!-- ========================================= -->
+
+    <div class="alert alert-light border mt-4">
+
+        <i class="bi bi-info-circle text-primary me-2"></i>
+
+        Attendance represents the student's monthly attendance.
+        Performance represents the monthly assessment result
+        recorded by the tutor.
+
+    </div>
+
+</div>
+
+
+<style>
+
+.tutor-report-table th {
+    color: #064f91;
+    background: #f5f8fb;
+    white-space: nowrap;
+}
+
+.tutor-report-table td {
+    white-space: nowrap;
+}
+
+.student-column {
+    min-width: 180px;
+}
+
+@media print {
+
+    .btn,
+    .alert,
+    .user-context-bar,
+    nav,
+    footer {
+        display: none !important;
+    }
+
+}
+
+</style>
+
+{% endblock %}

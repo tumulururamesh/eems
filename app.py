@@ -1348,6 +1348,506 @@ def tutor_space():
         )
 
 
+# =========================================
+# TUTOR REPORTS
+# =========================================
+
+@app.route("/tutor-reports")
+@login_required
+def tutor_reports():
+
+    centre_id = session.get("centre")
+
+    centre = {
+        "name": f"Centre {centre_id}",
+        "tutor": "Smt. Lakshmi",
+        "academic_year": "2026–27"
+    }
+
+    return render_template(
+    "reports/tutor/tutor_reports.html",
+    centre=centre,
+    active_page="reports"
+    )
+
+
+# =========================================
+# TUTOR REPORT - STUDENT ATTENDANCE &
+# PERFORMANCE
+# =========================================
+
+@app.route("/tutor-reports/student-attendance-performance")
+@login_required
+def tutor_student_attendance_performance():
+
+    centre_id = session.get("centre")
+
+    centre = {
+        "name": f"Centre {centre_id}",
+        "tutor": "Smt. Lakshmi",
+        "academic_year": "2026–27"
+    }
+
+    # -----------------------------------------
+    # Demo data
+    # -----------------------------------------
+
+    classes = {
+
+        "Class I": [
+            {
+                "name": "Aaradhya",
+                "months": [
+                    ("92%", "74%"),
+                    ("94%", "76%"),
+                    ("91%", "78%"),
+                    ("95%", "80%"),
+                    ("93%", "79%")
+                ]
+            },
+            {
+                "name": "Rahul",
+                "months": [
+                    ("88%", "68%"),
+                    ("90%", "70%"),
+                    ("87%", "69%"),
+                    ("91%", "72%"),
+                    ("89%", "71%")
+                ]
+            },
+            {
+                "name": "Sowmya",
+                "months": [
+                    ("96%", "82%"),
+                    ("95%", "84%"),
+                    ("97%", "85%"),
+                    ("96%", "87%"),
+                    ("94%", "86%")
+                ]
+            }
+        ],
+
+        "Class II": [
+            {
+                "name": "Anjali",
+                "months": [
+                    ("91%", "75%"),
+                    ("94%", "78%"),
+                    ("90%", "77%"),
+                    ("93%", "81%"),
+                    ("95%", "83%")
+                ]
+            },
+            {
+                "name": "Kiran",
+                "months": [
+                    ("86%", "67%"),
+                    ("89%", "70%"),
+                    ("88%", "72%"),
+                    ("91%", "74%"),
+                    ("90%", "73%")
+                ]
+            },
+            {
+                "name": "Meena",
+                "months": [
+                    ("95%", "84%"),
+                    ("96%", "86%"),
+                    ("94%", "85%"),
+                    ("97%", "88%"),
+                    ("96%", "89%")
+                ]
+            }
+        ],
+
+        "Class III": [
+            {
+                "name": "Anjali",
+                "months": [
+                    ("92%", "76%"),
+                    ("95%", "81%"),
+                    ("90%", "78%"),
+                    ("94%", "84%"),
+                    ("91%", "80%")
+                ]
+            },
+            {
+                "name": "Ravi",
+                "months": [
+                    ("88%", "69%"),
+                    ("91%", "73%"),
+                    ("86%", "71%"),
+                    ("90%", "75%"),
+                    ("89%", "74%")
+                ]
+            },
+            {
+                "name": "Sita",
+                "months": [
+                    ("96%", "84%"),
+                    ("94%", "86%"),
+                    ("95%", "88%"),
+                    ("97%", "90%"),
+                    ("96%", "89%")
+                ]
+            },
+            {
+                "name": "Manoj",
+                "months": [
+                    ("84%", "65%"),
+                    ("87%", "68%"),
+                    ("89%", "70%"),
+                    ("88%", "72%"),
+                    ("90%", "74%")
+                ]
+            }
+        ]
+
+    }
+
+    selected_class = request.args.get(
+        "class_name",
+        "Class III"
+    )
+
+    students = classes.get(
+        selected_class,
+        classes["Class III"]
+    )
+
+    months = [
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug"
+    ]
+
+    return render_template(
+        "reports/tutor/student_attendance_performance.html",
+        centre=centre,
+        classes=classes.keys(),
+        selected_class=selected_class,
+        students=students,
+        months=months,
+        active_page="reports"
+    )
+
+# =========================================
+# TUTOR REPORT - CLASS PERFORMANCE
+# COMPARISON
+# =========================================
+
+@app.route("/tutor-reports/class-performance-comparison")
+@login_required
+def tutor_class_performance_comparison():
+
+    centre_id = session.get("centre")
+
+    centre = {
+        "name": f"Centre {centre_id}",
+        "tutor": "Smt. Lakshmi",
+        "academic_year": "2026–27"
+    }
+
+    # -----------------------------------------
+    # Demo data
+    # -----------------------------------------
+
+    classes = {
+
+        "Class I": [
+            {
+                "name": "Aaradhya",
+                "months": [
+                    (92, 74), (94, 76), (91, 78),
+                    (95, 80), (93, 79)
+                ]
+            },
+            {
+                "name": "Rahul",
+                "months": [
+                    (88, 68), (90, 70), (87, 69),
+                    (91, 72), (89, 71)
+                ]
+            },
+            {
+                "name": "Sowmya",
+                "months": [
+                    (96, 82), (95, 84), (97, 85),
+                    (96, 87), (94, 86)
+                ]
+            }
+        ],
+
+        "Class II": [
+            {
+                "name": "Anjali",
+                "months": [
+                    (91, 75), (94, 78), (90, 77),
+                    (93, 81), (95, 83)
+                ]
+            },
+            {
+                "name": "Kiran",
+                "months": [
+                    (86, 67), (89, 70), (88, 72),
+                    (91, 74), (90, 73)
+                ]
+            },
+            {
+                "name": "Meena",
+                "months": [
+                    (95, 84), (96, 86), (94, 85),
+                    (97, 88), (96, 89)
+                ]
+            }
+        ],
+
+        "Class III": [
+            {
+                "name": "Anjali",
+                "months": [
+                    (92, 76), (95, 81), (90, 78),
+                    (94, 84), (91, 80)
+                ]
+            },
+            {
+                "name": "Ravi",
+                "months": [
+                    (88, 69), (91, 73), (86, 71),
+                    (90, 75), (89, 74)
+                ]
+            },
+            {
+                "name": "Sita",
+                "months": [
+                    (96, 84), (94, 86), (95, 88),
+                    (97, 90), (96, 89)
+                ]
+            },
+            {
+                "name": "Manoj",
+                "months": [
+                    (84, 65), (87, 68), (89, 70),
+                    (88, 72), (90, 74)
+                ]
+            }
+        ]
+
+    }
+
+    months = [
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug"
+    ]
+
+    # -----------------------------------------
+    # Calculate class averages
+    # -----------------------------------------
+
+    class_summary = []
+
+    all_attendance = []
+    all_performance = []
+
+    for class_name, students in classes.items():
+
+        attendance_values = []
+        performance_values = []
+
+        for student in students:
+
+            for attendance, performance in student["months"]:
+
+                attendance_values.append(attendance)
+                performance_values.append(performance)
+
+                all_attendance.append(attendance)
+                all_performance.append(performance)
+
+        class_summary.append({
+
+            "name": class_name,
+
+            "students": len(students),
+
+            "attendance": round(
+                sum(attendance_values) /
+                len(attendance_values)
+            ),
+
+            "performance": round(
+                sum(performance_values) /
+                len(performance_values)
+            )
+
+        })
+
+            # -----------------------------------------
+    # Centre averages
+    # -----------------------------------------
+
+    centre_average = {
+
+        "students": sum(
+            item["students"]
+            for item in class_summary
+        ),
+
+        "attendance": round(
+            sum(all_attendance) /
+            len(all_attendance)
+        ),
+
+        "performance": round(
+            sum(all_performance) /
+            len(all_performance)
+        )
+
+    }
+
+    # -----------------------------------------
+    # Display report
+    # -----------------------------------------
+
+    return render_template(
+        "reports/tutor/class_performance_comparison.html",
+        centre=centre,
+        class_summary=class_summary,
+        centre_average=centre_average,
+        months=months,
+        active_page="reports"
+    )
+
+
+# =========================================
+# TUTOR REPORT - CLASS PERFORMANCE
+# EXCEL EXPORT
+# =========================================
+
+@app.route("/tutor-reports/export/class-performance-comparison")
+@login_required
+def export_tutor_class_performance_comparison():
+
+    centre_id = session.get("centre")
+
+    # -----------------------------------------
+    # Demo data
+    # -----------------------------------------
+
+    class_summary = [
+        {
+            "name": "Class I",
+            "students": 3,
+            "attendance": 93,
+            "performance": 77
+        },
+        {
+            "name": "Class II",
+            "students": 3,
+            "attendance": 92,
+            "performance": 79
+        },
+        {
+            "name": "Class III",
+            "students": 4,
+            "attendance": 91,
+            "performance": 77
+        }
+    ]
+
+    centre_average = {
+        "students": 10,
+        "attendance": 92,
+        "performance": 78
+    }
+
+    headers = [
+        "Class",
+        "Students",
+        "Average Attendance",
+        "Average Performance"
+    ]
+
+    rows = []
+
+    for item in class_summary:
+
+        rows.append({
+            "Class": item["name"],
+            "Students": item["students"],
+            "Average Attendance": f'{item["attendance"]}%',
+            "Average Performance": f'{item["performance"]}%'
+        })
+
+    totals = (
+        f"Students: {centre_average['students']} | "
+        f"Average Attendance: {centre_average['attendance']}% | "
+        f"Average Performance: {centre_average['performance']}%"
+    )
+
+    workbook = export_report_to_excel(
+        report_title="Class Performance Comparison",
+        academic_year="2026–27",
+        headers=headers,
+        rows=rows,
+        totals=totals
+    )
+
+    filename = (
+        f"Centre_{centre_id}_"
+        f"Class_Performance_Comparison.xlsx"
+    )
+
+    workbook.save(filename)
+
+    return send_file(
+        filename,
+        as_attachment=True,
+        download_name=filename,
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+
+
+    # -----------------------------------------
+    # Centre averages
+    # -----------------------------------------
+
+    centre_average = {
+
+        "students": sum(
+            item["students"]
+            for item in class_summary
+        ),
+
+        "attendance": round(
+            sum(all_attendance) /
+            len(all_attendance)
+        ),
+
+        "performance": round(
+            sum(all_performance) /
+            len(all_performance)
+        )
+
+    }
+
+    return render_template(
+        "reports/tutor/class_performance_comparison.html",
+        centre=centre,
+        class_summary=class_summary,
+        centre_average=centre_average,
+        months=months,
+        active_page="reports"
+    )
+
     # =========================================
     # CLUSTER COORDINATOR
     # =========================================

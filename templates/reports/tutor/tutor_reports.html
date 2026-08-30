@@ -1,0 +1,147 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Tutor Reports
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Header -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+            <i class="bi bi-bar-chart-fill me-2"></i>
+            Tutor Reports
+        </h1>
+
+        <p class="text-muted mb-0">
+
+            <strong>{{ centre.name }}</strong>
+            &nbsp;•&nbsp;
+            Tutor: <strong>{{ centre.tutor }}</strong>
+            &nbsp;•&nbsp;
+            Academic Year: <strong>{{ centre.academic_year }}</strong>
+
+        </p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Report Options -->
+    <!-- ========================================= -->
+
+    <div class="row g-4">
+
+        <!-- Student Attendance & Performance -->
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card h-100">
+
+                <div class="card-body text-center p-4 d-flex flex-column">
+
+                    <div class="display-3 mb-3 text-primary">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <h3 class="text-primary">
+                        Student Attendance & Performance
+                    </h3>
+
+                    <p class="text-muted">
+                        Class-wise student list showing monthly
+                        attendance and performance across the
+                        academic year.
+                    </p>
+
+                    <p>
+                        Review individual student progress month by
+                        month and identify students who may need
+                        additional support.
+                    </p>
+
+                    <a href="/tutor-reports/student-attendance-performance"
+                        class="btn btn-primary mt-auto">
+
+                        <i class="bi bi-file-earmark-text me-1"></i>
+                        Open Report
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Class Performance Comparison -->
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card h-100">
+
+                <div class="card-body text-center p-4">
+
+                    <div class="display-3 mb-3 text-success">
+                        <i class="bi bi-bar-chart-line-fill"></i>
+                    </div>
+
+                    <h3 class="text-primary">
+                        Class Performance Comparison
+                    </h3>
+
+                    <p class="text-muted">
+                        Compare attendance and performance across
+                        classes within the learning centre.
+                    </p>
+
+                    <p>
+                        View class averages alongside the overall
+                        centre average for a simple performance
+                        comparison.
+                    </p>
+
+                    <a href="/tutor-reports/class-performance-comparison"
+                        class="btn btn-success mt-auto">
+
+                        <i class="bi bi-file-earmark-bar-graph me-1"></i>
+                        Open Report
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Information Note -->
+    <!-- ========================================= -->
+
+    <div class="alert alert-light border mt-4">
+
+        <i class="bi bi-info-circle text-primary me-2"></i>
+
+        These reports are based on attendance and assessment
+        records maintained by the tutor.
+
+    </div>
+
+</div>
+
+{% endblock %}
