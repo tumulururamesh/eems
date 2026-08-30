@@ -186,9 +186,10 @@ Tutor Space
                     <div class="tutor-profile-intro">
 
                         <div class="tutor-avatar">
-                            <i class="bi bi-person-fill"></i>
+                            <img id="profile-photo"
+                                src="{{ url_for('static', filename='images/teacher1.jpg') }}"
+                                alt="Tutor photograph">
                         </div>
-
                         <h2 id="profile-name">
                             Anitha
                         </h2>
@@ -331,6 +332,76 @@ Tutor Space
                 </div>
 
             </div>
+
+<!-- ================================= -->
+<!-- Personal & Family Details -->
+<!-- ================================= -->
+
+<div class="profile-section mt-4">
+
+    <h5>
+        <i class="bi bi-person-heart me-2 text-primary"></i>
+        Personal & Family Details
+    </h5>
+
+    <div class="row g-4">
+
+        <!-- Personal -->
+        <div class="col-md-6">
+
+            <div class="profile-item">
+                <span class="profile-label">Date of Birth</span>
+                <span class="profile-value" id="profile-dob">—</span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Gender</span>
+                <span class="profile-value" id="profile-gender">Female</span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Mobile Number</span>
+                <span class="profile-value" id="profile-mobile">—</span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Address</span>
+                <span class="profile-value" id="profile-address">
+                    Rampur Village
+                </span>
+            </div>
+
+        </div>
+
+        <!-- Family -->
+        <div class="col-md-6">
+
+            <div class="profile-item">
+                <span class="profile-label">Father's Name</span>
+                <span class="profile-value" id="profile-father">—</span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Mother's Name</span>
+                <span class="profile-value" id="profile-mother">—</span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Parent / Guardian Mobile</span>
+                <span class="profile-value" id="profile-parent-mobile">—</span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">&nbsp;</span>
+                <span class="profile-value">&nbsp;</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 
             <!-- ================================= -->
@@ -600,19 +671,29 @@ Tutor Space
 const tutors = [
 
     {
-        name: "Anitha",
-        centre: "Centre 1",
-        village: "Rampur Village",
-        qualification: "Class 10",
-        course: "Intermediate — 2nd Year",
-        college: "Government Junior College",
-        year: "2026–27",
-        fee: "₹18,000",
-        status: "Paid",
-        statusClass: "bg-success",
-        since: "2024",
-        experience: "Tutor since 2024",
-        goal: "Complete Intermediate and pursue a degree in teaching."
+    name: "Anitha",
+    centre: "Centre 1",
+    village: "Rampur Village",
+
+    // Personal & Family Details
+    dob: "—",
+    gender: "Female",
+    mobile: "—",
+    address: "Rampur Village",
+    father: "—",
+    mother: "—",
+    parentMobile: "—",
+
+    qualification: "Class 10",
+    course: "Intermediate — 2nd Year",
+    college: "Government Junior College",
+    year: "2026–27",
+    fee: "₹18,000",
+    status: "Paid",
+    statusClass: "bg-success",
+    since: "2024",
+    experience: "Tutor since 2024",
+    goal: "Complete Intermediate and pursue a degree in teaching."
     },
 
     {
@@ -715,6 +796,27 @@ function showTutor(index) {
 
     document.getElementById("profile-village").textContent =
         tutor.village;
+
+        document.getElementById("profile-dob").textContent =
+    tutor.dob || "—";
+
+    document.getElementById("profile-gender").textContent =
+        tutor.gender || "—";
+
+    document.getElementById("profile-mobile").textContent =
+        tutor.mobile || "—";
+
+    document.getElementById("profile-address").textContent =
+        tutor.address || tutor.village;
+
+    document.getElementById("profile-father").textContent =
+        tutor.father || "—";
+
+    document.getElementById("profile-mother").textContent =
+        tutor.mother || "—";
+
+    document.getElementById("profile-parent-mobile").textContent =
+        tutor.parentMobile || "—";
 
     document.getElementById("profile-experience").textContent =
         tutor.experience;
