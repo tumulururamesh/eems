@@ -204,30 +204,49 @@
                 {% endif %}
 
 
-                <!-- ===================================== -->
-                <!-- TUTOR SPACE -->
-                <!-- ===================================== -->
+            <!-- ===================================== -->
+            <!-- TUTOR SPACE -->
+            <!-- ===================================== -->
 
-                {% if session.get("role") in [
-                    "management",
-                    "operational_head",
-                    "segment_incharge",
-                    "cluster_incharge",
-                    "tutor"
-                ] %}
+            {% if session.get("role") in [
+                "management",
+                "operational_head",
+                "segment_incharge",
+                "cluster_incharge",
+                "tutor"
+            ] %}
+
                 {% if session.get("role") != "tutor" %}
-                <li class="nav-item">
-                    <a class="nav-link"
-                    href="/tutor-space">
 
-                        <i class="bi bi-person-workspace"></i>
-                        Tutor Space
+                    <li class="nav-item">
 
-                    </a>
-                </li>
+                        {% if session.get("role") == "cluster_incharge" %}
+
+                            <a class="nav-link"
+                            href="/tutor-space">
+
+                        {% elif session.get("role") == "segment_incharge" %}
+
+                            <a class="nav-link"
+                            href="/tutor-space">
+
+                        {% else %}
+
+                            <a class="nav-link"
+                            href="/zone-tutor-space">
+
+                        {% endif %}
+
+                                <i class="bi bi-person-workspace"></i>
+                                Tutor Space
+
+                            </a>
+
+                    </li>
+
                 {% endif %}
-                {% endif %}
 
+            {% endif %}
                 <!-- ===================================== -->
                 <!-- SCIENCE CENTRES -->
                 <!-- ===================================== -->

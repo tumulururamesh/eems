@@ -1514,7 +1514,90 @@ def zone_dashboard():
         "zone/zone_dashboard.html",
         zone=zone,
         segments=segments,
-        active_page="vidya_vikasam"
+        active_page="tutor_space"
+    )
+
+
+# --------------- ZONE TUTOR SPACE ---------------
+
+@app.route("/zone-tutor-space")
+@login_required
+def zone_tutor_space():
+
+    zone = {
+        "name": "Zone 1",
+        "head": "Smt. Anitha",
+        "tutors": 100,
+        "higher_education": 82,
+        "education_support": 81,
+        "pending_support": 11
+    }
+
+    segments = [
+        {
+            "id": 1,
+            "name": "Segment 1",
+            "tutors": 20,
+            "higher_education": 18,
+            "education_support": 19,
+            "pending_support": 1
+        },
+        {
+            "id": 2,
+            "name": "Segment 2",
+            "tutors": 20,
+            "higher_education": 17,
+            "education_support": 18,
+            "pending_support": 2
+        },
+        {
+            "id": 3,
+            "name": "Segment 3",
+            "tutors": 20,
+            "higher_education": 16,
+            "education_support": 15,
+            "pending_support": 3
+        },
+        {
+            "id": 4,
+            "name": "Segment 4",
+            "tutors": 20,
+            "higher_education": 15,
+            "education_support": 14,
+            "pending_support": 2
+        },
+        {
+            "id": 5,
+            "name": "Segment 5",
+            "tutors": 20,
+            "higher_education": 16,
+            "education_support": 15,
+            "pending_support": 3
+        }
+    ]
+
+    qualification = [
+        {"name": "Class 10", "tutors": 18},
+        {"name": "Intermediate", "tutors": 27},
+        {"name": "Degree", "tutors": 42},
+        {"name": "Post-Graduation", "tutors": 8},
+        {"name": "Other", "tutors": 5}
+    ]
+
+    education_status = [
+        {"name": "Intermediate", "tutors": 25},
+        {"name": "Degree", "tutors": 52},
+        {"name": "Post-Graduation", "tutors": 5},
+        {"name": "Completed", "tutors": 18}
+    ]
+
+    return render_template(
+        "zone/zone_tutor_space.html",
+        zone=zone,
+        segments=segments,
+        qualification=qualification,
+        education_status=education_status,
+        active_page="tutor_space"
     )
 
 

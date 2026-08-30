@@ -1,0 +1,573 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Tutor Space
+{% endblock %}
+
+{% block page_title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- ========================================= -->
+    <!-- Page Heading -->
+    <!-- ========================================= -->
+
+    <div class="mb-4">
+
+        <h1 class="display-6 fw-bold text-primary">
+
+            <i class="bi bi-people-fill me-2"></i>
+
+            Tutor Space
+
+        </h1>
+
+        <p class="text-muted mb-1">
+
+            <strong>{{ zone.name }}</strong>
+
+            &nbsp;•&nbsp;
+
+            Tutor Development & Education Support
+
+        </p>
+
+        <small class="text-muted">
+
+            Operational Head: <strong>{{ zone.head }}</strong>
+
+            &nbsp;•&nbsp;
+
+            Reporting Month: <strong>July 2026</strong>
+
+            &nbsp;•&nbsp;
+
+            Academic Year: <strong>2026–27</strong>
+
+        </small>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Tutor Overview -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- Total Tutors -->
+
+        <div class="col-md-6 col-lg-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-people-fill
+                              display-5 text-primary"></i>
+
+                    <h2 class="mt-3">
+                        {{ zone.tutors }}
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Total Tutors
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Higher Education -->
+
+        <div class="col-md-6 col-lg-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-mortarboard-fill
+                              display-5 text-success"></i>
+
+                    <h2 class="mt-3">
+
+                        {{ zone.higher_education }}
+
+                    </h2>
+
+                    <p class="text-muted mb-0">
+
+                        Pursuing Higher Education
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Education Support -->
+
+        <div class="col-md-6 col-lg-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-heart-fill
+                              display-5 text-info"></i>
+
+                    <h2 class="mt-3">
+
+                        {{ zone.education_support }}
+
+                    </h2>
+
+                    <p class="text-muted mb-0">
+
+                        Receiving AVF Education Support
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Pending Support -->
+
+        <div class="col-md-6 col-lg-3">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body">
+
+                    <i class="bi bi-clock-fill
+                              display-5 text-warning"></i>
+
+                    <h2 class="mt-3">
+
+                        {{ zone.pending_support }}
+
+                    </h2>
+
+                    <p class="text-muted mb-0">
+
+                        Pending Education Support
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Tutor Summary by Segment -->
+    <!-- ========================================= -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-diagram-3-fill me-2"></i>
+
+            Tutor Summary by Segment
+
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th class="ps-3">
+                                Segment
+                            </th>
+
+                            <th class="text-center">
+                                Tutors
+                            </th>
+
+                            <th class="text-center">
+                                Pursuing Higher<br>Education
+                            </th>
+
+                            <th class="text-center">
+                                AVF Education<br>Support
+                            </th>
+
+                            <th class="text-center">
+                                Pending<br>Support
+                            </th>
+
+                            <th class="text-center">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for segment in segments %}
+
+                        <tr>
+
+                            <!-- Segment -->
+
+                            <td class="ps-3">
+
+                                <span class="fw-semibold text-primary">
+
+                                    {{ segment.name }}
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- Tutors -->
+
+                            <td class="text-center">
+
+                                {{ segment.tutors }}
+
+                            </td>
+
+
+                            <!-- Higher Education -->
+
+                            <td class="text-center">
+
+                                <span class="fw-semibold">
+
+                                    {{ segment.higher_education }}
+
+                                </span>
+
+                                <small class="text-muted">
+
+                                    ({{ ((segment.higher_education /
+                                    segment.tutors) * 100)|round|int }}%)
+
+                                </small>
+
+                            </td>
+
+
+                            <!-- Education Support -->
+
+                            <td class="text-center">
+
+                                <span class="fw-semibold">
+
+                                    {{ segment.education_support }}
+
+                                </span>
+
+                                <small class="text-muted">
+
+                                    ({{ ((segment.education_support /
+                                    segment.tutors) * 100)|round|int }}%)
+
+                                </small>
+
+                            </td>
+
+
+                            <!-- Pending Support -->
+
+                            <td class="text-center">
+
+                                {% if segment.pending_support == 0 %}
+
+                                    <span class="badge bg-success">
+                                        0
+                                    </span>
+
+                                {% elif segment.pending_support <= 2 %}
+
+                                    <span class="badge bg-warning text-dark">
+
+                                        {{ segment.pending_support }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-danger">
+
+                                        {{ segment.pending_support }}
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Action -->
+
+                            <td class="text-center">
+
+                                <a href="/segment/{{ segment.id }}"
+                                   class="btn btn-sm btn-outline-primary">
+
+                                    View Segment
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+
+                    <!-- Zone Total -->
+
+                    <tfoot class="table-light fw-bold">
+
+                        <tr>
+
+                            <td class="ps-3">
+                                Zone Total
+                            </td>
+
+                            <td class="text-center">
+
+                                {{ zone.tutors }}
+
+                            </td>
+
+                            <td class="text-center">
+
+                                {{ zone.higher_education }}
+
+                                <small class="text-muted">
+
+                                    ({{ ((zone.higher_education /
+                                    zone.tutors) * 100)|round|int }}%)
+
+                                </small>
+
+                            </td>
+
+                            <td class="text-center">
+
+                                {{ zone.education_support }}
+
+                                <small class="text-muted">
+
+                                    ({{ ((zone.education_support /
+                                    zone.tutors) * 100)|round|int }}%)
+
+                                </small>
+
+                            </td>
+
+                            <td class="text-center">
+
+                                {{ zone.pending_support }}
+
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                        </tr>
+
+                    </tfoot>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Qualification Profile -->
+    <!-- ========================================= -->
+
+    <div class="row g-4 mb-4">
+
+
+        <!-- Highest Qualification -->
+
+        <div class="col-lg-6">
+
+            <div class="dashboard-card h-100">
+
+                <div class="dashboard-header">
+
+                    <i class="bi bi-mortarboard-fill me-2"></i>
+
+                    Tutor Qualification Profile
+
+                </div>
+
+                <div class="card-body">
+
+                    {% for item in qualification %}
+
+                    <div class="qualification-row">
+
+                        <div class="d-flex justify-content-between">
+
+                            <span>
+                                {{ item.name }}
+                            </span>
+
+                            <strong>
+                                {{ item.tutors }}
+                            </strong>
+
+                        </div>
+
+                        <div class="progress mt-2"
+                             style="height: 8px;">
+
+                            <div class="progress-bar"
+                                 role="progressbar"
+                                 style="width:
+                                 {{ ((item.tutors /
+                                 zone.tutors) * 100)|round|int }}%;">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Current Education -->
+
+        <div class="col-lg-6">
+
+            <div class="dashboard-card h-100">
+
+                <div class="dashboard-header">
+
+                    <i class="bi bi-book-fill me-2"></i>
+
+                    Current Education Status
+
+                </div>
+
+                <div class="card-body">
+
+                    {% for item in education_status %}
+
+                    <div class="qualification-row">
+
+                        <div class="d-flex justify-content-between">
+
+                            <span>
+                                {{ item.name }}
+                            </span>
+
+                            <strong>
+                                {{ item.tutors }}
+                            </strong>
+
+                        </div>
+
+                        <div class="progress mt-2"
+                             style="height: 8px;">
+
+                            <div class="progress-bar"
+                                 role="progressbar"
+                                 style="width:
+                                 {{ ((item.tutors /
+                                 zone.tutors) * 100)|round|int }}%;">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Information Note -->
+    <!-- ========================================= -->
+
+    <div class="alert alert-light border mb-5">
+
+        <i class="bi bi-info-circle me-2 text-primary"></i>
+
+        Tutor Space provides a management overview of tutor
+        education and AVF education support across the Zone.
+        Detailed tutor profiles are available at the Cluster level.
+
+    </div>
+
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- Page-specific styling -->
+<!-- ========================================= -->
+
+<style>
+
+.qualification-row {
+    padding: 10px 0;
+}
+
+.qualification-row + .qualification-row {
+    border-top: 1px solid #eeeeee;
+}
+
+</style>
+
+
+{% endblock %}
