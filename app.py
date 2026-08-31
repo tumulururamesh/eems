@@ -1348,6 +1348,21 @@ def tutor_space():
         )
 
 
+    # =========================================
+    # CLUSTER INCHARGE
+    # =========================================
+
+    if role == "cluster_incharge":
+
+        cluster_id = session.get("cluster")
+
+        return render_template(
+            "tutor_space/dashboard.html",
+            cluster_id=cluster_id,
+            active_page="tutor_space"
+        )
+
+
 # =========================================
 # TUTOR REPORTS
 # =========================================
@@ -1724,6 +1739,9 @@ def tutor_class_performance_comparison():
     )
 
 
+
+
+
 # =========================================
 # TUTOR REPORT - CLASS PERFORMANCE
 # EXCEL EXPORT
@@ -1791,11 +1809,13 @@ def export_tutor_class_performance_comparison():
     )
 
     workbook = export_report_to_excel(
-        report_title="Class Performance Comparison",
-        academic_year="2026–27",
-        headers=headers,
-        rows=rows,
-        totals=totals
+    report_title="Class Performance Comparison",
+    academic_year="2026–27",
+    headers=headers,
+    rows=rows,
+    totals=totals,
+    organisation_name="AKSHAYA VIDYA FOUNDATION",
+    system_name="Akshaya Vidya Education Management System"
     )
 
     filename = (

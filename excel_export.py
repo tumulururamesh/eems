@@ -1,28 +1,12 @@
-
-from openpyxl import Workbook
-
-
-def export_report_to_excel(
-    report_title,
-    academic_year,
-    headers,
-    rows,
-    totals
-):
-    """
-    Generic Excel Export Function
-    This function will be used by all reports.
-    """
-
 from openpyxl import Workbook
 
 from openpyxl.styles import (
-        Font,
-        PatternFill,
-        Border,
-        Side,
-        Alignment
-    )
+    Font,
+    PatternFill,
+    Border,
+    Side,
+    Alignment
+)
 
 from openpyxl.utils import get_column_letter
 
@@ -35,61 +19,44 @@ HEADER_FILL = PatternFill(
     fill_type="solid",
     start_color="1F4E78",
     end_color="1F4E78"
-    )
+)
 
 COLUMN_FILL = PatternFill(
     fill_type="solid",
     start_color="4472C4",
     end_color="4472C4"
-    )
+)
 
 WHITE_FONT = Font(
     bold=True,
     color="FFFFFF"
-    )
-
-TITLE_FONT = Font(
-    bold=True,
-    size=16
-    )
-
-SUBTITLE_FONT = Font(
-    bold=True,
-    size=12
-    )
+)
 
 THIN_BORDER = Border(
-
     left=Side(style="thin"),
-
     right=Side(style="thin"),
-
     top=Side(style="thin"),
-
     bottom=Side(style="thin")
-
-    )
+)
 
 CENTER_ALIGN = Alignment(
     horizontal="center",
     vertical="center"
-    )
+)
 
-RIGHT_ALIGN = Alignment(
-    horizontal="right"
-    )
 
-LEFT_ALIGN = Alignment(
-    horizontal="left"
-    )
-
+# ===========================================================
+# Generic Excel Export Function
+# ===========================================================
 
 def export_report_to_excel(
     report_title,
     academic_year,
     headers,
     rows,
-    totals
+    totals,
+    organisation_name="EKALAVYA FOUNDATION",
+    system_name="Ekalavya Education Management System"
 ):
 
     wb = Workbook()
@@ -98,17 +65,21 @@ def export_report_to_excel(
 
     ws.title = "Report"
 
-    # -------------------------------------------------
-# Report Header
-# -------------------------------------------------
+    # -------------------------------------------------------
+    # Report Header
+    # -------------------------------------------------------
 
-    ws.merge_cells("A1:F1")
-    ws.merge_cells("A2:F2")
-    ws.merge_cells("A4:F4")
-    ws.merge_cells("A5:F5")
+    column_count = len(headers)
 
-    ws["A1"] = "EKALAVYA FOUNDATION"
-    ws["A2"] = "Ekalavya Education Management System"
+    last_column = get_column_letter(column_count)
+
+    ws.merge_cells(f"A1:{last_column}1")
+    ws.merge_cells(f"A2:{last_column}2")
+    ws.merge_cells(f"A4:{last_column}4")
+    ws.merge_cells(f"A5:{last_column}5")
+
+    ws["A1"] = organisation_name
+    ws["A2"] = system_name
 
     ws["A4"] = report_title
     ws["A5"] = f"Academic Year : {academic_year}"
@@ -116,35 +87,31 @@ def export_report_to_excel(
     for cell in ["A1", "A2", "A4", "A5"]:
 
         ws[cell].fill = HEADER_FILL
-
         ws[cell].font = WHITE_FONT
-
         ws[cell].alignment = CENTER_ALIGN
 
-    # -------------------------------------------------
+    # -------------------------------------------------------
     # Column Headings
-    # -------------------------------------------------
+    # -------------------------------------------------------
 
     row_no = 7
 
     for col, header in enumerate(headers, start=1):
 
         cell = ws.cell(
-        row=row_no,
-        column=col,
-        value=header
+            row=row_no,
+            column=col,
+            value=header
         )
 
-    cell.font = WHITE_FONT
+        cell.font = WHITE_FONT
+        cell.fill = COLUMN_FILL
+        cell.border = THIN_BORDER
+        cell.alignment = CENTER_ALIGN
 
-    cell.fill = COLUMN_FILL
-
-    cell.border = THIN_BORDER
-
-    cell.alignment = CENTER_ALIGN
-    # -------------------------------------------------
+    # -------------------------------------------------------
     # Data
-    # -------------------------------------------------
+    # -------------------------------------------------------
 
     row_no += 1
 
@@ -152,41 +119,55 @@ def export_report_to_excel(
 
         for col, value in enumerate(record.values(), start=1):
 
-            ws.cell(
+            cell = ws.cell(
                 row=row_no,
                 column=col,
                 value=value
             )
 
+            cell.border = THIN_BORDER
+
         row_no += 1
 
-    # -------------------------------------------------
-    # Totals
-    # -------------------------------------------------
+    # -------------------------------------------------------
+    # Report Summary
+    # -------------------------------------------------------
 
     row_no += 2
 
-    ws.cell(row=row_no, column=1).value = "Report Summary"
+    ws.cell(
+        row=row_no,
+        column=1,
+        value="Report Summary"
+    )
 
-    ws.cell(row=row_no + 1, column=1).value = totals
+    ws.cell(
+        row=row_no + 1,
+        column=1,
+        value=totals
+    )
 
-    # ---------------------------------------------------------
-# Auto-fit Column Widths
-# ---------------------------------------------------------
+    # -------------------------------------------------------
+    # Auto-fit Column Widths
+    # -------------------------------------------------------
 
     for column_cells in ws.columns:
 
         length = 0
-        column = get_column_letter(column_cells[0].column)
 
-    for cell in column_cells:
+        column = get_column_letter(
+            column_cells[0].column
+        )
 
-        try:
-            if cell.value:
-                length = max(length, len(str(cell.value)))
-        except:
-            pass
+        for cell in column_cells:
 
-    ws.column_dimensions[column].width = length + 3
+            if cell.value is not None:
+
+                length = max(
+                    length,
+                    len(str(cell.value))
+                )
+
+        ws.column_dimensions[column].width = length + 3
 
     return wb
