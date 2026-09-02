@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>AEMS - Attendance</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            background: #f5f7fa;
+        }
+
+        .mobile-container {
+            max-width: 520px;
+            margin: auto;
+            padding: 20px 16px;
+        }
+
+        .app-title {
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        .welcome {
+            color: #6c757d;
+            margin-bottom: 24px;
+        }
+
+        .centre-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .centre-card:active {
+            transform: scale(0.99);
+        }
+
+        .centre-code {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .student-count {
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .attendance-status {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .completed {
+            color: #198754;
+        }
+
+        .pending {
+            color: #6c757d;
+        }
+
+        .submitted-time {
+            font-size: 12px;
+            font-weight: 400;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: #6c757d;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="mobile-container">
+
+    <div class="app-title">
+        AEMS
+    </div>
+
+    <div class="welcome">
+        Attendance · {{ cc_name }}
+    </div>
+
+    <h5 class="mb-3">
+        Today's Attendance
+    </h5>
+
+    {% for centre in centres %}
+
+    <a href="/mobile/attendance/{{ centre.center_id }}"
+       class="centre-card">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+
+                <div class="centre-code">
+                    {{ centre.center_code }}
+                </div>
+
+                <div class="student-count">
+                    {{ centre.student_count }} students
+                </div>
+
+                {% if centre.submission_id %}
+
+                    <div class="attendance-status completed">
+                        ✓ Attendance Completed
+                    </div>
+
+                    <div class="submitted-time">
+                        Submitted at
+                        {{ centre.submitted_at.strftime('%I:%M %p') }}
+                    </div>
+
+                {% else %}
+
+                    <div class="attendance-status pending">
+                        ○ Attendance Pending
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            <div class="arrow">
+                ›
+            </div>
+
+        </div>
+
+    </a>
+
+    {% endfor %}
+
+    {% if not centres %}
+
+    <div class="alert alert-warning">
+        No centres are currently assigned to you.
+    </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+</html>

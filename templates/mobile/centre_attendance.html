@@ -1,0 +1,468 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>AEMS - Attendance</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            background: #f5f7fa;
+        }
+
+        .mobile-container {
+            max-width: 520px;
+            margin: auto;
+            padding: 18px 16px 30px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #0d6efd;
+            font-size: 15px;
+        }
+
+        .centre-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 12px;
+        }
+
+        .centre-subtitle {
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 17px;
+        }
+
+        .student-result {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 10px;
+        }
+
+        .student-name {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .student-code {
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .absent-section {
+            margin-top: 24px;
+        }
+
+        .absent-card {
+            background: white;
+            border-radius: 12px;
+            padding: 13px;
+            margin-top: 8px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .absent-name {
+            font-weight: 600;
+        }
+
+        .submit-area {
+            margin-top: 25px;
+        }
+
+        .empty-message {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="mobile-container">
+
+    <a href="/mobile/attendance"
+       class="back-link">
+        ← Back to Centres
+    </a>
+
+    <div class="centre-title">
+        {{ centre.center_code }}
+    </div>
+
+    <div class="centre-subtitle">
+        Attendance · {{ cc_name }}
+        <br>
+        {{ students|length }} students
+    </div>
+
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+        <input
+            type="text"
+            id="studentSearch"
+            placeholder="🔍 Search student name"
+            autocomplete="off">
+
+    </div>
+
+
+    <!-- SEARCH RESULTS -->
+
+    <div id="searchResults"></div>
+
+
+    <!-- ABSENT STUDENTS -->
+
+    <div class="absent-section">
+
+        <h5>
+            Absent Today
+            <span
+                class="badge bg-danger"
+                id="absentCount">
+                0
+            </span>
+        </h5>
+
+        <div id="absentStudents">
+
+            <div
+                class="empty-message"
+                id="emptyMessage">
+
+                No students marked absent.
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SUBMIT -->
+
+    <div class="submit-area">
+
+        <button
+            type="button"
+            class="btn btn-primary btn-lg w-100"
+            id="submitButton">
+
+            Submit Attendance
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // -----------------------------------------
+    // Student data supplied by Flask
+    // -----------------------------------------
+
+    const students = [
+        {% for student in students %}
+        {
+            id: {{ student.student_id }},
+            code: "{{ student.student_code }}",
+            name: "{{ student.student_name|replace('"', '\\"') }}"
+        },
+        {% endfor %}
+    ];
+
+
+    // Students currently marked absent
+
+    const absentStudents = new Map();
+
+
+    const searchInput =
+        document.getElementById("studentSearch");
+
+    const searchResults =
+        document.getElementById("searchResults");
+
+    const absentStudentsDiv =
+        document.getElementById("absentStudents");
+
+    const absentCount =
+        document.getElementById("absentCount");
+
+    const emptyMessage =
+        document.getElementById("emptyMessage");
+
+
+    // -----------------------------------------
+    // Search students
+    // -----------------------------------------
+
+    searchInput.addEventListener("input", function () {
+
+        const searchText =
+            this.value.trim().toLowerCase();
+
+        searchResults.innerHTML = "";
+
+        if (!searchText) {
+            return;
+        }
+
+        const matches = students.filter(student =>
+            student.name.toLowerCase().includes(searchText)
+        );
+
+        matches.forEach(student => {
+
+            // Already marked absent
+            if (absentStudents.has(student.id)) {
+                return;
+            }
+
+            const card =
+                document.createElement("div");
+
+            card.className = "student-result";
+
+            card.innerHTML = `
+                <div class="d-flex
+                            justify-content-between
+                            align-items-center">
+
+                    <div>
+                        <div class="student-name">
+                            ${student.name}
+                        </div>
+
+                        <div class="student-code">
+                            ${student.code}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-danger"
+                        onclick="markAbsent(${student.id})">
+
+                        Mark Absent
+
+                    </button>
+
+                </div>
+            `;
+
+            searchResults.appendChild(card);
+
+        });
+
+        if (matches.length === 0) {
+
+            searchResults.innerHTML = `
+                <div class="empty-message">
+                    No student found.
+                </div>
+            `;
+
+        }
+
+    });
+
+
+    // -----------------------------------------
+    // Mark student absent
+    // -----------------------------------------
+
+    function markAbsent(studentId) {
+
+        const student =
+            students.find(s => s.id === studentId);
+
+        if (!student) {
+            return;
+        }
+
+        absentStudents.set(
+            student.id,
+            student
+        );
+
+        searchInput.value = "";
+
+        searchResults.innerHTML = "";
+
+        refreshAbsentList();
+
+    }
+
+
+    // -----------------------------------------
+    // Undo absent
+    // -----------------------------------------
+
+    function undoAbsent(studentId) {
+
+        absentStudents.delete(studentId);
+
+        refreshAbsentList();
+
+    }
+
+
+    // -----------------------------------------
+    // Refresh absent list
+    // -----------------------------------------
+
+    function refreshAbsentList() {
+
+        absentStudentsDiv.innerHTML = "";
+
+        absentCount.textContent =
+            absentStudents.size;
+
+        if (absentStudents.size === 0) {
+
+            absentStudentsDiv.innerHTML = `
+                <div class="empty-message">
+                    No students marked absent.
+                </div>
+            `;
+
+            return;
+        }
+
+
+        absentStudents.forEach(student => {
+
+            const card =
+                document.createElement("div");
+
+            card.className = "absent-card";
+
+            card.innerHTML = `
+                <div class="d-flex
+                            justify-content-between
+                            align-items-center">
+
+                    <div>
+                        <div class="absent-name">
+                            ${student.name}
+                        </div>
+
+                        <div class="student-code">
+                            ${student.code}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        onclick="undoAbsent(${student.id})">
+
+                        Undo
+
+                    </button>
+
+                </div>
+            `;
+
+            absentStudentsDiv.appendChild(card);
+
+        });
+
+    }
+
+
+    // -----------------------------------------
+    // Submit - temporarily just show selection
+    // -----------------------------------------
+
+    // -----------------------------------------
+// Submit attendance
+// -----------------------------------------
+
+document
+    .getElementById("submitButton")
+    .addEventListener("click", async function () {
+
+        const absentIds =
+            Array.from(absentStudents.keys());
+
+        if (!confirm(
+            "Submit attendance for " +
+            absentIds.length +
+            " absent student(s)?"
+        )) {
+            return;
+        }
+
+        const response = await fetch(
+            "/mobile/attendance/{{ centre.center_id }}/submit",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    absent_student_ids: absentIds
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+
+            window.location.href =
+                "/mobile/attendance/submitted/" +
+                result.submission_id;
+
+        } else {
+
+            alert(
+                "Attendance submission failed.\n\n" +
+                result.message
+            );
+        }
+
+    });
+
+</script>
+
+</body>
+
+</html>
