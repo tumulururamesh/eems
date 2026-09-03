@@ -110,22 +110,26 @@
 
 <div class="mobile-container">
 
+    <div class="d-flex justify-content-between align-items-start">
+
+    <div>
+        <div class="centre-title">
+            {{ centre.center_code }}
+        </div>
+
+        <div class="centre-subtitle">
+            Attendance · {{ cc_name }}
+            <br>
+            {{ students|length }} students
+        </div>
+    </div>
+
     <a href="/mobile/attendance"
-       class="back-link">
-        ← Back to Centres
+       class="btn btn-outline-secondary">
+        ← Back
     </a>
 
-    <div class="centre-title">
-        {{ centre.center_code }}
-    </div>
-
-    <div class="centre-subtitle">
-        Attendance · {{ cc_name }}
-        <br>
-        {{ students|length }} students
-    </div>
-
-
+</div>
     <!-- SEARCH -->
 
     <div class="search-box">

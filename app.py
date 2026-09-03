@@ -572,7 +572,6 @@ def mobile_attendance_submitted(submission_id):
 # =====================================================
 # LOGIN
 # =====================================================
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -580,6 +579,65 @@ def login():
 
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+
+        # =====================================================
+        # FIRST: Check database-backed users
+        # =====================================================
+
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT
+                u.user_id,
+                u.username,
+                u.password_hash,
+                u.role,
+                u.cc_id,
+                u.active_flag,
+                c.cc_name
+            FROM public.aems_user u
+            JOIN public.cluster_coordinator c
+                ON c.cc_id = u.cc_id
+            WHERE u.username = %s
+              AND u.active_flag = TRUE
+              AND c.active_flag = TRUE
+        """, (username,))
+
+        db_user = cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+        # =====================================================
+        # DATABASE USER - CURRENTLY CC LOGIN
+        # =====================================================
+
+        if db_user:
+
+            # Development phase:
+            # password_hash currently contains plain demo password
+            if db_user["password_hash"] == password:
+
+                session["username"] = db_user["username"]
+                session["role"] = db_user["role"]
+                session["name"] = db_user["cc_name"]
+                session["cc_id"] = db_user["cc_id"]
+
+                if db_user["role"] == "cluster_incharge":
+                    return redirect("/cluster-dashboard/1")
+
+                return redirect("/dashboard")
+
+            return render_template(
+                "auth/login.html",
+                error="Invalid username or password."
+            )
+
+        # =====================================================
+        # EXISTING HARD-CODED USERS
+        # Keep these temporarily for other roles
+        # =====================================================
 
         user = AEMS_USERS.get(username)
 
@@ -594,7 +652,6 @@ def login():
             session["cluster"] = user.get("cluster")
             session["centre"] = user.get("centre")
             session["centres"] = user.get("centres")
-
 
             if user["role"] == "management":
                 return redirect("/dashboard")
@@ -742,11 +799,12 @@ def cluster_dashboard(cluster_id):
 ]
 
     return render_template(
-        "cluster/cluster_dashboard.html",
-        cluster=cluster,
-        centres=centres,
-        active_page="cluster"
-    )
+    "cluster/cluster_dashboard.html",
+    cluster=cluster,
+    centres=centres,
+    active_page="cluster",
+    show_mobile_attendance=(session.get("role") == "cluster_incharge")
+)
 
 
 # =====================================================
