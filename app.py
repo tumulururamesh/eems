@@ -30,6 +30,8 @@ from datetime import datetime
 
 from excel_export import export_report_to_excel
 
+from werkzeug.security import check_password_hash
+
 app = Flask(__name__)
 app.secret_key = "aems-demo-secret-key"
 
@@ -616,8 +618,8 @@ def login():
         if db_user:
 
             # Development phase:
-            # password_hash currently contains plain demo password
-            if db_user["password_hash"] == password:
+            # Verify password against the stored Werkzeug hash
+            if check_password_hash(db_user["password_hash"], password):
 
                 session["username"] = db_user["username"]
                 session["role"] = db_user["role"]
