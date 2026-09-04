@@ -630,7 +630,7 @@ def login():
                 session["cc_id"] = db_user["cc_id"]
 
                 if db_user["role"] == "cluster_incharge":
-                    return redirect("/cluster-dashboard/1")
+                    return redirect(f"/cluster-dashboard/{db_user['cc_id']}")
 
                 return redirect("/dashboard")
 
@@ -709,7 +709,6 @@ def dashboard():
         active_page="home"
     )
 
-
 @app.route("/cluster-dashboard/<int:cluster_id>")
 @login_required
 def cluster_dashboard(cluster_id):
@@ -725,8 +724,16 @@ def cluster_dashboard(cluster_id):
     if session.get("role") not in allowed_roles:
         return redirect("/dashboard")
 
+    # ---------------------------------------------------------
+    # Cluster Incharge can only view their own cluster
+    # ---------------------------------------------------------
+    if session.get("role") == "cluster_incharge":
+        if session.get("cc_id") != cluster_id:
+            return redirect(
+                f"/cluster-dashboard/{session.get('cc_id')}"
+            )
 
-        # ---------------------------------------------------------
+    # ---------------------------------------------------------
     # Load Cluster Coordinator / Centre data from database
     # ---------------------------------------------------------
 
@@ -735,7 +742,9 @@ def cluster_dashboard(cluster_id):
     try:
         with cc.cursor(cursor_factory=RealDictCursor) as cur:
 
+            # -------------------------------------------------
             # Coordinator details
+            # -------------------------------------------------
             cur.execute("""
                 SELECT
                     cc_id,
@@ -750,7 +759,9 @@ def cluster_dashboard(cluster_id):
             if not coordinator:
                 return redirect("/dashboard")
 
+            # -------------------------------------------------
             # Assigned centres and active students
+            # -------------------------------------------------
             cur.execute("""
                 SELECT
                     tc.center_id,
@@ -775,11 +786,40 @@ def cluster_dashboard(cluster_id):
 
             centres = cur.fetchall()
 
+            # -------------------------------------------------
+            # 5-Day Attendance Trend
+            #
+            # Aggregate attendance across ALL centres
+            # belonging to this Cluster Coordinator.
+            # -------------------------------------------------
+            cur.execute("""
+                SELECT
+                    sa.attendance_date,
+                    COUNT(*) AS total,
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'Present'
+                    ) AS present,
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'Absent'
+                    ) AS absent
+                FROM public.student_attendance sa
+                JOIN public.cluster_center c
+                    ON c.center_id = sa.center_id
+                   AND c.cc_id = %s
+                   AND c.active_flag = TRUE
+                WHERE sa.attendance_date >= CURRENT_DATE - INTERVAL '4 days'
+                  AND sa.attendance_date <= CURRENT_DATE
+                GROUP BY sa.attendance_date
+                ORDER BY sa.attendance_date
+            """, (cluster_id,))
+
+            attendance_trend = cur.fetchall()
+
     finally:
         cc.close()
 
     # ---------------------------------------------------------
-    # Today's attendance
+    # Calculate centre-wise today's attendance
     # ---------------------------------------------------------
 
     for centre in centres:
@@ -787,7 +827,9 @@ def cluster_dashboard(cluster_id):
         attendance = get_connection()
 
         try:
-            with attendance.cursor(cursor_factory=RealDictCursor) as cur:
+            with attendance.cursor(
+                cursor_factory=RealDictCursor
+            ) as cur:
 
                 cur.execute("""
                     SELECT
@@ -817,25 +859,50 @@ def cluster_dashboard(cluster_id):
         centre["absent"] = absent
 
         if total > 0:
+
             centre["attendance_value"] = round(
-                (present / total) * 100, 1
+                (present / total) * 100,
+                1
             )
-            centre["attendance"] = f'{centre["attendance_value"]}%'
+
+            centre["attendance"] = (
+                f'{centre["attendance_value"]}%'
+            )
+
         else:
+
             centre["attendance_value"] = 0
             centre["attendance"] = "—"
 
-    # Overall cluster summary
-    total_students = sum(c["students"] for c in centres)
-    total_attendance = sum(c["attendance_total"] for c in centres)
-    total_present = sum(c["present"] for c in centres)
-    total_absent = sum(c["absent"] for c in centres)
+    # ---------------------------------------------------------
+    # Calculate today's cluster totals
+    # ---------------------------------------------------------
+
+    total_students = sum(
+        c["students"] for c in centres
+    )
+
+    total_attendance = sum(
+        c["attendance_total"] for c in centres
+    )
+
+    total_present = sum(
+        c["present"] for c in centres
+    )
+
+    total_absent = sum(
+        c["absent"] for c in centres
+    )
 
     if total_attendance > 0:
+
         attendance_percentage = round(
-            (total_present / total_attendance) * 100, 1
+            (total_present / total_attendance) * 100,
+            1
         )
+
     else:
+
         attendance_percentage = 0
 
     cluster = {
@@ -847,17 +914,75 @@ def cluster_dashboard(cluster_id):
         "absent": total_absent
     }
 
+    # ---------------------------------------------------------
+    # Calculate daily attendance percentages for trend
+    # ---------------------------------------------------------
+
+    for day in attendance_trend:
+
+        total = day["total"] or 0
+        present = day["present"] or 0
+
+        if total > 0:
+
+            day["attendance_percentage"] = round(
+                (present / total) * 100,
+                1
+            )
+
+        else:
+
+            day["attendance_percentage"] = 0
+
+    # ---------------------------------------------------------
+    # Calculate 5-day aggregate average
+    #
+    # IMPORTANT:
+    # This is NOT an average of daily percentages.
+    # It is total Present / total attendance records.
+    # ---------------------------------------------------------
+
+    trend_total = sum(
+        day["total"] for day in attendance_trend
+    )
+
+    trend_present = sum(
+        day["present"] for day in attendance_trend
+    )
+
+    if trend_total > 0:
+
+        trend_average = round(
+            (trend_present / trend_total) * 100,
+            1
+        )
+
+    else:
+
+        trend_average = 0
+
+    # ---------------------------------------------------------
+    # Attendance date
+    # ---------------------------------------------------------
+
     attendance_date = datetime.today().date()
 
-    return render_template(
-    "cluster/cluster_dashboard.html",
-    cluster=cluster,
-    centres=centres,
-    attendance_date=attendance_date,
-    active_page="cluster",
-    show_mobile_attendance=(session.get("role") == "cluster_incharge")
-)
+    # ---------------------------------------------------------
+    # Render dashboard
+    # ---------------------------------------------------------
 
+    return render_template(
+        "cluster/cluster_dashboard.html",
+        cluster=cluster,
+        centres=centres,
+        attendance_date=attendance_date,
+        attendance_trend=attendance_trend,
+        trend_average=trend_average,
+        active_page="cluster",
+        show_mobile_attendance=(
+            session.get("role") == "cluster_incharge"
+        )
+    )
 
 # =====================================================
 # HOME

@@ -514,9 +514,46 @@ Cluster Coordinator Dashboard
 
                     <div class="border rounded p-4 text-center h-100">
 
-                        <h4 class="text-primary">
-                            Last 7 Days
-                        </h4>
+                    <!-- =========================================================
+                        5-DAY ATTENDANCE TREND
+                    ========================================================= -->
+
+                    <div class="card shadow-sm border-0 mb-4">
+
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                <div>
+                                    <h5 class="fw-bold mb-1">
+                                        Attendance Trend
+                                    </h5>
+
+                                    <div class="text-muted small">
+                                        Last 5 Days · All Centres
+                                    </div>
+                                </div>
+
+                                <div class="text-end">
+                                    <div class="fw-bold fs-5">
+                                        {{ trend_average }}%
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        5-Day Average
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Chart -->
+                            <div style="height: 280px;">
+                                <canvas id="attendanceTrendChart"></canvas>
+                            </div>
+
+                        </div>
+
+                    </div>
 
                         <p class="text-muted mb-0">
 
@@ -648,5 +685,135 @@ Cluster Coordinator Dashboard
 
 
 </div>
+
+        <p class="text-muted mb-0">
+            Performance over time
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     ATTENDANCE TREND CHART
+     ========================================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    const attendanceTrend = [
+        {% for day in attendance_trend %}
+        {
+            date: "{{ day.attendance_date.strftime('%d %b') }}",
+            percentage: {{ day.attendance_percentage }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const labels = attendanceTrend.map(
+        item => item.date
+    );
+
+    const values = attendanceTrend.map(
+        item => item.percentage
+    );
+
+    const ctx = document
+        .getElementById('attendanceTrendChart')
+        .getContext('2d');
+
+    new Chart(ctx, {
+
+        type: 'line',
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+
+                label: 'Attendance %',
+
+                data: values,
+
+                tension: 0.3,
+
+                fill: false,
+
+                pointRadius: 5,
+
+                pointHoverRadius: 7
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+
+                    min: 0,
+
+                    max: 100,
+
+                    ticks: {
+
+                        callback: function(value) {
+                            return value + '%';
+                        }
+
+                    },
+
+                    title: {
+                        display: true,
+                        text: 'Attendance %'
+                    }
+
+                },
+
+                x: {
+
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+                            return context.parsed.y + '%';
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+</script>
 
 {% endblock %}
