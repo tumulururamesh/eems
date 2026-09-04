@@ -1,8 +1,7 @@
-
 {% extends "base.html" %}
 
 {% block title %}
-My Cluster
+Cluster Coordinator Dashboard
 {% endblock %}
 
 {% block page_title %}
@@ -12,34 +11,36 @@ My Cluster
 
 <div class="container-fluid">
 
+    <!-- ===================================================== -->
+    <!-- Page Heading -->
+    <!-- ===================================================== -->
 
-<!-- ========================================= -->
-<!-- Page Heading -->
-<!-- ========================================= -->
+    <div class="mb-4">
 
-<div class="mb-4">
+        <h1 class="display-6 fw-bold text-primary">
+            Cluster Coordinator Dashboard
+        </h1>
 
-    <h1 class="display-6 fw-bold text-primary">
-        My Cluster
-    </h1>
+        <p class="text-muted mb-1">
+            {{ cluster.name }}
+            &nbsp;•&nbsp;
+            {{ cluster.centres }} Learning Centres
+        </p>
 
-    <p class="text-muted mb-1">
-        Cluster 1 • Coordinator: Smt. Lakshmi
-    </p>
+        <p class="text-muted mb-1">
+            Attendance Date: {{ attendance_date.strftime('%d %B %Y') }}
+        </p>
 
-    <small class="text-muted">
-        Reporting Month: <strong>July 2026</strong>
-        &nbsp;•&nbsp;
-        Academic Year: <strong>2026–27</strong>
-    </small>
+    </div>
 
-</div>
 
-    <!-- ========================================= -->
-    <!-- Cluster KPIs -->
-    <!-- ========================================= -->
+    <!-- ===================================================== -->
+    <!-- Attendance KPIs -->
+    <!-- ===================================================== -->
 
     <div class="row g-4 mb-4">
+
+        <!-- Learning Centres -->
 
         <div class="col-md-3">
 
@@ -64,6 +65,8 @@ My Cluster
         </div>
 
 
+        <!-- Students -->
+
         <div class="col-md-3">
 
             <div class="dashboard-card text-center">
@@ -87,20 +90,22 @@ My Cluster
         </div>
 
 
+        <!-- Present -->
+
         <div class="col-md-3">
 
             <div class="dashboard-card text-center">
 
                 <div class="card-body">
 
-                    <i class="bi bi-calendar-check-fill display-5 text-warning"></i>
+                    <i class="bi bi-person-check-fill display-5 text-success"></i>
 
                     <h2 class="mt-3">
-                        {{ cluster.attendance }}
+                        {{ cluster.present }}
                     </h2>
 
                     <p class="text-muted mb-0">
-                        Attendance
+                        Present Today
                     </p>
 
                 </div>
@@ -110,20 +115,22 @@ My Cluster
         </div>
 
 
+        <!-- Absent -->
+
         <div class="col-md-3">
 
             <div class="dashboard-card text-center">
 
                 <div class="card-body">
 
-                    <i class="bi bi-bar-chart-fill display-5 text-info"></i>
+                    <i class="bi bi-person-x-fill display-5 text-danger"></i>
 
                     <h2 class="mt-3">
-                        {{ cluster.assessment }}
+                        {{ cluster.absent }}
                     </h2>
 
                     <p class="text-muted mb-0">
-                        Avg. Assessment
+                        Absent Today
                     </p>
 
                 </div>
@@ -135,11 +142,81 @@ My Cluster
     </div>
 
 
+    <!-- ===================================================== -->
+    <!-- Today's Attendance -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-calendar-check-fill me-2"></i>
+
+            Today's Attendance
+
+        </div>
 
 
-        <!-- ========================================= -->
-    <!-- Daily Attendance -->
-    <!-- ========================================= -->
+        <div class="card-body">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-4 text-center">
+
+                    <div class="display-4 fw-bold text-primary">
+                        {{ cluster.attendance }}
+                    </div>
+
+                    <p class="text-muted mb-0">
+                        Overall Attendance
+                    </p>
+
+                </div>
+
+
+                <div class="col-md-8">
+
+                    <div class="row text-center">
+
+                        <div class="col-6">
+
+                            <div class="fs-4 fw-bold text-success">
+                                {{ cluster.present }}
+                            </div>
+
+                            <small class="text-muted">
+                                Present
+                            </small>
+
+                        </div>
+
+
+                        <div class="col-6">
+
+                            <div class="fs-4 fw-bold text-danger">
+                                {{ cluster.absent }}
+                            </div>
+
+                            <small class="text-muted">
+                                Absent
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- Daily Attendance Mobile -->
+    <!-- ===================================================== -->
 
     {% if show_mobile_attendance %}
 
@@ -161,19 +238,26 @@ My Cluster
                             <div>
 
                                 <h4 class="mb-2">
-                                    <i class="bi bi-calendar-check-fill me-2"></i>
+
+                                    <i class="bi bi-phone-fill me-2"></i>
+
                                     Daily Attendance
+
                                 </h4>
 
                                 <p class="text-muted mb-0">
+
                                     Capture today's attendance
                                     for your centres.
+
                                 </p>
 
                             </div>
 
                             <div class="fs-3 text-primary">
+
                                 →
+
                             </div>
 
                         </div>
@@ -189,328 +273,216 @@ My Cluster
     </div>
 
     {% endif %}
-<!-- ========================================= -->
-<!-- Centre Performance Comparison -->
-<!-- ========================================= -->
 
-<div class="dashboard-card mt-4 mb-4">
 
-    <div class="dashboard-header">
+    <!-- ===================================================== -->
+    <!-- Centre-wise Attendance -->
+    <!-- ===================================================== -->
 
-        <i class="bi bi-bar-chart-fill me-2"></i>
+    <div class="dashboard-card mb-4">
 
-        Learning Centre Performance Comparison
+        <div class="dashboard-header">
 
-    </div>
+            <i class="bi bi-building me-2"></i>
 
-    <div class="card-body">
-
-        <p class="text-muted mb-4">
-            Compare attendance and assessment performance
-            across the five learning centres in the Cluster.
-        </p>
-
-
-        <!-- ===================================== -->
-        <!-- Performance Comparison Table -->
-        <!-- ===================================== -->
-
-        <div class="table-responsive">
-
-            <table class="table table-hover align-middle">
-
-                <thead class="table-light">
-
-                    <tr>
-
-                        <th>
-                            Rank
-                        </th>
-
-                        <th>
-                            Learning Centre
-                        </th>
-
-                        <th class="text-center">
-                            Students
-                        </th>
-
-                        <th class="text-center">
-                            Attendance
-                        </th>
-
-                        <th class="text-center">
-                            RAG
-                        </th>
-
-                        <th class="text-center">
-                            Avg. Marks
-                        </th>
-
-                        <th class="text-center">
-                            RAG
-                        </th>
-
-                        <th class="text-center">
-                            Group A
-                        </th>
-
-                        <th class="text-center">
-                            Group B
-                        </th>
-
-                        <th class="text-center">
-                            Action
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for centre in centres %}
-
-                    <tr
-                        {% if centre.id == 2 %}
-                            class="table-primary"
-                        {% endif %}
-                    >
-
-                        <!-- Rank -->
-
-                        <td class="fw-bold">
-                            {{ loop.index }}
-                        </td>
-
-
-                        <!-- Centre -->
-
-                        <td>
-
-                            <a href="/centre/{{ centre.id }}"
-                               class="text-decoration-none fw-semibold">
-
-                                {{ centre.name }}
-
-                            </a>
-
-                            {% if centre.id == 2 %}
-
-                                <span class="badge bg-primary ms-2">
-                                    Current
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <!-- Students -->
-
-                        <td class="text-center">
-                            {{ centre.students }}
-                        </td>
-
-
-                        <!-- Attendance -->
-
-                        <td class="text-center fw-bold">
-
-                            {{ centre.attendance }}
-
-                        </td>
-
-
-                        <!-- Attendance RAG -->
-
-                        <td class="text-center">
-
-                            {% if centre.attendance_value >= 90 %}
-
-                                <span class="rag-dot rag-green"></span>
-
-                            {% elif centre.attendance_value >= 80 %}
-
-                                <span class="rag-dot rag-amber"></span>
-
-                            {% else %}
-
-                                <span class="rag-dot rag-red"></span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <!-- Assessment -->
-
-                        <td class="text-center fw-bold">
-
-                            {{ centre.assessment }}
-
-                        </td>
-
-
-                        <!-- Assessment RAG -->
-
-                        <td class="text-center">
-
-                            {% if centre.assessment_value >= 75 %}
-
-                                <span class="rag-dot rag-green"></span>
-
-                            {% elif centre.assessment_value >= 65 %}
-
-                                <span class="rag-dot rag-amber"></span>
-
-                            {% else %}
-
-                                <span class="rag-dot rag-red"></span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <!-- Group A -->
-
-                        <td class="text-center">
-
-                            {{ centre.group_a }}
-
-                        </td>
-
-
-                        <!-- Group B -->
-
-                        <td class="text-center">
-
-                            {{ centre.group_b }}
-
-                        </td>
-
-
-                        <!-- Action -->
-
-                        <td class="text-center">
-
-                            <a href="/centre/{{ centre.id }}"
-                               class="btn btn-sm btn-outline-primary">
-
-                                View Centre
-
-                            </a>
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-
-                <!-- ================================= -->
-                <!-- Cluster Average -->
-                <!-- ================================= -->
-
-                <tfoot class="table-light fw-bold">
-
-                    <tr>
-
-                        <td colspan="2">
-                            Cluster Average
-                        </td>
-
-                        <td class="text-center">
-                            {{ cluster.students }}
-                        </td>
-
-                        <td class="text-center">
-                            {{ cluster.attendance }}
-                        </td>
-
-                        <td class="text-center">
-                            —
-                        </td>
-
-                        <td class="text-center">
-                            {{ cluster.assessment }}
-                        </td>
-
-                        <td class="text-center">
-                            —
-                        </td>
-
-                        <td class="text-center">
-                            73%
-                        </td>
-
-                        <td class="text-center">
-                            68%
-                        </td>
-
-                        <td class="text-center">
-                            —
-                        </td>
-
-                    </tr>
-
-                </tfoot>
-
-            </table>
+            Centre-wise Attendance
 
         </div>
 
-    </div>
 
-</div>
+        <div class="card-body">
 
+            <p class="text-muted mb-4">
 
-<!-- ========================================= -->
-<!-- Cluster Performance Position -->
-<!-- ========================================= -->
+                Attendance status across your assigned
+                learning centres.
 
-<div class="dashboard-card mb-4">
-
-    
-
-    <div class="card-body">
-
-        <div class="row text-center">
-
-            <div class="col-md-6">
-
-                <h2 class="fw-bold text-success">
-                    2 / 5
-                </h2>
-
-                <p class="text-muted mb-1">
-                    Attendance Rank
-                </p>
-
-                <span class="text-success fw-semibold">
-                    🟢 91%
-                </span>
-
-            </div>
+            </p>
 
 
-            <div class="col-md-6">
+            <div class="table-responsive">
 
-                <h2 class="fw-bold text-warning">
-                    3 / 5
-                </h2>
+                <table class="table table-hover align-middle">
 
-                <p class="text-muted mb-1">
-                    Assessment Rank
-                </p>
+                    <thead class="table-light">
 
-                <span class="text-warning fw-semibold">
-                    🟠 72%
-                </span>
+                        <tr>
+
+                            <th>
+                                Learning Centre
+                            </th>
+
+                            <th class="text-center">
+                                Students
+                            </th>
+
+                            <th class="text-center">
+                                Present
+                            </th>
+
+                            <th class="text-center">
+                                Absent
+                            </th>
+
+                            <th class="text-center">
+                                Attendance
+                            </th>
+
+                            <th class="text-center">
+                                Status
+                            </th>
+
+                            <th class="text-center">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for centre in centres %}
+
+                        <tr>
+
+                            <!-- Centre -->
+
+                            <td>
+
+                                <a href="/centre/{{ centre.center_id }}"
+                                   class="text-decoration-none fw-semibold">
+
+                                    {{ centre.center_code }}
+
+                                </a>
+
+                            </td>
+
+
+                            <!-- Students -->
+
+                            <td class="text-center">
+
+                                {{ centre.students }}
+
+                            </td>
+
+
+                            <!-- Present -->
+
+                            <td class="text-center text-success fw-semibold">
+
+                                {{ centre.present }}
+
+                            </td>
+
+
+                            <!-- Absent -->
+
+                            <td class="text-center text-danger fw-semibold">
+
+                                {{ centre.absent }}
+
+                            </td>
+
+
+                            <!-- Attendance -->
+
+                            <td class="text-center fw-bold">
+
+                                {{ centre.attendance }}
+
+                            </td>
+
+
+                            <!-- RAG -->
+
+                            <td class="text-center">
+
+                                {% if centre.attendance_value >= 90 %}
+
+                                    <span class="rag-dot rag-green"></span>
+
+                                {% elif centre.attendance_value >= 80 %}
+
+                                    <span class="rag-dot rag-amber"></span>
+
+                                {% elif centre.attendance_value > 0 %}
+
+                                    <span class="rag-dot rag-red"></span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Action -->
+
+                            <td class="text-center">
+
+                                <a href="/centre/{{ centre.center_id }}"
+                                   class="btn btn-sm btn-outline-primary">
+
+                                    View Centre
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+
+                    <!-- Overall -->
+
+                    <tfoot class="table-light fw-bold">
+
+                        <tr>
+
+                            <td>
+                                Cluster Total
+                            </td>
+
+                            <td class="text-center">
+                                {{ cluster.students }}
+                            </td>
+
+                            <td class="text-center text-success">
+                                {{ cluster.present }}
+                            </td>
+
+                            <td class="text-center text-danger">
+                                {{ cluster.absent }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ cluster.attendance }}
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                            <td class="text-center">
+                                —
+                            </td>
+
+                        </tr>
+
+                    </tfoot>
+
+                </table>
 
             </div>
 
@@ -518,34 +490,162 @@ My Cluster
 
     </div>
 
-</div>
+
+    <!-- ===================================================== -->
+    <!-- Attendance Trend -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-graph-up me-2"></i>
+
+            Attendance Trend
+
+        </div>
 
 
-<!-- ========================================= -->
-<!-- Management Insight -->
-<!-- ========================================= -->
+        <div class="card-body">
 
-<div class="dashboard-card mb-5">
+            <div class="row g-4">
 
-    
-    <div class="card-body">
+                <div class="col-md-6">
 
-        <div class="alert alert-info mb-0">
+                    <div class="border rounded p-4 text-center h-100">
 
-            <strong>Centre 2:</strong>
+                        <h4 class="text-primary">
+                            Last 7 Days
+                        </h4>
 
-            Attendance is above the Cluster average, while
-            assessment performance is below the leading centres.
+                        <p class="text-muted mb-0">
 
-            <br><br>
+                            Seven-day attendance trend
+                            will be shown here.
 
-            This provides an opportunity to investigate the
-            factors influencing academic performance despite
-            relatively strong attendance.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                    <div class="border rounded p-4 text-center h-100">
+
+                        <h4 class="text-primary">
+                            Previous Month
+                        </h4>
+
+                        <p class="text-muted mb-0">
+
+                            Previous-month attendance
+                            average will be shown here.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
     </div>
+
+
+    <!-- ===================================================== -->
+    <!-- Academic Performance -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-5">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-bar-chart-fill me-2"></i>
+
+            Academic Performance
+
+        </div>
+
+
+        <div class="card-body">
+
+            <p class="text-muted mb-4">
+
+                Academic performance will be connected
+                to the assessment data and displayed
+                centre-wise and student-wise.
+
+            </p>
+
+
+            <div class="row g-4">
+
+                <div class="col-md-4">
+
+                    <div class="border rounded p-4 text-center">
+
+                        <i class="bi bi-graph-up display-6 text-info"></i>
+
+                        <h5 class="mt-3">
+                            Centre Performance
+                        </h5>
+
+                        <p class="text-muted mb-0">
+                            Centre-wise academic results
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="border rounded p-4 text-center">
+
+                        <i class="bi bi-people-fill display-6 text-primary"></i>
+
+                        <h5 class="mt-3">
+                            Student Performance
+                        </h5>
+
+                        <p class="text-muted mb-0">
+                            Student-level performance
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="border rounded p-4 text-center">
+
+                        <i class="bi bi-clock-history display-6 text-success"></i>
+
+                        <h5 class="mt-3">
+                            Performance Trend
+                        </h5>
+
+                        <p class="text-muted mb-0">
+                            Performance over time
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
 </div>
 

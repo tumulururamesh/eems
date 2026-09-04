@@ -27,10 +27,13 @@ from database import (
 )
 
 from datetime import datetime
+from psycopg2.extras import RealDictCursor
 
 from excel_export import export_report_to_excel
 
 from werkzeug.security import check_password_hash
+
+
 
 app = Flask(__name__)
 app.secret_key = "aems-demo-secret-key"
@@ -723,87 +726,134 @@ def cluster_dashboard(cluster_id):
         return redirect("/dashboard")
 
 
-    
+        # ---------------------------------------------------------
+    # Load Cluster Coordinator / Centre data from database
+    # ---------------------------------------------------------
+
+    cc = get_connection()
+
+    try:
+        with cc.cursor(cursor_factory=RealDictCursor) as cur:
+
+            # Coordinator details
+            cur.execute("""
+                SELECT
+                    cc_id,
+                    cc_name
+                FROM public.cluster_coordinator
+                WHERE cc_id = %s
+                  AND active_flag = TRUE
+            """, (cluster_id,))
+
+            coordinator = cur.fetchone()
+
+            if not coordinator:
+                return redirect("/dashboard")
+
+            # Assigned centres and active students
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name,
+                    COUNT(sm.student_id) AS students
+                FROM public.cluster_center c
+                JOIN public.tuition_center tc
+                    ON tc.center_id = c.center_id
+                   AND tc.status = 'ACTIVE'
+                LEFT JOIN public.student_master sm
+                    ON sm.center_id = tc.center_id
+                   AND sm.active_flag = TRUE
+                WHERE c.cc_id = %s
+                  AND c.active_flag = TRUE
+                GROUP BY
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+                ORDER BY tc.center_code
+            """, (cluster_id,))
+
+            centres = cur.fetchall()
+
+    finally:
+        cc.close()
+
+    # ---------------------------------------------------------
+    # Today's attendance
+    # ---------------------------------------------------------
+
+    for centre in centres:
+
+        attendance = get_connection()
+
+        try:
+            with attendance.cursor(cursor_factory=RealDictCursor) as cur:
+
+                cur.execute("""
+                    SELECT
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (
+                            WHERE attendance_status = 'Present'
+                        ) AS present,
+                        COUNT(*) FILTER (
+                            WHERE attendance_status = 'Absent'
+                        ) AS absent
+                    FROM public.student_attendance
+                    WHERE center_id = %s
+                      AND attendance_date = CURRENT_DATE
+                """, (centre["center_id"],))
+
+                result = cur.fetchone()
+
+        finally:
+            attendance.close()
+
+        total = result["total"] or 0
+        present = result["present"] or 0
+        absent = result["absent"] or 0
+
+        centre["attendance_total"] = total
+        centre["present"] = present
+        centre["absent"] = absent
+
+        if total > 0:
+            centre["attendance_value"] = round(
+                (present / total) * 100, 1
+            )
+            centre["attendance"] = f'{centre["attendance_value"]}%'
+        else:
+            centre["attendance_value"] = 0
+            centre["attendance"] = "—"
+
+    # Overall cluster summary
+    total_students = sum(c["students"] for c in centres)
+    total_attendance = sum(c["attendance_total"] for c in centres)
+    total_present = sum(c["present"] for c in centres)
+    total_absent = sum(c["absent"] for c in centres)
+
+    if total_attendance > 0:
+        attendance_percentage = round(
+            (total_present / total_attendance) * 100, 1
+        )
+    else:
+        attendance_percentage = 0
+
     cluster = {
-        "name": "Cluster 1",
-        "centres": 5,
-        "students": 168,
-        "attendance": "91%",
-        "assessment": "74%"
+        "name": coordinator["cc_name"],
+        "centres": len(centres),
+        "students": total_students,
+        "attendance": f"{attendance_percentage}%",
+        "present": total_present,
+        "absent": total_absent
     }
 
-    
-    centres = [
-    {
-        "id": 1,
-        "name": "Centre 1",
-        "students": 31,
-        "attendance": "94%",
-        "attendance_value": 94,
-        "assessment": "78%",
-        "assessment_value": 78,
-        "group_a": "80%",
-        "group_b": "76%",
-        "gurukul": 7
-    },
-
-    {
-        "id": 2,
-        "name": "Centre 2",
-        "students": 28,
-        "attendance": "91%",
-        "attendance_value": 91,
-        "assessment": "72%",
-        "assessment_value": 72,
-        "group_a": "74%",
-        "group_b": "70%",
-        "gurukul": 6
-    },
-
-    {
-        "id": 3,
-        "name": "Centre 3",
-        "students": 29,
-        "attendance": "89%",
-        "attendance_value": 89,
-        "assessment": "74%",
-        "assessment_value": 74,
-        "group_a": "77%",
-        "group_b": "71%",
-        "gurukul": 5
-    },
-
-    {
-        "id": 4,
-        "name": "Centre 4",
-        "students": 35,
-        "attendance": "82%",
-        "attendance_value": 82,
-        "assessment": "65%",
-        "assessment_value": 65,
-        "group_a": "69%",
-        "group_b": "61%",
-        "gurukul": 4
-    },
-
-    {
-        "id": 5,
-        "name": "Centre 5",
-        "students": 27,
-        "attendance": "76%",
-        "attendance_value": 76,
-        "assessment": "62%",
-        "assessment_value": 62,
-        "group_a": "66%",
-        "group_b": "58%",
-        "gurukul": 3
-    }
-]
+    attendance_date = datetime.today().date()
 
     return render_template(
     "cluster/cluster_dashboard.html",
     cluster=cluster,
     centres=centres,
+    attendance_date=attendance_date,
     active_page="cluster",
     show_mobile_attendance=(session.get("role") == "cluster_incharge")
 )
