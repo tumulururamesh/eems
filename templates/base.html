@@ -204,49 +204,91 @@
                 {% endif %}
 
 
-            <!-- ===================================== -->
-            <!-- TUTOR SPACE -->
-            <!-- ===================================== -->
+                <!-- ===================================== -->
+                <!-- TUTOR SPACE -->
+                <!-- ===================================== -->
 
-            {% if session.get("role") in [
-                "management",
-                "operational_head",
-                "segment_incharge",
-                "cluster_incharge",
-                "tutor"
-            ] %}
-
-                {% if session.get("role") != "tutor" %}
+                {% if session.get("role") in [
+                    "management",
+                    "operational_head",
+                    "segment_incharge",
+                    "cluster_incharge"
+                ] %}
 
                     <li class="nav-item">
 
                         {% if session.get("role") == "cluster_incharge" %}
 
                             <a class="nav-link"
-                            href="/tutor-space">
+                               href="/tutor-space">
 
                         {% elif session.get("role") == "segment_incharge" %}
 
                             <a class="nav-link"
-                            href="/tutor-space">
+                               href="/tutor-space">
 
                         {% else %}
 
                             <a class="nav-link"
-                            href="/zone-tutor-space">
+                               href="/zone-tutor-space">
 
                         {% endif %}
 
-                                <i class="bi bi-person-workspace"></i>
-                                Tutor Space
+                            <i class="bi bi-person-workspace"></i>
+                            Tutor Space
 
-                            </a>
+                        </a>
 
                     </li>
 
                 {% endif %}
 
-            {% endif %}
+
+                <!-- ===================================== -->
+                <!-- CENTRE-SPECIFIC MENU -->
+                <!-- ===================================== -->
+
+                {% if (
+                    session.get("role") == "tutor"
+                    or (
+                        session.get("role") == "cluster_incharge"
+                        and request.endpoint == "centre_dashboard"
+                    )
+                ) %}
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/students/{{ request.view_args.get('centre_id') if session.get('role') == 'cluster_incharge' else session.get('centre') }}">
+
+                            <i class="bi bi-people-fill"></i>
+                            Students
+
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/attendance/{{ request.view_args.get('centre_id') if session.get('role') == 'cluster_incharge' else session.get('centre') }}">
+
+                            <i class="bi bi-calendar-check-fill"></i>
+                            Attendance
+
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/performance/{{ request.view_args.get('centre_id') if session.get('role') == 'cluster_incharge' else session.get('centre') }}">
+
+                            <i class="bi bi-clipboard-data-fill"></i>
+                            Performance
+
+                        </a>
+                    </li>
+
+                {% endif %}
+
+
                 <!-- ===================================== -->
                 <!-- SCIENCE CENTRES -->
                 <!-- ===================================== -->

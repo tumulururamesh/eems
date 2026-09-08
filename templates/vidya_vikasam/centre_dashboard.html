@@ -11,50 +11,46 @@ Centre Dashboard
 
 <div class="container-fluid">
 
-<!-- ========================================= -->
-<!-- Page Heading -->
-<!-- ========================================= -->
-<div class="row mb-4">
+    <!-- ========================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================= -->
 
-    <!-- Centre Title -->
-    <div class="col-md-9">
+    <div class="row mb-4">
 
-        <h1 class="display-6 fw-bold text-primary mb-2">
-            Centre 2
-        </h1>
+        <div class="col-md-9">
 
-        <p class="text-muted mb-1">
-            Akshaya Vidya Learning Centre • Performance Dashboard
-        </p>
+            <h1 class="display-6 fw-bold text-primary mb-2">
+                {{ centre.center_name }}
+            </h1>
 
-        <p class="text-muted mb-0">
-            Reporting Month:
-            <strong>July 2026</strong>
-            &nbsp;•&nbsp;
-            Academic Year:
-            <strong>2026–27</strong>
-        </p>
+            <p class="text-muted mb-1">
+                Akshaya Vidya Learning Centre
+            </p>
 
-    </div>
+            <p class="text-muted mb-0">
+                Academic Year:
+                <strong>{{ centre.academic_year }}</strong>
+            </p>
 
+        </div>
 
-    <!-- Back Button -->
-    <div class="col-md-3 text-end">
+        <div class="col-md-3 text-end">
 
-        <a href="javascript:history.back()"
-           class="btn btn-outline-secondary">
+            <a href="javascript:history.back()"
+               class="btn btn-outline-secondary">
 
-            <i class="bi bi-arrow-left me-1"></i>
-            Back
+                <i class="bi bi-arrow-left me-1"></i>
+                Back
 
-        </a>
+            </a>
+
+        </div>
 
     </div>
 
-</div>
 
     <!-- ========================================= -->
-    <!-- Centre Identity -->
+    <!-- CENTRE PROFILE -->
     <!-- ========================================= -->
 
     <div class="dashboard-card mb-4">
@@ -62,7 +58,6 @@ Centre Dashboard
         <div class="dashboard-header">
 
             <i class="bi bi-house-door-fill me-2"></i>
-
             Learning Centre Profile
 
         </div>
@@ -71,12 +66,10 @@ Centre Dashboard
 
             <div class="row">
 
-                <!-- Centre Image -->
-
                 <div class="col-md-3 text-center">
 
                     <h5 class="fw-bold mb-1">
-                        AVLC-002
+                        {{ centre.center_code }}
                     </h5>
 
                     <p class="text-muted mb-3">
@@ -85,52 +78,75 @@ Centre Dashboard
 
                     <img
                         src="{{ url_for('static', filename='images/school.jpg') }}"
-                        alt="Centre 2"
+                        alt="Learning Centre"
                         class="centre-photo">
 
                 </div>
 
 
-                <!-- Centre Details -->
-
                 <div class="col-md-9">
 
-                    <table class="table table-borderless">
+                    <table class="table table-borderless mb-0">
 
-                        <tr>
-                            <th width="30%">Centre Name</th>
-                            <td>Centre 2 </td> 
-                        </tr>
+                        <tbody>
 
-                        <tr>
-                            <th>Ward</th>
-                            <td>GHMC</td>
-                        </tr>
+                            <tr>
+                                <th style="width: 180px;">
+                                    Centre Name
+                                </th>
 
-                        <tr>
-                            <th>Mandal</th>
-                            <td>Hyderabad</td>
-                        </tr>
+                                <td>
+                                    {{ centre.center_name }}
+                                </td>
+                            </tr>
 
-                        <tr>
-                            <th>District</th>
-                            <td>Hyderabad</td>
-                        </tr>
+                            <tr>
+                                <th>
+                                    Ward
+                                </th>
 
-                        <tr>
-                            <th>Tutor</th>
-                            <td>Smt. Lakshmi</td>
-                        </tr>
+                                <td class="text-muted">
+                                    —
+                                </td>
+                            </tr>
 
-                        <tr>
-                            <th>Classes</th>
-                            <td>I to VI</td>
-                        </tr>
+                            <tr>
+                                <th>
+                                    District
+                                </th>
 
-                        <tr>
-                            <th>Academic Year</th>
-                            <td>2026–27</td>
-                        </tr>
+                                <td>
+                                    Hyderabad
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>
+                                    Tutor
+                                </th>
+
+                                <td>
+                                    {% if centre.tutor_name %}
+                                        {{ centre.tutor_name }}
+                                    {% else %}
+                                        <span class="text-muted">
+                                            Not assigned
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>
+                                    Academic Year
+                                </th>
+
+                                <td>
+                                    {{ centre.academic_year }}
+                                </td>
+                            </tr>
+
+                        </tbody>
 
                     </table>
 
@@ -144,14 +160,14 @@ Centre Dashboard
 
 
     <!-- ========================================= -->
-    <!-- Centre Performance Snapshot -->
+    <!-- STUDENT & ATTENDANCE SNAPSHOT -->
     <!-- ========================================= -->
 
-    <div class="row mt-4 mb-4">
+    <div class="row g-4 mb-4">
 
-        <!-- Students -->
+        <!-- STUDENTS -->
 
-        <div class="col-md-3">
+        <div class="col-md-4">
 
             <div class="dashboard-card text-center h-100">
 
@@ -160,7 +176,7 @@ Centre Dashboard
                     <i class="bi bi-people-fill display-5 text-primary"></i>
 
                     <h2 class="mt-3">
-                        28
+                        {{ centre.total_students }}
                     </h2>
 
                     <h6 class="text-muted">
@@ -174,90 +190,48 @@ Centre Dashboard
         </div>
 
 
-        <!-- Attendance -->
+        <!-- BOYS -->
 
-        <div class="col-md-3">
-
-            <div class="dashboard-card text-center h-100">
-
-                <div class="card-body py-4">
-
-                    <div class="fs-2">
-                        🟢
-                    </div>
-
-                    <h2 class="mt-2">
-                        91%
-                    </h2>
-
-                    <h6 class="text-muted">
-                        Attendance
-                    </h6>
-
-                    <small class="text-success fw-semibold">
-                        GREEN
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- Assessment -->
-
-        <div class="col-md-3">
+        <div class="col-md-4">
 
             <div class="dashboard-card text-center h-100">
 
                 <div class="card-body py-4">
 
-                    <div class="fs-2">
-                        🟠
-                    </div>
-
-                    <h2 class="mt-2">
-                        72%
-                    </h2>
-
-                    <h6 class="text-muted">
-                        Avg. Assessment
-                    </h6>
-
-                    <small class="text-warning fw-semibold">
-                        AMBER
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- Performance Change -->
-
-        <div class="col-md-3">
-
-            <div class="dashboard-card text-center h-100">
-
-                <div class="card-body py-4">
-
-                    <i class="bi bi-graph-up-arrow
-                              display-5 text-success"></i>
+                    <i class="bi bi-person-fill display-5 text-primary"></i>
 
                     <h2 class="mt-3">
-                        +4 pts
+                        {{ centre.boys }}
                     </h2>
 
                     <h6 class="text-muted">
-                        vs Previous Month
+                        Boys
                     </h6>
 
-                    <small class="text-success fw-semibold">
-                        IMPROVING
-                    </small>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- GIRLS -->
+
+        <div class="col-md-4">
+
+            <div class="dashboard-card text-center h-100">
+
+                <div class="card-body py-4">
+
+                    <i class="bi bi-person-fill display-5 text-success"></i>
+
+                    <h2 class="mt-3">
+                        {{ centre.girls }}
+                    </h2>
+
+                    <h6 class="text-muted">
+                        Girls
+                    </h6>
 
                 </div>
 
@@ -269,564 +243,134 @@ Centre Dashboard
 
 
     <!-- ========================================= -->
-    <!-- Student Strength -->
+    <!-- LATEST ATTENDANCE -->
     <!-- ========================================= -->
 
     <div class="dashboard-card mb-4">
 
         <div class="dashboard-header">
 
-            <i class="bi bi-people-fill me-2"></i>
-
-            Student Strength
+            <i class="bi bi-calendar-check-fill me-2"></i>
+            Latest Attendance
 
         </div>
 
         <div class="card-body">
 
-            <div class="table-responsive">
+            {% if latest_attendance_date %}
 
-                <table class="table table-hover align-middle">
+                <div class="mb-4">
 
-                    <thead class="table-light">
+                    <span class="text-muted">
+                        Attendance Date:
+                    </span>
 
-                        <tr>
+                    <strong>
+                        {{ latest_attendance_date.strftime('%d %B %Y') }}
+                    </strong>
 
-                            <th>Class</th>
-
-                            <th class="text-center">
-                                Students
-                            </th>
-
-                            <th class="text-center">
-                                Boys
-                            </th>
-
-                            <th class="text-center">
-                                Girls
-                            </th>
-
-                            <th class="text-center">
-                                ST
-                            </th>
-
-                            <th class="text-center">
-                                SC
-                            </th>
-
-                            <th class="text-center">
-                                BC
-                            </th>
-
-                            <th class="text-center">
-                                OC
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        <tr>
-                            <td>I</td>
-                            <td class="text-center">6</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">0</td>
-                        </tr>
-
-                        <tr>
-                            <td>II</td>
-                            <td class="text-center">5</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">0</td>
-                        </tr>
-
-                        <tr>
-                            <td>III</td>
-                            <td class="text-center">6</td>
-                            <td class="text-center">4</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">1</td>
-                        </tr>
-
-                        <tr>
-                            <td>IV</td>
-                            <td class="text-center">5</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">0</td>
-                        </tr>
-
-                        <tr>
-                            <td>V</td>
-                            <td class="text-center">6</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">0</td>
-                        </tr>
-
-                        <tr>
-                            <td>VI</td>
-                            <td class="text-center">5</td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">1</td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">0</td>
-                        </tr>
-
-                    </tbody>
-
-                    <tfoot class="table-light fw-bold">
-
-                        <tr>
-
-                            <td>Total</td>
-
-                            <td class="text-center">
-                                28
-                            </td>
-
-                            <td class="text-center">
-                                15
-                            </td>
-
-                            <td class="text-center">
-                                13
-                            </td>
-
-                            <td class="text-center">
-                                14
-                            </td>
-
-                            <td class="text-center">
-                                6
-                            </td>
-
-                            <td class="text-center">
-                                7
-                            </td>
-
-                            <td class="text-center">
-                                1
-                            </td>
-
-                        </tr>
-
-                    </tfoot>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    </div>
+                </div>
 
 
-<!-- ========================================= -->
-<!-- Assessment Groups -->
-<!-- ========================================= -->
+                <div class="row g-4 text-center">
 
-<div class="dashboard-card mb-4">
+                    <!-- TOTAL -->
 
-    <div class="dashboard-header">
+                    <div class="col-md-3">
 
-        <i class="bi bi-collection-fill me-2"></i>
+                        <div class="border rounded p-3 h-100">
 
-        Assessment Groups
+                            <div class="text-muted small">
+                                Total
+                            </div>
 
-    </div>
-
-    <div class="card-body">
-
-        <p class="text-muted">
-            Students are assessed using two common learning groups
-            to enable meaningful comparison across centres.
-        </p>
-
-        <div class="row g-4">
-
-            <!-- Group A -->
-
-            <div class="col-md-6">
-
-                <div class="border rounded p-4 h-100">
-
-                    <div class="d-flex justify-content-between
-                                align-items-center">
-
-                        <div>
-
-                            <h4 class="fw-bold text-primary mb-1">
-                                Group A
-                            </h4>
-
-                            <p class="text-muted mb-0">
-                                Classes I – III
-                            </p>
-
-                        </div>
-
-                        <div class="text-end">
-
-                            <h2 class="fw-bold mb-0">
-                                15
-                            </h2>
-
-                            <small class="text-muted">
-                                Students
-                            </small>
+                            <div class="fs-3 fw-bold">
+                                {{ latest_attendance.total }}
+                            </div>
 
                         </div>
 
                     </div>
 
-                    <hr>
 
-                    <p class="mb-0">
+                    <!-- PRESENT -->
 
-                        <i class="bi bi-book me-2 text-primary"></i>
+                    <div class="col-md-3">
 
-                        Assessed using Group A learning books
+                        <div class="border rounded p-3 h-100">
 
-                    </p>
+                            <div class="text-muted small">
+                                Present
+                            </div>
 
-                </div>
-
-            </div>
-
-
-            <!-- Group B -->
-
-            <div class="col-md-6">
-
-                <div class="border rounded p-4 h-100">
-
-                    <div class="d-flex justify-content-between
-                                align-items-center">
-
-                        <div>
-
-                            <h4 class="fw-bold text-success mb-1">
-                                Group B
-                            </h4>
-
-                            <p class="text-muted mb-0">
-                                Classes IV – VI
-                            </p>
-
-                        </div>
-
-                        <div class="text-end">
-
-                            <h2 class="fw-bold mb-0">
-                                13
-                            </h2>
-
-                            <small class="text-muted">
-                                Students
-                            </small>
+                            <div class="fs-3 fw-bold text-success">
+                                {{ latest_attendance.present }}
+                            </div>
 
                         </div>
 
                     </div>
 
-                    <hr>
 
-                    <p class="mb-0">
+                    <!-- ABSENT -->
 
-                        <i class="bi bi-book me-2 text-success"></i>
+                    <div class="col-md-3">
 
-                        Assessed using Group B learning books
+                        <div class="border rounded p-3 h-100">
 
-                    </p>
+                            <div class="text-muted small">
+                                Absent
+                            </div>
 
-                </div>
+                            <div class="fs-3 fw-bold text-danger">
+                                {{ latest_attendance.absent }}
+                            </div>
 
-            </div>
+                        </div>
 
-        </div>
-
-    </div>
-
-</div>
-
+                    </div>
 
 
-    <!-- ========================================= -->
-    <!-- Performance vs Peers -->
-    <!-- ========================================= -->
+                    <!-- PERCENTAGE -->
 
-    <div class="dashboard-card mb-4">
+                    <div class="col-md-3">
 
-        <div class="dashboard-header">
+                        <div class="border rounded p-3 h-100">
 
-            <i class="bi bi-bar-chart-line-fill me-2"></i>
-
-            Centre Performance vs Peers
-
-        </div>
-
-        <div class="card-body">
-
-            <p class="text-muted">
-                Attendance and assessment performance compared independently
-                with peer centres within the Cluster, Segment and Zone.
-            </p>
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle">
-
-                    <thead class="table-light">
-
-                        <tr>
-
-                            <th>Indicator</th>
-
-                            <th class="text-center">
-                                This Centre
-                            </th>
-
-                            <th class="text-center">
-                                Cluster Avg.
-                            </th>
-
-                            <th class="text-center">
-                                Segment Avg.
-                            </th>
-
-                            <th class="text-center">
-                                Zone Avg.
-                            </th>
-
-                            <th class="text-center">
-                                RAG
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        <tr>
-
-                            <td class="fw-semibold">
+                            <div class="text-muted small">
                                 Attendance
-                            </td>
+                            </div>
 
-                            <td class="text-center fw-bold">
-                                91%
-                            </td>
+                            <div class="fs-3 fw-bold">
+                                {{ latest_attendance.percentage }}%
+                            </div>
 
-                            <td class="text-center">
-                                89%
-                            </td>
+                        </div>
 
-                            <td class="text-center">
-                                87%
-                            </td>
-
-                            <td class="text-center">
-                                86%
-                            </td>
-
-                            <td class="text-center fs-4">
-                                🟢
-                            </td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td class="fw-semibold">
-                                Average Assessment Marks
-                            </td>
-
-                            <td class="text-center fw-bold">
-                                72%
-                            </td>
-
-                            <td class="text-center">
-                                70%
-                            </td>
-
-                            <td class="text-center">
-                                68%
-                            </td>
-
-                            <td class="text-center">
-                                67%
-                            </td>
-
-                            <td class="text-center fs-4">
-                                🟠
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-            <!-- Ranking -->
-
-            <!-- ========================================= -->
-<!-- Separate Performance Rankings -->
-<!-- ========================================= -->
-
-<div class="row mt-4 g-4">
-
-    <!-- Attendance Ranking -->
-
-    <div class="col-md-6">
-
-        <div class="border rounded p-4 h-100">
-
-            <h5 class="fw-bold mb-3">
-
-                <i class="bi bi-calendar-check-fill text-success me-2"></i>
-
-                Attendance Ranking
-
-            </h5>
-
-            <div class="row text-center">
-
-                <div class="col-md-4">
-
-                    <h4 class="fw-bold text-primary">
-                        2 / 5
-                    </h4>
-
-                    <small class="text-muted">
-                        Cluster
-                    </small>
+                    </div>
 
                 </div>
 
-                <div class="col-md-4">
+            {% else %}
 
-                    <h4 class="fw-bold text-success">
-                        7 / 20
-                    </h4>
+                <div class="text-center text-muted py-4">
 
-                    <small class="text-muted">
-                        Segment
-                    </small>
+                    <i class="bi bi-calendar-x display-6"></i>
 
-                </div>
-
-                <div class="col-md-4">
-
-                    <h4 class="fw-bold text-warning">
-                        34 / 100
-                    </h4>
-
-                    <small class="text-muted">
-                        Zone
-                    </small>
+                    <p class="mt-3 mb-0">
+                        No attendance data captured yet.
+                    </p>
 
                 </div>
 
-            </div>
+            {% endif %}
 
         </div>
 
     </div>
-
-
-    <!-- Assessment Ranking -->
-
-    <div class="col-md-6">
-
-        <div class="border rounded p-4 h-100">
-
-            <h5 class="fw-bold mb-3">
-
-                <i class="bi bi-journal-check text-warning me-2"></i>
-
-                Assessment Ranking
-
-            </h5>
-
-            <div class="row text-center">
-
-                <div class="col-md-4">
-
-                    <h4 class="fw-bold text-primary">
-                        3 / 5
-                    </h4>
-
-                    <small class="text-muted">
-                        Cluster
-                    </small>
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <h4 class="fw-bold text-success">
-                        8 / 20
-                    </h4>
-
-                    <small class="text-muted">
-                        Segment
-                    </small>
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <h4 class="fw-bold text-warning">
-                        31 / 100
-                    </h4>
-
-                    <small class="text-muted">
-                        Zone
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-        </div>
-
-    </div>
-
 
     <!-- ========================================= -->
-    <!-- Monthly Performance -->
+    <!-- ATTENDANCE TREND -->
     <!-- ========================================= -->
 
     <div class="dashboard-card mb-4">
@@ -834,397 +378,318 @@ Centre Dashboard
         <div class="dashboard-header">
 
             <i class="bi bi-graph-up me-2"></i>
-
-            Monthly Performance Trend
+            Attendance Trend
 
         </div>
 
         <div class="card-body">
 
-            <p class="text-muted">
-                Attendance and average assessment performance
-                over the recent months.
-            </p>
+            {% if attendance_trend %}
 
-            <div class="table-responsive">
+                <p class="text-muted">
+                    Attendance recorded over the latest available days.
+                </p>
 
-                <table class="table table-hover align-middle">
+                <div style="height: 280px;">
 
-                    <thead class="table-light">
+                    <canvas id="centreAttendanceTrendChart"></canvas>
 
-                        <tr>
+                </div>
 
-                            <th>Month</th>
+            {% else %}
 
-                            <th class="text-center">
-                                Attendance
-                            </th>
+                <div class="text-center text-muted py-4">
 
-                            <th class="text-center">
-                                Avg. Marks
-                            </th>
+                    <i class="bi bi-bar-chart display-6"></i>
 
-                            <th class="text-center">
-                                Movement
-                            </th>
+                    <p class="mt-3 mb-0">
+                        Attendance trend will appear after attendance is captured.
+                    </p>
 
-                        </tr>
+                </div>
 
-                    </thead>
-
-                    <tbody>
-
-                        <tr>
-
-                            <td>April</td>
-
-                            <td class="text-center">
-                                86%
-                            </td>
-
-                            <td class="text-center">
-                                64%
-                            </td>
-
-                            <td class="text-center">
-                                —
-                            </td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>May</td>
-
-                            <td class="text-center">
-                                88%
-                            </td>
-
-                            <td class="text-center">
-                                67%
-                            </td>
-
-                            <td class="text-center text-success">
-                                ↑
-                            </td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>June</td>
-
-                            <td class="text-center">
-                                89%
-                            </td>
-
-                            <td class="text-center">
-                                70%
-                            </td>
-
-                            <td class="text-center text-success">
-                                ↑
-                            </td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>July</td>
-
-                            <td class="text-center fw-bold">
-                                91%
-                            </td>
-
-                            <td class="text-center fw-bold">
-                                72%
-                            </td>
-
-                            <td class="text-center text-success fw-bold">
-                                ↑
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
+            {% endif %}
 
         </div>
 
     </div>
-
-<div class="row mb-3">
-
-    <div class="col-md-6">
-
-        <div class="border rounded p-3">
-
-            <span class="fw-semibold">
-                Group A Average
-            </span>
-
-            <span class="float-end fw-bold text-primary">
-                73%
-            </span>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-6">
-
-        <div class="border rounded p-3">
-
-            <span class="fw-semibold">
-                Group B Average
-            </span>
-
-            <span class="float-end fw-bold text-success">
-                71%
-            </span>
-
-        </div>
-
-    </div>
-
-</div>
 
 
     <!-- ========================================= -->
-    <!-- Academic Performance -->
+    <!-- ABSENTEES -->
     <!-- ========================================= -->
 
     <div class="dashboard-card mb-4">
 
         <div class="dashboard-header">
 
-            <i class="bi bi-journal-check me-2"></i>
-
-            Academic Performance
-
-        </div>
-
-        <div class="card-body">
-
-            <table class="table table-hover align-middle">
-
-                <thead class="table-light">
-
-                    <tr>
-
-                        <th>Class</th>
-                        <th class="text-center">Group</th>
-                        <th class="text-center">Reading</th>
-
-                        <th class="text-center">
-                            Writing
-                        </th>
-
-                        <th class="text-center">
-                            Mathematics
-                        </th>
-
-                        <th class="text-center">
-                            Overall
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    <tr>
-                        <td>I</td>
-                        <td class="text-center fw-semibold">A</td>
-                        <td class="text-center">74%</td>
-                        <td class="text-center">72%</td>
-                        <td class="text-center">76%</td>
-                        <td class="text-center fw-bold">74%</td>
-                    </tr>
-
-                    <tr>
-                        <td>II</td>
-                        <td class="text-center fw-semibold">A</td>
-                        <td class="text-center">70%</td>
-                        <td class="text-center">68%</td>
-                        <td class="text-center">71%</td>
-                        <td class="text-center fw-bold">70%</td>
-                    </tr>
-
-                    <tr>
-                        <td>III</td>
-                        <td class="text-center fw-semibold">A</td>
-                        <td class="text-center">76%</td>
-                        <td class="text-center">75%</td>
-                        <td class="text-center">77%</td>
-                        <td class="text-center fw-bold">76%</td>
-                    </tr>
-
-                    <tr>
-                        <td>IV</td>
-                        <td class="text-center fw-semibold">B</td>
-                        <td class="text-center">73%</td>
-                        <td class="text-center">71%</td>
-                        <td class="text-center">74%</td>
-                        <td class="text-center fw-bold">73%</td>
-                    </tr>
-
-                    <tr>
-                        <td>V</td>
-                        <td class="text-center fw-semibold">B</td>
-                        <td class="text-center">69%</td>
-                        <td class="text-center">68%</td>
-                        <td class="text-center">70%</td>
-                        <td class="text-center fw-bold">69%</td>
-                    </tr>
-
-                    <tr>
-                        <td>VI</td>
-                        <td class="text-center fw-semibold">B</td>
-                        <td class="text-center">71%</td>
-                        <td class="text-center">69%</td>
-                        <td class="text-center">72%</td>
-                        <td class="text-center fw-bold">71%</td>
-                    </tr>
-
-                </tbody>
-
-                <tfoot class="table-light fw-bold">
-
-                    <tr>
-
-                        <td>Overall</td>
-
-                        <td class="text-center">
-                            72%
-                        </td>
-
-                        <td class="text-center">
-                            71%
-                        </td>
-
-                        <td class="text-center">
-                            74%
-                        </td>
-
-                        <td class="text-center text-success">
-                            72%
-                        </td>
-
-                    </tr>
-
-                </tfoot>
-
-            </table>
-
-        </div>
-
-    </div>
-
-
-    <!-- ========================================= -->
-    <!-- Student Outcomes -->
-    <!-- ========================================= -->
-
-    <div class="dashboard-card mb-5">
-
-        <div class="dashboard-header">
-
-            <i class="bi bi-trophy-fill me-2"></i>
-
-            Student Outcomes
+            <i class="bi bi-person-x-fill me-2"></i>
+            Absentees
 
         </div>
 
         <div class="card-body">
 
-            <table class="table table-bordered align-middle">
+            {% if latest_attendance_date %}
 
-                <thead class="table-light">
+                <p class="text-muted mb-3">
 
-                    <tr>
+                    Students marked absent on
 
-                        <th>
-                            Outcome Indicator
-                        </th>
+                    <strong>
+                        {{ latest_attendance_date.strftime('%d %B %Y') }}
+                    </strong>
 
-                        <th class="text-center">
-                            Count
-                        </th>
+                </p>
 
-                    </tr>
 
-                </thead>
+                {% if absentees %}
 
-                <tbody>
+                    <div class="table-responsive">
 
-                    <tr>
-                        <td>Class V Students</td>
-                        <td class="text-center">6</td>
-                    </tr>
+                        <table class="table table-hover align-middle">
 
-                    <tr>
-                        <td>Eligible for Entrance Tests</td>
-                        <td class="text-center">6</td>
-                    </tr>
+                            <thead class="table-light">
 
-                    <tr>
-                        <td>Appeared</td>
-                        <td class="text-center">6</td>
-                    </tr>
+                                <tr>
 
-                    <tr>
-                        <td>Qualified</td>
-                        <td class="text-center">2</td>
-                    </tr>
+                                    <th>
+                                        #
+                                    </th>
 
-                    <tr>
-                        <td>Joined Residential Schools</td>
-                        <td class="text-center">2</td>
-                    </tr>
+                                    <th>
+                                        Student
+                                    </th>
 
-                    <tr class="table-success fw-bold">
+                                    <th>
+                                        Code
+                                    </th>
 
-                        <td>
-                            Success Rate
-                        </td>
+                                    <th>
+                                        Gender
+                                    </th>
 
-                        <td class="text-center">
-                            33.3%
-                        </td>
+                                    <th>
+                                        Remarks
+                                    </th>
 
-                    </tr>
+                                </tr>
 
-                </tbody>
+                            </thead>
 
-            </table>
+                            <tbody>
 
-            <small class="text-muted">
+                                {% for student in absentees %}
 
-                Residential Schools include Gurukul and other
-                Government Residential Schools.
+                                    <tr>
 
-            </small>
+                                        <td>
+                                            {{ loop.index }}
+                                        </td>
+
+                                        <td class="fw-semibold">
+                                            {{ student.student_name }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.student_code or '—' }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.gender }}
+                                        </td>
+
+                                        <td>
+                                            {{ student.remarks or '—' }}
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="text-center text-success py-4">
+
+                        <i class="bi bi-check-circle display-6"></i>
+
+                        <p class="mt-3 mb-0 fw-semibold">
+                            No absentees recorded for this date.
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            {% else %}
+
+                <div class="text-center text-muted py-4">
+
+                    No attendance has been captured yet.
+
+                </div>
+
+            {% endif %}
 
         </div>
 
     </div>
 
 
-    <!-- ========================================= -->
-    <!-- Prototype Note -->
-    <!-- ========================================= -->
-
-    <div class="text-center text-muted small mb-4">
-
-        Illustrative performance data for demonstration.
-
-    </div>
 
 </div>
+
+
+<!-- ========================================= -->
+<!-- ATTENDANCE TREND CHART -->
+<!-- ========================================= -->
+
+{% if attendance_trend %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const centreAttendanceTrend = [
+
+    {% for day in attendance_trend %}
+
+    {
+        date: "{{ day.attendance_date.strftime('%d %b') }}",
+        percentage: {{ day.attendance_percentage }}
+    }
+
+    {% if not loop.last %},{% endif %}
+
+    {% endfor %}
+
+];
+
+
+const labels = centreAttendanceTrend.map(
+    item => item.date
+);
+
+const values = centreAttendanceTrend.map(
+    item => item.percentage
+);
+
+
+const ctx = document
+    .getElementById('centreAttendanceTrendChart')
+    .getContext('2d');
+
+
+new Chart(ctx, {
+
+    type: 'line',
+
+    data: {
+
+        labels: labels,
+
+        datasets: [{
+
+            label: 'Attendance %',
+
+            data: values,
+
+            tension: 0.3,
+
+            fill: false,
+
+            pointRadius: 5,
+
+            pointHoverRadius: 7
+
+        }]
+
+    },
+
+    options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        scales: {
+
+            y: {
+
+                min: 0,
+
+                max: 100,
+
+                ticks: {
+
+                    callback: function(value) {
+
+                        return value + '%';
+
+                    }
+
+                },
+
+                title: {
+
+                    display: true,
+
+                    text: 'Attendance %'
+
+                }
+
+            },
+
+            x: {
+
+                title: {
+
+                    display: true,
+
+                    text: 'Date'
+
+                }
+
+            }
+
+        },
+
+        plugins: {
+
+            legend: {
+
+                display: false
+
+            },
+
+            tooltip: {
+
+                callbacks: {
+
+                    label: function(context) {
+
+                        return context.parsed.y + '%';
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+});
+
+</script>
+
+{% endif %}
 
 {% endblock %}

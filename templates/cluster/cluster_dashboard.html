@@ -694,7 +694,6 @@ Cluster Coordinator Dashboard
 
 </div>
 
-
 <!-- =========================================================
      ATTENDANCE TREND CHART
      ========================================================= -->
@@ -724,6 +723,55 @@ Cluster Coordinator Dashboard
         .getElementById('attendanceTrendChart')
         .getContext('2d');
 
+
+    /* =========================================================
+       DISPLAY VALUE ABOVE EACH DATA POINT
+       ========================================================= */
+
+    const attendanceLabelsPlugin = {
+
+        id: 'attendanceLabels',
+
+        afterDatasetsDraw(chart) {
+
+            const { ctx } = chart;
+
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+
+                const meta = chart.getDatasetMeta(datasetIndex);
+
+                meta.data.forEach((point, index) => {
+
+                    const value = dataset.data[index];
+
+                    ctx.save();
+
+                    ctx.font = '600 12px Arial';
+                    ctx.fillStyle = '#333';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+
+                    ctx.fillText(
+                        Number(value).toFixed(1) + '%',
+                        point.x,
+                        point.y - 10
+                    );
+
+                    ctx.restore();
+
+                });
+
+            });
+
+        }
+
+    };
+
+
+    /* =========================================================
+       ATTENDANCE TREND CHART
+       ========================================================= */
+
     new Chart(ctx, {
 
         type: 'line',
@@ -749,6 +797,10 @@ Cluster Coordinator Dashboard
             }]
 
         },
+
+        plugins: [
+            attendanceLabelsPlugin
+        ],
 
         options: {
 

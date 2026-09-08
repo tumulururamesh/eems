@@ -1027,28 +1027,366 @@ def search_students():
         students=students
 )
 
+# =========================================
+# CENTRE / TUTOR DASHBOARD
+# =========================================
 
 @app.route("/centre/<int:centre_id>")
+@login_required
 def centre_dashboard(centre_id):
 
-    centre = {
-        "name": "Rampur Tuition Centre",
-        "code": "VV-012",
-        "village": "Rampur",
-        "mandal": "Adilabad Rural",
-        "district": "Adilabad",
-        "tutor": "Smt. Lakshmi",
-        "academic_year": "2026-27",
-        "classes": "I to V"
-    }
+    role = session.get("role")
+
+    # -----------------------------------------
+    # CC access control
+    # -----------------------------------------
+    if role == "cluster_incharge":
+
+        cc_id = session.get("cc_id")
+
+        if not cc_id:
+            return redirect("/dashboard")
+
+    db = get_connection()
+
+    try:
+        with db.cursor(cursor_factory=RealDictCursor) as cur:
+
+            # -----------------------------------------
+            # 1. CENTRE DETAILS
+            # -----------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name,
+                    tc.tutor_id
+                FROM public.tuition_center tc
+                WHERE tc.center_id = %s
+                  AND tc.status = 'ACTIVE'
+            """, (centre_id,))
+
+            centre = cur.fetchone()
+
+            if not centre:
+                return redirect("/dashboard")
+
+
+            # -----------------------------------------
+            # 2. VERIFY CC ACCESS TO THIS CENTRE
+            # -----------------------------------------
+            if role == "cluster_incharge":
+
+                cur.execute("""
+                    SELECT 1
+                    FROM public.cluster_center
+                    WHERE cc_id = %s
+                      AND center_id = %s
+                      AND academic_year_id = 2
+                      AND active_flag = TRUE
+                """, (
+                    session.get("cc_id"),
+                    centre_id
+                ))
+
+                if not cur.fetchone():
+                    return redirect(
+                        f"/cluster-dashboard/{session.get('cc_id')}"
+                    )
+
+
+            # -----------------------------------------
+            # 3. TUTOR
+            # -----------------------------------------
+            tutor = None
+
+            if centre["tutor_id"]:
+
+                cur.execute("""
+                    SELECT
+                        tutor_id,
+                        tutor_name
+                    FROM public.tutor_master
+                    WHERE tutor_id = %s
+                      AND active_flag = TRUE
+                """, (centre["tutor_id"],))
+
+                tutor = cur.fetchone()
+
+
+            # -----------------------------------------
+            # 4. STUDENT STRENGTH
+            # -----------------------------------------
+            cur.execute("""
+                SELECT
+                    COUNT(*) AS total_students,
+
+                    COUNT(*) FILTER (
+                        WHERE gender = 'Boy'
+                    ) AS boys,
+
+                    COUNT(*) FILTER (
+                        WHERE gender = 'Girl'
+                    ) AS girls,
+
+                    COUNT(*) FILTER (
+                        WHERE caste_category IS NOT NULL
+                          AND TRIM(caste_category) <> ''
+                    ) AS caste_available
+
+                FROM public.student_master
+                WHERE center_id = %s
+                  AND active_flag = TRUE
+            """, (centre_id,))
+
+            strength = cur.fetchone()
+
+
+            # -----------------------------------------
+            # 5. STUDENT LIST
+            # -----------------------------------------
+            cur.execute("""
+                SELECT
+                    student_id,
+                    student_code,
+                    student_name,
+                    gender
+                FROM public.student_master
+                WHERE center_id = %s
+                  AND active_flag = TRUE
+                ORDER BY student_name
+            """, (centre_id,))
+
+            students = cur.fetchall()
+
+
+            # -----------------------------------------
+            # 6. LATEST ATTENDANCE DATE
+            # -----------------------------------------
+            cur.execute("""
+                SELECT
+                    MAX(attendance_date) AS latest_date
+                FROM public.student_attendance
+                WHERE center_id = %s
+            """, (centre_id,))
+
+            latest = cur.fetchone()
+
+            latest_attendance_date = latest["latest_date"]
+
+
+            # -----------------------------------------
+            # 7. LATEST ATTENDANCE SUMMARY
+            # -----------------------------------------
+            latest_attendance = {
+                "total": 0,
+                "present": 0,
+                "absent": 0,
+                "percentage": 0
+            }
+
+            if latest_attendance_date:
+
+                cur.execute("""
+                    SELECT
+                        COUNT(*) AS total,
+
+                        COUNT(*) FILTER (
+                            WHERE attendance_status = 'Present'
+                        ) AS present,
+
+                        COUNT(*) FILTER (
+                            WHERE attendance_status = 'Absent'
+                        ) AS absent
+
+                    FROM public.student_attendance
+                    WHERE center_id = %s
+                      AND attendance_date = %s
+                """, (
+                    centre_id,
+                    latest_attendance_date
+                ))
+
+                result = cur.fetchone()
+
+                total = result["total"] or 0
+                present = result["present"] or 0
+                absent = result["absent"] or 0
+
+                latest_attendance["total"] = total
+                latest_attendance["present"] = present
+                latest_attendance["absent"] = absent
+
+                if total > 0:
+                    latest_attendance["percentage"] = round(
+                        (present / total) * 100,
+                        1
+                    )
+
+
+            # -----------------------------------------
+            # 8. ABSENTEES ON LATEST DATE
+            # -----------------------------------------
+            absentees = []
+
+            if latest_attendance_date:
+
+                cur.execute("""
+                    SELECT
+                        sm.student_id,
+                        sm.student_code,
+                        sm.student_name,
+                        sm.gender,
+                        sa.attendance_date,
+                        sa.remarks
+                    FROM public.student_attendance sa
+
+                    JOIN public.student_master sm
+                        ON sm.student_id = sa.student_id
+
+                    WHERE sa.center_id = %s
+                      AND sa.attendance_date = %s
+                      AND sa.attendance_status = 'Absent'
+
+                    ORDER BY sm.student_name
+                """, (
+                    centre_id,
+                    latest_attendance_date
+                ))
+
+                absentees = cur.fetchall()
+            # -----------------------------------------
+            # 9. FIVE-DAY ATTENDANCE TREND
+            # -----------------------------------------
+            attendance_trend = []
+
+            weekly_attendance = {
+                "total": 0,
+                "present": 0,
+                "absent": 0,
+                "percentage": 0
+            }
+
+            if latest_attendance_date:
+
+                cur.execute("""
+                    SELECT
+                        sa.attendance_date,
+
+                        COUNT(*) AS total,
+
+                        COUNT(*) FILTER (
+                            WHERE sa.attendance_status = 'Present'
+                        ) AS present,
+
+                        COUNT(*) FILTER (
+                            WHERE sa.attendance_status = 'Absent'
+                        ) AS absent
+
+                    FROM public.student_attendance sa
+
+                    WHERE sa.center_id = %s
+                      AND sa.attendance_date >=
+                          %s - INTERVAL '4 days'
+                      AND sa.attendance_date <= %s
+
+                    GROUP BY sa.attendance_date
+                    ORDER BY sa.attendance_date
+                """, (
+                    centre_id,
+                    latest_attendance_date,
+                    latest_attendance_date
+                ))
+
+                attendance_trend = cur.fetchall()
+
+                # -----------------------------------------
+                # FIVE-DAY TOTAL
+                # -----------------------------------------
+
+                for day in attendance_trend:
+
+                    total = day["total"] or 0
+                    present = day["present"] or 0
+                    absent = day["absent"] or 0
+
+                    day["attendance_percentage"] = (
+                        round((present / total) * 100, 1)
+                        if total > 0
+                        else 0
+                    )
+
+                    weekly_attendance["total"] += total
+                    weekly_attendance["present"] += present
+                    weekly_attendance["absent"] += absent
+
+                if weekly_attendance["total"] > 0:
+
+                    weekly_attendance["percentage"] = round(
+                        (
+                            weekly_attendance["present"]
+                            / weekly_attendance["total"]
+                        ) * 100,
+                        1
+                    )
+
+
+            # -----------------------------------------
+            # 10. CENTRE DISPLAY OBJECT
+            # -----------------------------------------
+
+            centre["tutor_name"] = (
+                tutor["tutor_name"]
+                if tutor
+                else None
+            )
+
+            centre["academic_year"] = "2026–27"
+
+            centre["total_students"] = (
+                strength["total_students"] or 0
+            )
+
+            centre["boys"] = (
+                strength["boys"] or 0
+            )
+
+            centre["girls"] = (
+                strength["girls"] or 0
+            )
+
+            centre["caste_available"] = (
+                strength["caste_available"] or 0
+            )
+
+
+    finally:
+        db.close()
+
+
+    # -----------------------------------------
+    # 11. RENDER
+    # -----------------------------------------
 
     return render_template(
-        "vidya_vikasam/centre_dashboard.html",
-        centre=centre,
-        active_page="vidya_vikasam"
-    )
+    "vidya_vikasam/centre_dashboard.html",
 
+    centre=centre,
 
+    students=students,
+
+    latest_attendance_date=latest_attendance_date,
+
+    latest_attendance=latest_attendance,
+
+    weekly_attendance=weekly_attendance,
+
+    absentees=absentees,
+
+    attendance_trend=attendance_trend,
+
+    active_page="vidya_vikasam"
+)
 @app.route("/student/<int:student_id>")
 def student_summary(student_id):
 
