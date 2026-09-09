@@ -136,6 +136,66 @@ def login_required(view):
 
     return wrapped_view
 
+
+
+def permission_required(permission_code):
+
+    def decorator(view):
+
+        @wraps(view)
+        def wrapped_view(*args, **kwargs):
+
+            # User must be logged in
+            if "user_id" not in session:
+                return redirect("/login")
+
+            conn = get_connection()
+
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                    cur.execute("""
+                        SELECT 1
+                        FROM user_role ur
+                        JOIN role_permission rp
+                            ON rp.role_id = ur.role_id
+                        JOIN permission_master pm
+                            ON pm.permission_id = rp.permission_id
+                        WHERE ur.user_id = %s
+                          AND ur.active_flag = TRUE
+                          AND ur.assigned_from <= CURRENT_DATE
+                          AND (
+                                ur.assigned_to IS NULL
+                                OR ur.assigned_to >= CURRENT_DATE
+                              )
+                          AND pm.permission_code = %s
+                        LIMIT 1
+                    """, (
+                        session["user_id"],
+                        permission_code
+                    ))
+
+                    allowed = cur.fetchone()
+
+                   
+
+                    print("DEBUG permission:", permission_code)
+                    print("DEBUG user_id:", session.get("user_id"))
+                    print("DEBUG allowed:", allowed)
+
+                  
+                    if not allowed:
+                        return redirect("/dashboard")
+
+            finally:
+                conn.close()
+
+            return view(*args, **kwargs)
+
+        return wrapped_view
+
+    return decorator
+
 @app.route("/mobile/attendance")
 @login_required
 def mobile_attendance():
@@ -825,6 +885,7 @@ def dashboard():
 def cluster_dashboard(cluster_id):
 
     allowed_roles = [
+        "admin",
         "management",
         "programme_director",
         "operational_head",
@@ -3255,6 +3316,7 @@ def zone_tutor_space():
 
 @app.route("/students/<int:centre_id>")
 @login_required
+@permission_required("VIEW_STUDENTS")
 def centre_students(centre_id):
 
     students_by_class = {
