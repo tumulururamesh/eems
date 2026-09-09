@@ -573,7 +573,6 @@ def mobile_attendance_submitted(submission_id):
         summary=summary
     )
 
-
 # =====================================================
 # LOGIN
 # =====================================================
@@ -586,51 +585,159 @@ def login():
         password = request.form.get("password", "")
 
         # =====================================================
-        # FIRST: Check database-backed users
+        # FIRST: Check new database-backed users
         # =====================================================
 
         conn = get_connection()
-        cur = conn.cursor()
 
-        cur.execute("""
-            SELECT
-                u.user_id,
-                u.username,
-                u.password_hash,
-                u.role,
-                u.cc_id,
-                u.active_flag,
-                c.cc_name
-            FROM public.aems_user u
-            JOIN public.cluster_coordinator c
-                ON c.cc_id = u.cc_id
-            WHERE u.username = %s
-              AND u.active_flag = TRUE
-              AND c.active_flag = TRUE
-        """, (username,))
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
 
-        db_user = cur.fetchone()
+                cur.execute("""
+                    SELECT
+                        u.user_id,
+                        u.username,
+                        u.password_hash,
+                        u.full_name,
+                        r.role_code,
+                        r.role_name
+                    FROM public.aems_user u
+                    JOIN public.user_role ur
+                        ON ur.user_id = u.user_id
+                       AND ur.active_flag = TRUE
+                       AND ur.assigned_from <= CURRENT_DATE
+                       AND (
+                            ur.assigned_to IS NULL
+                            OR ur.assigned_to >= CURRENT_DATE
+                       )
+                    JOIN public.role_master r
+                        ON r.role_id = ur.role_id
+                       AND r.active_flag = TRUE
+                    WHERE u.username = %s
+                      AND u.active_flag = TRUE
+                    ORDER BY ur.assigned_from DESC
+                    LIMIT 1
+                """, (username,))
 
-        cur.close()
-        conn.close()
+                db_user = cur.fetchone()
+
+                # -------------------------------------------------
+                # User access scope
+                # -------------------------------------------------
+
+                access = None
+
+                if db_user:
+
+                    cur.execute("""
+                        SELECT
+                            access_scope,
+                            zone_id,
+                            segment_id,
+                            cluster_id,
+                            center_id
+                        FROM public.user_access
+                        WHERE user_id = %s
+                          AND active_flag = TRUE
+                          AND assigned_from <= CURRENT_DATE
+                          AND (
+                               assigned_to IS NULL
+                               OR assigned_to >= CURRENT_DATE
+                          )
+                        ORDER BY assigned_from DESC
+                        LIMIT 1
+                    """, (db_user["user_id"],))
+
+                    access = cur.fetchone()
+
+        finally:
+            conn.close()
 
         # =====================================================
-        # DATABASE USER - CURRENTLY CC LOGIN
+        # DATABASE USER
         # =====================================================
 
         if db_user:
 
-            # Development phase:
-            # Verify password against the stored Werkzeug hash
-            if check_password_hash(db_user["password_hash"], password):
+            # Verify password against stored Werkzeug hash
+            if check_password_hash(
+                db_user["password_hash"],
+                password
+            ):
 
+                # -------------------------------------------------
+                # Clear any previous session
+                # -------------------------------------------------
+
+                session.clear()
+
+                # -------------------------------------------------
+                # Common session information
+                # -------------------------------------------------
+
+                session["user_id"] = db_user["user_id"]
                 session["username"] = db_user["username"]
-                session["role"] = db_user["role"]
-                session["name"] = db_user["cc_name"]
-                session["cc_id"] = db_user["cc_id"]
+                session["name"] = db_user["full_name"]
 
-                if db_user["role"] == "cluster_incharge":
-                    return redirect(f"/cluster-dashboard/{db_user['cc_id']}")
+                # Canonical role from new security model
+                session["role_code"] = db_user["role_code"]
+
+                # -------------------------------------------------
+                # Compatibility role
+                #
+                # Existing AEMS routes currently use lowercase
+                # POC role names. Keep these temporarily so that
+                # existing screens do not break.
+                # -------------------------------------------------
+
+                role_compatibility = {
+                    "ADMIN": "admin",
+                    "OPERATIONS_HEAD": "operational_head",
+                    "MANAGEMENT": "management",
+                    "SEGMENT_INCHARGE": "segment_incharge",
+                    "CLUSTER_COORDINATOR": "cluster_incharge",
+                    "TUTOR": "tutor"
+                }
+
+                session["role"] = role_compatibility.get(
+                    db_user["role_code"],
+                    db_user["role_code"].lower()
+                )
+
+                # -------------------------------------------------
+                # Access scope
+                # -------------------------------------------------
+
+                if access:
+
+                    session["access_scope"] = access["access_scope"]
+                    session["access_zone_id"] = access["zone_id"]
+                    session["access_segment_id"] = access["segment_id"]
+                    session["access_cluster_id"] = access["cluster_id"]
+                    session["access_center_id"] = access["center_id"]
+
+                else:
+
+                    session["access_scope"] = None
+                    session["access_zone_id"] = None
+                    session["access_segment_id"] = None
+                    session["access_cluster_id"] = None
+                    session["access_center_id"] = None
+
+                # -------------------------------------------------
+                # ADMIN
+                # -------------------------------------------------
+
+                if db_user["role_code"] == "ADMIN":
+                    return redirect("/dashboard")
+
+                # -------------------------------------------------
+                # Other database users
+                #
+                # For now, send them to the dashboard.
+                # Their role-specific routing will be migrated
+                # in the next security phase.
+                # -------------------------------------------------
 
                 return redirect("/dashboard")
 
@@ -641,12 +748,15 @@ def login():
 
         # =====================================================
         # EXISTING HARD-CODED USERS
-        # Keep these temporarily for other roles
+        #
+        # Keep temporarily for POC/demo compatibility.
         # =====================================================
 
         user = AEMS_USERS.get(username)
 
         if user and user["password"] == password:
+
+            session.clear()
 
             session["username"] = username
             session["role"] = user["role"]
@@ -658,6 +768,7 @@ def login():
             session["centre"] = user.get("centre")
             session["centres"] = user.get("centres")
 
+            # Existing POC routing
             if user["role"] == "management":
                 return redirect("/dashboard")
 
@@ -668,7 +779,9 @@ def login():
                 return redirect(f"/segment/{user['segment']}")
 
             elif user["role"] == "cluster_incharge":
-                return redirect(f"/cluster-dashboard/{user['cluster']}")
+                return redirect(
+                    f"/cluster-dashboard/{user['cluster']}"
+                )
 
             elif user["role"] == "tutor":
                 return redirect("/centre/2")
@@ -680,9 +793,7 @@ def login():
             error="Invalid username or password."
         )
 
-    return render_template(
-        "auth/login.html"
-    )
+    return render_template("auth/login.html")
 
 
 @app.route("/logout")
