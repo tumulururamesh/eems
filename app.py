@@ -1837,7 +1837,7 @@ def vv_centre_directory():
 
     academic_year = request.args.get(
         "year",
-        "2026-27"
+        "2026-2027"
     )
     rows = get_centre_directory()
 
@@ -1864,7 +1864,7 @@ def vv_centre_directory():
 @app.route("/vv-report-category/village")
 def village_mapping():
 
-    academic_year = request.args.get("year", "2026-27")
+    academic_year = request.args.get("year", "2026-2027")
 
     academic_year = request.args.get(
     "year",
@@ -1968,7 +1968,7 @@ def export_village_mapping():
 @app.route("/vv-report-category/student-strength")
 def student_strength():
 
-    academic_year = request.args.get("year", "2026-27")
+    academic_year = request.args.get("year", "2026-2027")
     academic_year_id = get_academic_year_id(
         academic_year
     )

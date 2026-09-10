@@ -1,5 +1,5 @@
--- AEMS 2026-27 Student Master Load - KG Slice 01
--- Source: Academic Details 2026-27
+-- AEMS 2026-2027 Student Master Load - KG Slice 01
+-- Source: Academic Details 2026-2027
 -- Scope: 26KG01-26KG07 (121 clear students)
 -- Existing student_id values are preserved.
 BEGIN;
