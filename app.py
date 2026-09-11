@@ -791,6 +791,51 @@ def login():
                 if db_user["role_code"] == "ADMIN":
                     return redirect("/dashboard")
 
+
+                # -------------------------------------------------
+                # TUTOR
+                # -------------------------------------------------
+
+                if db_user["role_code"] == "TUTOR":
+
+                    conn = get_connection()
+
+                    try:
+                        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                            cur.execute("""
+                                SELECT
+                                    tca.center_id
+                                FROM public.user_person_assignment upa
+
+                                JOIN public.tutor_centre_assignment tca
+                                    ON tca.tutor_id = upa.tutor_id
+
+                                WHERE upa.user_id = %s
+                                AND upa.active_flag = TRUE
+                                AND tca.active_flag = TRUE
+                                AND tca.academic_year_id = 3
+
+                                ORDER BY tca.assigned_from DESC
+                                LIMIT 1
+                            """, (db_user["user_id"],))
+
+                            tutor_centre = cur.fetchone()
+
+                    finally:
+                        conn.close()
+
+                    if not tutor_centre:
+                        return redirect("/dashboard")
+
+                    session["centre"] = tutor_centre["center_id"]
+
+                    return redirect(
+                        f"/centre/{tutor_centre['center_id']}"
+                    )
+
+
+
                 # -------------------------------------------------
                 # Other database users
                 #
@@ -1208,16 +1253,7 @@ def search_students():
 def centre_dashboard(centre_id):
 
     role = session.get("role")
-
-    # -----------------------------------------
-    # CC access control
-    # -----------------------------------------
-    if role == "cluster_incharge":
-
-        cc_id = session.get("cc_id")
-
-        if not cc_id:
-            return redirect("/dashboard")
+    user_id = session.get("user_id")
 
     db = get_connection()
 
@@ -1231,8 +1267,7 @@ def centre_dashboard(centre_id):
                 SELECT
                     tc.center_id,
                     tc.center_code,
-                    tc.center_name,
-                    tc.tutor_id
+                    tc.center_name
                 FROM public.tuition_center tc
                 WHERE tc.center_id = %s
                   AND tc.status = 'ACTIVE'
@@ -1245,46 +1280,86 @@ def centre_dashboard(centre_id):
 
 
             # -----------------------------------------
-            # 2. VERIFY CC ACCESS TO THIS CENTRE
+            # 2. VERIFY USER ACCESS TO THIS CENTRE
             # -----------------------------------------
-            if role == "cluster_incharge":
 
+            if role == "tutor":
+
+                # Tutor can access only the centre currently
+                # assigned to the logged-in tutor.
                 cur.execute("""
                     SELECT 1
-                    FROM public.cluster_center
-                    WHERE cc_id = %s
-                      AND center_id = %s
-                      AND academic_year_id = 2
-                      AND active_flag = TRUE
+                    FROM public.user_person_assignment upa
+
+                    JOIN public.tutor_centre_assignment tca
+                        ON tca.tutor_id = upa.tutor_id
+                       AND tca.active_flag = TRUE
+
+                    WHERE upa.user_id = %s
+                      AND upa.active_flag = TRUE
+                      AND tca.center_id = %s
+                      AND tca.academic_year_id = 3
                 """, (
-                    session.get("cc_id"),
+                    user_id,
                     centre_id
                 ))
 
                 if not cur.fetchone():
-                    return redirect(
-                        f"/cluster-dashboard/{session.get('cc_id')}"
-                    )
+                    return redirect("/dashboard")
+
+
+            elif role == "cluster_incharge":
+
+                # CC can access centres belonging to the
+                # cluster currently assigned to that CC.
+                cur.execute("""
+                    SELECT 1
+                    FROM public.user_person_assignment upa
+
+                    JOIN public.cluster_coordinator_assignment cca
+                        ON cca.cc_id = upa.cc_id
+                       AND cca.active_flag = TRUE
+
+                    JOIN public.cluster_center cc
+                        ON cc.cluster_id = cca.cluster_id
+                       AND cc.active_flag = TRUE
+                       AND cc.academic_year_id = 3
+
+                    WHERE upa.user_id = %s
+                      AND upa.active_flag = TRUE
+                      AND cca.academic_year_id = 3
+                      AND cc.center_id = %s
+                """, (
+                    user_id,
+                    centre_id
+                ))
+
+                if not cur.fetchone():
+                    return redirect("/dashboard")
 
 
             # -----------------------------------------
-            # 3. TUTOR
+            # 3. CURRENT TUTOR
             # -----------------------------------------
+
             tutor = None
 
-            if centre["tutor_id"]:
+            cur.execute("""
+                SELECT
+                    tm.tutor_id,
+                    tm.tutor_name
+                FROM public.tutor_centre_assignment tca
 
-                cur.execute("""
-                    SELECT
-                        tutor_id,
-                        tutor_name
-                    FROM public.tutor_master
-                    WHERE tutor_id = %s
-                      AND active_flag = TRUE
-                """, (centre["tutor_id"],))
+                JOIN public.tutor_master tm
+                    ON tm.tutor_id = tca.tutor_id
 
-                tutor = cur.fetchone()
+                WHERE tca.center_id = %s
+                  AND tca.academic_year_id = 3
+                  AND tca.active_flag = TRUE
+                  AND tm.active_flag = TRUE
+            """, (centre_id,))
 
+            tutor = cur.fetchone()
 
             # -----------------------------------------
             # 4. STUDENT STRENGTH
@@ -1294,21 +1369,27 @@ def centre_dashboard(centre_id):
                     COUNT(*) AS total_students,
 
                     COUNT(*) FILTER (
-                        WHERE gender = 'Boy'
+                        WHERE sm.gender = 'Boy'
                     ) AS boys,
 
                     COUNT(*) FILTER (
-                        WHERE gender = 'Girl'
+                        WHERE sm.gender = 'Girl'
                     ) AS girls,
 
                     COUNT(*) FILTER (
-                        WHERE caste_category IS NOT NULL
-                          AND TRIM(caste_category) <> ''
+                        WHERE sm.caste_category IS NOT NULL
+                          AND TRIM(sm.caste_category) <> ''
                     ) AS caste_available
 
-                FROM public.student_master
-                WHERE center_id = %s
-                  AND active_flag = TRUE
+                FROM public.student_center_assignment sca
+
+                JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+
+                WHERE sca.center_id = %s
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = TRUE
             """, (centre_id,))
 
             strength = cur.fetchone()
@@ -1319,14 +1400,21 @@ def centre_dashboard(centre_id):
             # -----------------------------------------
             cur.execute("""
                 SELECT
-                    student_id,
-                    student_code,
-                    student_name,
-                    gender
-                FROM public.student_master
-                WHERE center_id = %s
-                  AND active_flag = TRUE
-                ORDER BY student_name
+                    sm.student_id,
+                    sm.student_code,
+                    sm.student_name,
+                    sm.gender
+                FROM public.student_center_assignment sca
+
+                JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+
+                WHERE sca.center_id = %s
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = TRUE
+
+                ORDER BY sm.student_name
             """, (centre_id,))
 
             students = cur.fetchall()
@@ -1338,7 +1426,7 @@ def centre_dashboard(centre_id):
             cur.execute("""
                 SELECT
                     MAX(attendance_date) AS latest_date
-                FROM public.student_attendance
+                FROM public.attendance_submission
                 WHERE center_id = %s
             """, (centre_id,))
 
@@ -1364,16 +1452,20 @@ def centre_dashboard(centre_id):
                         COUNT(*) AS total,
 
                         COUNT(*) FILTER (
-                            WHERE attendance_status = 'Present'
+                            WHERE sa.attendance_status = 'PRESENT'
                         ) AS present,
 
                         COUNT(*) FILTER (
-                            WHERE attendance_status = 'Absent'
+                            WHERE sa.attendance_status = 'ABSENT'
                         ) AS absent
 
-                    FROM public.student_attendance
-                    WHERE center_id = %s
-                      AND attendance_date = %s
+                    FROM public.student_attendance sa
+
+                    JOIN public.attendance_submission ats
+                        ON ats.submission_id = sa.submission_id
+
+                    WHERE ats.center_id = %s
+                      AND sa.attendance_date = %s
                 """, (
                     centre_id,
                     latest_attendance_date
@@ -1411,14 +1503,18 @@ def centre_dashboard(centre_id):
                         sm.gender,
                         sa.attendance_date,
                         sa.remarks
+
                     FROM public.student_attendance sa
 
                     JOIN public.student_master sm
                         ON sm.student_id = sa.student_id
 
-                    WHERE sa.center_id = %s
+                    JOIN public.attendance_submission ats
+                        ON ats.submission_id = sa.submission_id
+
+                    WHERE ats.center_id = %s
                       AND sa.attendance_date = %s
-                      AND sa.attendance_status = 'Absent'
+                      AND sa.attendance_status = 'ABSENT'
 
                     ORDER BY sm.student_name
                 """, (
@@ -1427,6 +1523,8 @@ def centre_dashboard(centre_id):
                 ))
 
                 absentees = cur.fetchall()
+
+
             # -----------------------------------------
             # 9. FIVE-DAY ATTENDANCE TREND
             # -----------------------------------------
@@ -1448,16 +1546,19 @@ def centre_dashboard(centre_id):
                         COUNT(*) AS total,
 
                         COUNT(*) FILTER (
-                            WHERE sa.attendance_status = 'Present'
+                            WHERE sa.attendance_status = 'PRESENT'
                         ) AS present,
 
                         COUNT(*) FILTER (
-                            WHERE sa.attendance_status = 'Absent'
+                            WHERE sa.attendance_status = 'ABSENT'
                         ) AS absent
 
                     FROM public.student_attendance sa
 
-                    WHERE sa.center_id = %s
+                    JOIN public.attendance_submission ats
+                        ON ats.submission_id = sa.submission_id
+
+                    WHERE ats.center_id = %s
                       AND sa.attendance_date >=
                           %s - INTERVAL '4 days'
                       AND sa.attendance_date <= %s
@@ -1502,7 +1603,6 @@ def centre_dashboard(centre_id):
                         1
                     )
 
-
             # -----------------------------------------
             # 10. CENTRE DISPLAY OBJECT
             # -----------------------------------------
@@ -1513,7 +1613,10 @@ def centre_dashboard(centre_id):
                 else None
             )
 
-            centre["academic_year"] = "2026–27"
+            centre["academic_year"] = "2026–2027"
+
+            if not centre.get("center_name"):
+                centre["center_name"] = "Name not available"
 
             centre["total_students"] = (
                 strength["total_students"] or 0

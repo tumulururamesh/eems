@@ -249,11 +249,8 @@
                 <!-- ===================================== -->
 
                 {% if (
-                    session.get("role") == "tutor"
-                    or (
-                        session.get("role") == "cluster_incharge"
-                        and request.endpoint == "centre_dashboard"
-                    )
+                    session.get("role") == "cluster_incharge"
+                    and request.endpoint == "centre_dashboard"
                 ) %}
 
                     <li class="nav-item">
