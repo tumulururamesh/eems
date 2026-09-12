@@ -3416,84 +3416,110 @@ def zone_tutor_space():
         active_page="tutor_space"
     )
 
-
 @app.route("/students/<int:centre_id>")
 @login_required
 @permission_required("VIEW_STUDENTS")
 def centre_students(centre_id):
 
-    students_by_class = {
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
 
-        "I": [
-            {"name": "Anjali", "age": 6, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Rahul", "age": 6, "gender": "Male", "village": "Rampur"},
-            {"name": "Sravani", "age": 6, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Kiran", "age": 7, "gender": "Male", "village": "Rampur"},
-            {"name": "Divya", "age": 6, "gender": "Female", "village": "Rasoolpura"}
-        ],
+    # ---------------------------------------------------------
+    # Get centre details
+    # ---------------------------------------------------------
+    cur.execute("""
+        SELECT
+            center_id,
+            center_code,
+            center_name
+        FROM tuition_center
+        WHERE center_id = %s
+    """, (centre_id,))
 
-        "II": [
-            {"name": "Kavya", "age": 7, "gender": "Female", "village": "Rampur"},
-            {"name": "Rohit", "age": 7, "gender": "Male", "village": "Rasoolpura"},
-            {"name": "Pooja", "age": 7, "gender": "Female", "village": "Rampur"},
-            {"name": "Arjun", "age": 8, "gender": "Male", "village": "Rasoolpura"},
-            {"name": "Lakshmi", "age": 7, "gender": "Female", "village": "Rampur"},
-            {"name": "Manoj", "age": 8, "gender": "Male", "village": "Rasoolpura"}
-        ],
+    centre = cur.fetchone()
 
-        "III": [
-            {"name": "Swathi", "age": 8, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Vijay", "age": 8, "gender": "Male", "village": "Rampur"},
-            {"name": "Keerthi", "age": 9, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Naveen", "age": 8, "gender": "Male", "village": "Rampur"},
-            {"name": "Harika", "age": 9, "gender": "Female", "village": "Rasoolpura"}
-        ],
+    if not centre:
+        cur.close()
+        conn.close()
+        return redirect("/dashboard")
 
-        "IV": [
-            {"name": "Anusha", "age": 9, "gender": "Female", "village": "Rampur"},
-            {"name": "Ramesh", "age": 9, "gender": "Male", "village": "Rasoolpura"},
-            {"name": "Bhavya", "age": 10, "gender": "Female", "village": "Rampur"},
-            {"name": "Suresh", "age": 9, "gender": "Male", "village": "Rasoolpura"},
-            {"name": "Meena", "age": 10, "gender": "Female", "village": "Rampur"},
-            {"name": "Ajay", "age": 10, "gender": "Male", "village": "Rasoolpura"}
-        ],
+    # ---------------------------------------------------------
+    # Get students for this centre and academic year
+    # ---------------------------------------------------------
 
-        "V": [
-            {"name": "Sandhya", "age": 10, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Praveen", "age": 10, "gender": "Male", "village": "Rampur"},
-            {"name": "Deepa", "age": 11, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Mahesh", "age": 11, "gender": "Male", "village": "Rampur"},
-            {"name": "Jyothi", "age": 10, "gender": "Female", "village": "Rasoolpura"}
-        ],
+    cur.execute("""
+        SELECT
+            current_database(),
+            current_user,
+            current_schema()
+    """)
 
-        "VI": [
-            {"name": "Sravani", "age": 11, "gender": "Female", "village": "Rampur"},
-            {"name": "Anjali", "age": 11, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Karthik", "age": 11, "gender": "Male", "village": "Rampur"},
-            {"name": "Divya", "age": 12, "gender": "Female", "village": "Rasoolpura"},
-            {"name": "Ravi", "age": 12, "gender": "Male", "village": "Rampur"},
-            {"name": "Pavani", "age": 11, "gender": "Female", "village": "Rasoolpura"}
-        ]
-    }
+   
+    cur.execute("""
+        SELECT
+            sm.student_id,
+            sm.student_code,
+            sm.student_name,
+            sm.gender,
+                                
+            say.class_studying,
+            say.status
+        FROM student_center_assignment sca
 
+        JOIN student_master sm
+            ON sm.student_id = sca.student_id
+
+        JOIN student_academic_year say
+            ON say.student_id = sm.student_id
+           AND say.academic_year_id = %s
+
+        WHERE sca.center_id = %s
+          AND sca.academic_year_id = %s
+          AND sca.active_flag = TRUE
+          AND say.status = 'ACTIVE'
+          
+        ORDER BY
+            say.class_studying,
+            sm.student_name
+    """, (3, centre_id, 3))
+
+    students = cur.fetchall()
+
+
+    cur.close()
+    conn.close()
+
+    # ---------------------------------------------------------
+    # Group students by class
+    # ---------------------------------------------------------
+    students_by_class = {}
+
+    for student in students:
+
+        class_no = student["class_studying"]
+
+        if class_no not in students_by_class:
+            students_by_class[class_no] = []
+
+        students_by_class[class_no].append(student)
+
+    # ---------------------------------------------------------
+    # Class-wise student counts
+    # ---------------------------------------------------------
     class_counts = {
-        "I": 5,
-        "II": 6,
-        "III": 5,
-        "IV": 6,
-        "V": 5,
-        "VI": 6
+        class_no: len(students_by_class.get(class_no, []))
+        for class_no in range(1, 8)
     }
 
     return render_template(
         "students/centre_students.html",
+        centre=centre,
         centre_id=centre_id,
         students_by_class=students_by_class,
         class_counts=class_counts,
+        total_students=len(students),
         active_page="students"
     )
-
-
 
 @app.route("/attendance/<int:centre_id>")
 @login_required
