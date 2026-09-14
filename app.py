@@ -195,170 +195,369 @@ def permission_required(permission_code):
         return wrapped_view
 
     return decorator
+# ============================================================
+# MOBILE ATTENDANCE
+# ============================================================
 
 @app.route("/mobile/attendance")
 @login_required
 def mobile_attendance():
 
-    # Mobile attendance is currently for Cluster Coordinators
+    # --------------------------------------------------------
+    # Mobile attendance is ONLY for Cluster Coordinators
+    # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return redirect("/dashboard")
 
-    cc_name = session.get("name")
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect("/dashboard")
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
-        SELECT
-            tc.center_id,
-            tc.center_code,
-            tc.center_name,
-            COUNT(sm.student_id) AS student_count,
-            ats.submission_id,
-            ats.submitted_at
+    try:
 
-        FROM public.cluster_coordinator cc
+        # ----------------------------------------------------
+        # Get current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT academic_year_id
+            FROM public.academic_year_master
+            WHERE academic_year = '2026-2027'
+        """)
 
-        JOIN public.cluster_center ccm
-            ON ccm.cc_id = cc.cc_id
-           AND ccm.active_flag = TRUE
+        academic_year = cur.fetchone()
 
-        JOIN public.tuition_center tc
-            ON tc.center_id = ccm.center_id
+        if not academic_year:
+            return redirect("/dashboard")
 
-        LEFT JOIN public.student_master sm
-            ON sm.center_id = tc.center_id
-           AND sm.active_flag = TRUE
+        academic_year_id = academic_year["academic_year_id"]
 
-        LEFT JOIN public.attendance_submission ats
-            ON ats.center_id = tc.center_id
-           AND ats.attendance_date = CURRENT_DATE
+        # ----------------------------------------------------
+        # Identify the logged-in CC through the user's
+        # person assignment.
+        #
+        # user
+        #   ↓
+        # user_person_assignment
+        #   ↓
+        # cluster_coordinator
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cc.cc_id,
+                cc.cc_name
+            FROM public.user_person_assignment upa
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = upa.cc_id
+            WHERE upa.user_id = %s
+              AND cc.active_flag = TRUE
+            LIMIT 1
+        """, (user_id,))
 
-        WHERE cc.cc_name = %s
-          AND cc.active_flag = TRUE
-          AND ccm.academic_year_id = (
-              SELECT academic_year_id
-              FROM public.academic_year_master
-              WHERE academic_year = '2026-2027'
-          )
+        cc = cur.fetchone()
 
-        GROUP BY
-            tc.center_id,
-            tc.center_code,
-            tc.center_name,
-            ats.submission_id,
-            ats.submitted_at
+        if not cc:
+            return redirect("/dashboard")
 
-        ORDER BY tc.center_code
-    """, (cc_name,))
+        cc_id = cc["cc_id"]
+        cc_name = cc["cc_name"]
 
-    centres = cur.fetchall()
+        # ----------------------------------------------------
+        # Get centres assigned to this CC for the current
+        # academic year.
+        #
+        # Student count comes through:
+        #
+        # student_center_assignment
+        #        ↓
+        # student_master
+        #        ↓
+        # student_academic_year
+        #
+        # This is the correct AEMS model.
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                tc.center_id,
+                tc.center_code,
+                tc.center_name,
 
-    cur.close()
-    conn.close()
+                COUNT(DISTINCT sm.student_id) AS student_count,
 
-    return render_template(
-        "mobile/attendance.html",
-        cc_name=cc_name,
-        centres=centres
-    )
+                ats.submission_id,
+                ats.submitted_at
+
+            FROM public.cluster_center ccm
+
+            JOIN public.tuition_center tc
+                ON tc.center_id = ccm.center_id
+
+            LEFT JOIN public.student_center_assignment sca
+                ON sca.center_id = tc.center_id
+               AND sca.academic_year_id = %s
+               AND sca.active_flag = TRUE
+
+            LEFT JOIN public.student_master sm
+                ON sm.student_id = sca.student_id
+               AND sm.active_flag = TRUE
+
+            LEFT JOIN public.student_academic_year say
+                ON say.student_id = sm.student_id
+               AND say.academic_year_id = %s
+               AND say.status = 'ACTIVE'
+
+            LEFT JOIN public.attendance_submission ats
+                ON ats.center_id = tc.center_id
+               AND ats.attendance_date = CURRENT_DATE
+
+            WHERE ccm.cc_id = %s
+              AND ccm.academic_year_id = %s
+              AND ccm.active_flag = TRUE
+
+            GROUP BY
+                tc.center_id,
+                tc.center_code,
+                tc.center_name,
+                ats.submission_id,
+                ats.submitted_at
+
+            ORDER BY
+                tc.center_code
+        """, (
+            academic_year_id,
+            academic_year_id,
+            cc_id,
+            academic_year_id
+        ))
+
+        centres = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Display existing mobile attendance centre list
+        # ----------------------------------------------------
+        return render_template(
+            "mobile/attendance.html",
+            cc_name=cc_name,
+            centres=centres
+        )
+
+    except Exception as e:
+
+        print("Mobile attendance page error:", e)
+
+        return redirect("/dashboard")
+
+    finally:
+
+        cur.close()
+        conn.close()
+
+
+# ============================================================
+# MOBILE ATTENDANCE - CENTRE
+# ============================================================
 
 @app.route("/mobile/attendance/<int:center_id>")
 @login_required
 def mobile_centre_attendance(center_id):
 
-    # Mobile attendance is currently for Cluster Coordinators
+    # --------------------------------------------------------
+    # Mobile attendance is ONLY for Cluster Coordinators
+    # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return redirect("/dashboard")
 
-    cc_name = session.get("name")
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect("/dashboard")
 
     conn = get_connection()
     cur = conn.cursor()
 
-    # -----------------------------------------
-    # Verify that this centre belongs to CC
-    # -----------------------------------------
+    try:
 
-    cur.execute("""
-        SELECT
-            tc.center_id,
-            tc.center_code,
-            tc.center_name
+        # ----------------------------------------------------
+        # Get current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT academic_year_id
+            FROM public.academic_year_master
+            WHERE academic_year = '2026-2027'
+        """)
 
-        FROM public.cluster_coordinator cc
+        academic_year = cur.fetchone()
 
-        JOIN public.cluster_center ccm
-            ON ccm.cc_id = cc.cc_id
-           AND ccm.active_flag = TRUE
+        if not academic_year:
+            return redirect("/dashboard")
 
-        JOIN public.tuition_center tc
-            ON tc.center_id = ccm.center_id
+        academic_year_id = academic_year["academic_year_id"]
 
-        WHERE cc.cc_name = %s
-          AND cc.active_flag = TRUE
-          AND ccm.academic_year_id = (
-              SELECT academic_year_id
-              FROM public.academic_year_master
-              WHERE academic_year = '2026-2027'
-          )
-          AND tc.center_id = %s
-    """, (cc_name, center_id))
+        # ----------------------------------------------------
+        # Identify the logged-in CC
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cc.cc_id,
+                cc.cc_name
+            FROM public.user_person_assignment upa
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = upa.cc_id
+            WHERE upa.user_id = %s
+              AND cc.active_flag = TRUE
+            LIMIT 1
+        """, (user_id,))
 
-    centre = cur.fetchone()
+        cc = cur.fetchone()
 
-    # CC is not authorised for this centre
-    if not centre:
+        if not cc:
+            return redirect("/dashboard")
+
+        cc_id = cc["cc_id"]
+        cc_name = cc["cc_name"]
+
+        # ----------------------------------------------------
+        # Verify that this centre belongs to the logged-in CC
+        # for the current academic year.
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                tc.center_id,
+                tc.center_code,
+                tc.center_name,
+                cc.cc_id,
+                cc.cc_name
+
+            FROM public.cluster_coordinator cc
+
+            JOIN public.cluster_center ccm
+                ON ccm.cc_id = cc.cc_id
+               AND ccm.active_flag = TRUE
+
+            JOIN public.tuition_center tc
+                ON tc.center_id = ccm.center_id
+
+            WHERE cc.cc_id = %s
+              AND cc.active_flag = TRUE
+              AND ccm.academic_year_id = %s
+              AND tc.center_id = %s
+        """, (
+            cc_id,
+            academic_year_id,
+            center_id
+        ))
+
+        centre = cur.fetchone()
+
+        # ----------------------------------------------------
+        # CC is not authorised for this centre
+        # ----------------------------------------------------
+        if not centre:
+            return redirect("/mobile/attendance")
+
+        # ----------------------------------------------------
+        # Get active students for this centre and academic year
+        #
+        # Centre membership:
+        #
+        # student_center_assignment
+        #             ↓
+        #       student_master
+        #             ↓
+        #    student_academic_year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                sm.student_id,
+                sm.student_code,
+                sm.student_name,
+                say.class_studying
+
+            FROM public.student_center_assignment sca
+
+            JOIN public.student_master sm
+                ON sm.student_id = sca.student_id
+
+            JOIN public.student_academic_year say
+                ON say.student_id = sm.student_id
+               AND say.academic_year_id = sca.academic_year_id
+
+            WHERE sca.center_id = %s
+              AND sca.academic_year_id = %s
+              AND sca.active_flag = TRUE
+              AND sm.active_flag = TRUE
+              AND say.status = 'ACTIVE'
+
+            ORDER BY
+                say.class_studying,
+                sm.student_name
+        """, (
+            center_id,
+            academic_year_id
+        ))
+
+        students = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Display existing mobile attendance screen
+        # ----------------------------------------------------
+        return render_template(
+            "mobile/centre_attendance.html",
+            cc_name=cc_name,
+            centre=centre,
+            students=students
+        )
+
+    except Exception as e:
+
+        print("Mobile attendance page error:", e)
+
+        return redirect("/dashboard")
+
+    finally:
+
         cur.close()
         conn.close()
-        return redirect("/mobile/attendance")
 
-    # -----------------------------------------
-    # Get active students in this centre
-    # -----------------------------------------
 
-    cur.execute("""
-        SELECT
-            student_id,
-            student_code,
-            student_name
+# ============================================================
+# SUBMIT MOBILE ATTENDANCE
+# ============================================================
 
-        FROM public.student_master
-
-        WHERE center_id = %s
-          AND active_flag = TRUE
-
-        ORDER BY student_name
-    """, (center_id,))
-
-    students = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return render_template(
-        "mobile/centre_attendance.html",
-        cc_name=cc_name,
-        centre=centre,
-        students=students
-    )
-
-@app.route("/mobile/attendance/<int:center_id>/submit", methods=["POST"])
+@app.route(
+    "/mobile/attendance/<int:center_id>/submit",
+    methods=["POST"]
+)
 @login_required
 def mobile_attendance_submit(center_id):
 
-    # Mobile attendance is currently for Cluster Coordinators
+    # --------------------------------------------------------
+    # Mobile attendance is ONLY for Cluster Coordinators
+    # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
-        return {"success": False, "message": "Unauthorized"}, 403
+        return {
+            "success": False,
+            "message": "Unauthorized"
+        }, 403
 
-    cc_name = session.get("name")
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return {
+            "success": False,
+            "message": "User session not found."
+        }, 403
 
     data = request.get_json(silent=True) or {}
 
     absent_ids = data.get("absent_student_ids", [])
 
+    # --------------------------------------------------------
     # Make sure we received a list
+    # --------------------------------------------------------
     if not isinstance(absent_ids, list):
         return {
             "success": False,
@@ -370,16 +569,39 @@ def mobile_attendance_submit(center_id):
 
     try:
 
-        # -----------------------------------------
-        # Find the logged-in CC
-        # -----------------------------------------
-
+        # ----------------------------------------------------
+        # Get current academic year
+        # ----------------------------------------------------
         cur.execute("""
-            SELECT cc_id
-            FROM public.cluster_coordinator
-            WHERE cc_name = %s
-              AND active_flag = TRUE
-        """, (cc_name,))
+            SELECT academic_year_id
+            FROM public.academic_year_master
+            WHERE academic_year = '2026-2027'
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return {
+                "success": False,
+                "message": "Academic year 2026-2027 not found."
+            }, 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Identify the logged-in CC through user assignment
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cc.cc_id,
+                cc.cc_name
+            FROM public.user_person_assignment upa
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = upa.cc_id
+            WHERE upa.user_id = %s
+              AND cc.active_flag = TRUE
+            LIMIT 1
+        """, (user_id,))
 
         cc = cur.fetchone()
 
@@ -391,13 +613,15 @@ def mobile_attendance_submit(center_id):
 
         cc_id = cc["cc_id"]
 
-
-        # -----------------------------------------
-        # Verify centre belongs to CC
-        # -----------------------------------------
-
+        # ----------------------------------------------------
+        # Verify that the centre belongs to this CC
+        # ----------------------------------------------------
         cur.execute("""
-            SELECT tc.center_id
+            SELECT
+                tc.center_id,
+                tc.center_code,
+                tc.center_name
+
             FROM public.cluster_center ccm
 
             JOIN public.tuition_center tc
@@ -406,12 +630,12 @@ def mobile_attendance_submit(center_id):
             WHERE ccm.cc_id = %s
               AND ccm.center_id = %s
               AND ccm.active_flag = TRUE
-              AND ccm.academic_year_id = (
-                  SELECT academic_year_id
-                  FROM public.academic_year_master
-                  WHERE academic_year = '2026-2027'
-              )
-        """, (cc_id, center_id))
+              AND ccm.academic_year_id = %s
+        """, (
+            cc_id,
+            center_id,
+            academic_year_id
+        ))
 
         centre = cur.fetchone()
 
@@ -421,11 +645,10 @@ def mobile_attendance_submit(center_id):
                 "message": "This centre is not assigned to you."
             }, 403
 
-
-        # -----------------------------------------
-        # Check duplicate submission
-        # -----------------------------------------
-
+        # ----------------------------------------------------
+        # Check whether attendance has already been submitted
+        # for this centre today
+        # ----------------------------------------------------
         cur.execute("""
             SELECT submission_id
             FROM public.attendance_submission
@@ -436,22 +659,41 @@ def mobile_attendance_submit(center_id):
         existing_submission = cur.fetchone()
 
         if existing_submission:
+
             return {
                 "success": False,
-                "message": "Attendance has already been submitted for this centre today."
+                "message": (
+                    "Attendance has already been submitted "
+                    "for this centre today."
+                )
             }, 409
 
-
-        # -----------------------------------------
-        # Get all active students
-        # -----------------------------------------
-
+        # ----------------------------------------------------
+        # Get all active students for this centre
+        # and academic year
+        # ----------------------------------------------------
         cur.execute("""
-            SELECT student_id
-            FROM public.student_master
-            WHERE center_id = %s
-              AND active_flag = TRUE
-        """, (center_id,))
+            SELECT
+                sm.student_id
+
+            FROM public.student_center_assignment sca
+
+            JOIN public.student_master sm
+                ON sm.student_id = sca.student_id
+
+            JOIN public.student_academic_year say
+                ON say.student_id = sm.student_id
+               AND say.academic_year_id = sca.academic_year_id
+
+            WHERE sca.center_id = %s
+              AND sca.academic_year_id = %s
+              AND sca.active_flag = TRUE
+              AND sm.active_flag = TRUE
+              AND say.status = 'ACTIVE'
+        """, (
+            center_id,
+            academic_year_id
+        ))
 
         students = cur.fetchall()
 
@@ -460,16 +702,16 @@ def mobile_attendance_submit(center_id):
             for student in students
         }
 
-
-        # -----------------------------------------
+        # ----------------------------------------------------
         # Validate absentee IDs
-        # -----------------------------------------
-
+        # ----------------------------------------------------
         try:
+
             absent_ids = {
                 int(student_id)
                 for student_id in absent_ids
             }
+
         except (ValueError, TypeError):
 
             return {
@@ -477,64 +719,98 @@ def mobile_attendance_submit(center_id):
                 "message": "Invalid student selection."
             }, 400
 
-
+        # ----------------------------------------------------
         # Every absentee must belong to this centre
+        # ----------------------------------------------------
         if not absent_ids.issubset(student_ids):
 
             return {
                 "success": False,
-                "message": "One or more selected students do not belong to this centre."
+                "message": (
+                    "One or more selected students "
+                    "do not belong to this centre."
+                )
             }, 400
 
+        # ----------------------------------------------------
+        # Make sure the centre actually has students
+        # ----------------------------------------------------
+        if not student_ids:
 
-        # -----------------------------------------
-        # Create submission record
-        # -----------------------------------------
+            return {
+                "success": False,
+                "message": (
+                    "No active students are available "
+                    "for this centre."
+                )
+            }, 400
 
+        # ----------------------------------------------------
+        # Create attendance submission
+        #
+        # Normal attendance day = WORKING
+        # ----------------------------------------------------
         cur.execute("""
             INSERT INTO public.attendance_submission
-                (center_id, attendance_date, cc_id)
+                (
+                    center_id,
+                    attendance_date,
+                    cc_id,
+                    day_status
+                )
             VALUES
-                (%s, CURRENT_DATE, %s)
+                (
+                    %s,
+                    CURRENT_DATE,
+                    %s,
+                    'WORKING'
+                )
             RETURNING submission_id
-        """, (center_id, cc_id))
+        """, (
+            center_id,
+            cc_id
+        ))
 
         submission_id = cur.fetchone()["submission_id"]
 
-        # -----------------------------------------
+        # ----------------------------------------------------
         # Insert attendance for every student
-        # -----------------------------------------
-
+        #
+        # All students are PRESENT by default.
+        # Only selected students are ABSENT.
+        # ----------------------------------------------------
         for student_id in student_ids:
 
             status = (
-                "Absent"
+                "ABSENT"
                 if student_id in absent_ids
-                else "Present"
+                else "PRESENT"
             )
 
             cur.execute("""
                 INSERT INTO public.student_attendance
                     (
                         student_id,
+                        submission_id,
                         attendance_date,
-                        attendance_status,
-                        center_id
+                        attendance_status
                     )
-
                 VALUES
-                    (%s, CURRENT_DATE, %s, %s)
+                    (
+                        %s,
+                        %s,
+                        CURRENT_DATE,
+                        %s
+                    )
             """, (
                 student_id,
-                status,
-                center_id
+                submission_id,
+                status
             ))
 
-
-        # -----------------------------------------
+        # ----------------------------------------------------
         # Commit everything
-        # -----------------------------------------
-
+        # ----------------------------------------------------
         conn.commit()
 
         return {
@@ -544,7 +820,6 @@ def mobile_attendance_submit(center_id):
             "absent_count": len(absent_ids),
             "total_students": len(student_ids)
         }
-
 
     except Exception as e:
 
@@ -557,84 +832,165 @@ def mobile_attendance_submit(center_id):
             "message": "Attendance could not be submitted."
         }, 500
 
-
     finally:
 
         cur.close()
         conn.close()
 
 
+# ============================================================
+# MOBILE ATTENDANCE SUBMISSION CONFIRMATION
+# ============================================================
+
 @app.route("/mobile/attendance/submitted/<int:submission_id>")
 @login_required
 def mobile_attendance_submitted(submission_id):
 
+    # --------------------------------------------------------
+    # Mobile attendance is ONLY for Cluster Coordinators
+    # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return redirect("/dashboard")
 
-    cc_name = session.get("name")
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect("/dashboard")
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
-        SELECT
-            ats.submission_id,
-            ats.attendance_date,
-            ats.submitted_at,
-            tc.center_id,
-            tc.center_code,
-            tc.center_name
+    try:
 
-        FROM public.attendance_submission ats
+        # ----------------------------------------------------
+        # Identify the logged-in CC
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cc.cc_id,
+                cc.cc_name
+            FROM public.user_person_assignment upa
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = upa.cc_id
+            WHERE upa.user_id = %s
+              AND cc.active_flag = TRUE
+            LIMIT 1
+        """, (user_id,))
 
-        JOIN public.tuition_center tc
-            ON tc.center_id = ats.center_id
+        cc = cur.fetchone()
 
-        JOIN public.cluster_coordinator cc
-            ON cc.cc_id = ats.cc_id
+        if not cc:
+            return redirect("/dashboard")
 
-        WHERE ats.submission_id = %s
-          AND cc.cc_name = %s
-          AND cc.active_flag = TRUE
-    """, (submission_id, cc_name))
+        cc_id = cc["cc_id"]
+        cc_name = cc["cc_name"]
 
-    submission = cur.fetchone()
+        # ----------------------------------------------------
+        # Get current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT academic_year_id
+            FROM public.academic_year_master
+            WHERE academic_year = '2026-2027'
+        """)
 
-    if not submission:
-        cur.close()
-        conn.close()
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return redirect("/dashboard")
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Get submission and verify that it belongs to
+        # the logged-in CC
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                ats.submission_id,
+                ats.attendance_date,
+                ats.submitted_at,
+                ats.day_status,
+
+                tc.center_id,
+                tc.center_code,
+                tc.center_name
+
+            FROM public.attendance_submission ats
+
+            JOIN public.tuition_center tc
+                ON tc.center_id = ats.center_id
+
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = ats.cc_id
+
+            JOIN public.cluster_center ccm
+                ON ccm.cc_id = cc.cc_id
+               AND ccm.center_id = ats.center_id
+               AND ccm.academic_year_id = %s
+               AND ccm.active_flag = TRUE
+
+            WHERE ats.submission_id = %s
+              AND ats.cc_id = %s
+              AND cc.active_flag = TRUE
+        """, (
+            academic_year_id,
+            submission_id,
+            cc_id
+        ))
+
+        submission = cur.fetchone()
+
+        if not submission:
+            return redirect("/mobile/attendance")
+
+        # ----------------------------------------------------
+        # Attendance summary for this submission
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                COUNT(*) AS total_students,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'PRESENT'
+                ) AS present,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'ABSENT'
+                ) AS absent
+
+            FROM public.student_attendance sa
+
+            WHERE sa.submission_id = %s
+              AND sa.attendance_date = %s
+        """, (
+            submission["submission_id"],
+            submission["attendance_date"]
+        ))
+
+        summary = cur.fetchone()
+
+        # ----------------------------------------------------
+        # Display existing confirmation screen
+        # ----------------------------------------------------
+        return render_template(
+            "mobile/attendance_submitted.html",
+            submission=submission,
+            summary=summary
+        )
+
+    except Exception as e:
+
+        print("Attendance confirmation error:", e)
+
         return redirect("/mobile/attendance")
 
-    cur.execute("""
-        SELECT
-            COUNT(*) AS total_students,
-            COUNT(*) FILTER (
-                WHERE attendance_status = 'Present'
-            ) AS present,
-            COUNT(*) FILTER (
-                WHERE attendance_status = 'Absent'
-            ) AS absent
-        FROM public.student_attendance
-        WHERE center_id = %s
-          AND attendance_date = %s
-    """, (
-        submission["center_id"],
-        submission["attendance_date"]
-    ))
+    finally:
 
-    summary = cur.fetchone()
+        cur.close()
+        conn.close()
 
-    cur.close()
-    conn.close()
-
-    return render_template(
-        "mobile/attendance_submitted.html",
-        submission=submission,
-        summary=summary
-    )
-
-# =====================================================
-# LOGIN
+        
 # =====================================================
 @app.route("/login", methods=["GET", "POST"])
 def login():

@@ -18,7 +18,7 @@ def get_connection():
 
     # Set default schema
     cur = conn.cursor()
-    cur.execute("SET search_path TO vidya_vahini, public;")
+    cur.execute("SET search_path TO public;")
     cur.close()
 
     return conn
