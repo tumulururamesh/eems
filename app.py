@@ -1378,7 +1378,7 @@ def centre_dashboard(centre_id):
 
                     COUNT(*) FILTER (
                         WHERE sm.caste_category IS NOT NULL
-                          AND TRIM(sm.caste_category) <> ''
+                        AND TRIM(sm.caste_category) <> ''
                     ) AS caste_available
 
                 FROM public.student_center_assignment sca
@@ -1386,12 +1386,16 @@ def centre_dashboard(centre_id):
                 JOIN public.student_master sm
                     ON sm.student_id = sca.student_id
 
-                WHERE sca.center_id = %s
-                  AND sca.academic_year_id = 3
-                  AND sca.active_flag = TRUE
-                  AND sm.active_flag = TRUE
-            """, (centre_id,))
+                JOIN public.student_academic_year say
+                    ON say.student_id = sca.student_id
+                AND say.academic_year_id = sca.academic_year_id
 
+                WHERE sca.center_id = %s
+                AND sca.academic_year_id = 3
+                AND sca.active_flag = TRUE
+                AND sm.active_flag = TRUE
+                AND say.status = 'ACTIVE'
+            """, (centre_id,))
             strength = cur.fetchone()
 
 
@@ -1409,10 +1413,15 @@ def centre_dashboard(centre_id):
                 JOIN public.student_master sm
                     ON sm.student_id = sca.student_id
 
+                JOIN public.student_academic_year say
+                    ON say.student_id = sca.student_id
+                AND say.academic_year_id = sca.academic_year_id
+
                 WHERE sca.center_id = %s
-                  AND sca.academic_year_id = 3
-                  AND sca.active_flag = TRUE
-                  AND sm.active_flag = TRUE
+                AND sca.academic_year_id = 3
+                AND sca.active_flag = TRUE
+                AND sm.active_flag = TRUE
+                AND say.status = 'ACTIVE'
 
                 ORDER BY sm.student_name
             """, (centre_id,))
