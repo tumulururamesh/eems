@@ -204,7 +204,7 @@ def permission_required(permission_code):
 def mobile_attendance():
 
     # --------------------------------------------------------
-    # Mobile attendance is ONLY for Cluster Coordinators
+    # CC Attendance Capture is ONLY for Cluster Coordinators
     # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return redirect("/dashboard")
@@ -236,8 +236,7 @@ def mobile_attendance():
         academic_year_id = academic_year["academic_year_id"]
 
         # ----------------------------------------------------
-        # Identify the logged-in CC through the user's
-        # person assignment.
+        # Identify the logged-in CC
         #
         # user
         #   ↓
@@ -266,18 +265,26 @@ def mobile_attendance():
         cc_name = cc["cc_name"]
 
         # ----------------------------------------------------
-        # Get centres assigned to this CC for the current
-        # academic year.
+        # Get centres assigned to this CC
+        #
+        # CC
+        #   ↓
+        # cluster_coordinator_assignment
+        #   ↓
+        # cluster
+        #   ↓
+        # cluster_center
+        #   ↓
+        # tuition_center
         #
         # Student count comes through:
-        #
+        # tuition_center
+        #   ↓
         # student_center_assignment
-        #        ↓
+        #   ↓
         # student_master
-        #        ↓
+        #   ↓
         # student_academic_year
-        #
-        # This is the correct AEMS model.
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -290,7 +297,12 @@ def mobile_attendance():
                 ats.submission_id,
                 ats.submitted_at
 
-            FROM public.cluster_center ccm
+            FROM public.cluster_coordinator_assignment cca
+
+            JOIN public.cluster_center ccm
+                ON ccm.cluster_id = cca.cluster_id
+               AND ccm.academic_year_id = cca.academic_year_id
+               AND ccm.active_flag = TRUE
 
             JOIN public.tuition_center tc
                 ON tc.center_id = ccm.center_id
@@ -313,9 +325,9 @@ def mobile_attendance():
                 ON ats.center_id = tc.center_id
                AND ats.attendance_date = CURRENT_DATE
 
-            WHERE ccm.cc_id = %s
-              AND ccm.academic_year_id = %s
-              AND ccm.active_flag = TRUE
+            WHERE cca.cc_id = %s
+              AND cca.academic_year_id = %s
+              AND cca.active_flag = TRUE
 
             GROUP BY
                 tc.center_id,
@@ -336,7 +348,7 @@ def mobile_attendance():
         centres = cur.fetchall()
 
         # ----------------------------------------------------
-        # Display existing mobile attendance centre list
+        # Display CC Attendance Capture centre list
         # ----------------------------------------------------
         return render_template(
             "mobile/attendance.html",
@@ -346,7 +358,7 @@ def mobile_attendance():
 
     except Exception as e:
 
-        print("Mobile attendance page error:", e)
+        print("CC Attendance Capture page error:", e)
 
         return redirect("/dashboard")
 
@@ -354,7 +366,6 @@ def mobile_attendance():
 
         cur.close()
         conn.close()
-
 
 # ============================================================
 # MOBILE ATTENDANCE - CENTRE
@@ -421,7 +432,16 @@ def mobile_centre_attendance(center_id):
 
         # ----------------------------------------------------
         # Verify that this centre belongs to the logged-in CC
-        # for the current academic year.
+        #
+        # CC
+        #   ↓
+        # cluster_coordinator_assignment
+        #   ↓
+        # cluster
+        #   ↓
+        # cluster_center
+        #   ↓
+        # tuition_center
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -431,18 +451,23 @@ def mobile_centre_attendance(center_id):
                 cc.cc_id,
                 cc.cc_name
 
-            FROM public.cluster_coordinator cc
+            FROM public.cluster_coordinator_assignment cca
+
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = cca.cc_id
 
             JOIN public.cluster_center ccm
-                ON ccm.cc_id = cc.cc_id
+                ON ccm.cluster_id = cca.cluster_id
+               AND ccm.academic_year_id = cca.academic_year_id
                AND ccm.active_flag = TRUE
 
             JOIN public.tuition_center tc
                 ON tc.center_id = ccm.center_id
 
-            WHERE cc.cc_id = %s
+            WHERE cca.cc_id = %s
+              AND cca.academic_year_id = %s
+              AND cca.active_flag = TRUE
               AND cc.active_flag = TRUE
-              AND ccm.academic_year_id = %s
               AND tc.center_id = %s
         """, (
             cc_id,
@@ -459,15 +484,8 @@ def mobile_centre_attendance(center_id):
             return redirect("/mobile/attendance")
 
         # ----------------------------------------------------
-        # Get active students for this centre and academic year
-        #
-        # Centre membership:
-        #
-        # student_center_assignment
-        #             ↓
-        #       student_master
-        #             ↓
-        #    student_academic_year
+        # Get active students for this centre
+        # and current academic year
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -502,7 +520,7 @@ def mobile_centre_attendance(center_id):
         students = cur.fetchall()
 
         # ----------------------------------------------------
-        # Display existing mobile attendance screen
+        # Display centre attendance screen
         # ----------------------------------------------------
         return render_template(
             "mobile/centre_attendance.html",
@@ -513,7 +531,7 @@ def mobile_centre_attendance(center_id):
 
     except Exception as e:
 
-        print("Mobile attendance page error:", e)
+        print("Mobile centre attendance page error:", e)
 
         return redirect("/dashboard")
 
@@ -521,7 +539,6 @@ def mobile_centre_attendance(center_id):
 
         cur.close()
         conn.close()
-
 
 # ============================================================
 # SUBMIT MOBILE ATTENDANCE
@@ -990,7 +1007,7 @@ def mobile_attendance_submitted(submission_id):
         cur.close()
         conn.close()
 
-        
+
 # =====================================================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -1191,13 +1208,53 @@ def login():
                     )
 
 
+                # -------------------------------------------------
+                # CLUSTER COORDINATOR
+                # -------------------------------------------------
+
+                if db_user["role_code"] == "CLUSTER_COORDINATOR":
+
+                    conn = get_connection()
+
+                    try:
+                        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                            cur.execute("""
+                                SELECT
+                                    upa.cc_id,
+                                    cca.cluster_id
+                                FROM public.user_person_assignment upa
+                                JOIN public.cluster_coordinator_assignment cca
+                                    ON cca.cc_id = upa.cc_id
+                                WHERE upa.user_id = %s
+                                  AND upa.active_flag = TRUE
+                                  AND cca.academic_year_id = 3
+                                  AND cca.active_flag = TRUE
+                                ORDER BY cca.assigned_from DESC NULLS LAST
+                                LIMIT 1
+                            """, (db_user["user_id"],))
+
+                            cc_assignment = cur.fetchone()
+
+                    finally:
+                        conn.close()
+
+                    if not cc_assignment:
+                        return redirect("/dashboard")
+
+                    # Store CC and cluster context in session
+                    session["cc_id"] = cc_assignment["cc_id"]
+                    session["cluster_id"] = cc_assignment["cluster_id"]
+
+                    # Existing cluster dashboard route currently
+                    # expects the CC ID.
+                    return redirect(
+                        f"/cluster-dashboard/{cc_assignment['cc_id']}"
+                    )
+
 
                 # -------------------------------------------------
                 # Other database users
-                #
-                # For now, send them to the dashboard.
-                # Their role-specific routing will be migrated
-                # in the next security phase.
                 # -------------------------------------------------
 
                 return redirect("/dashboard")
@@ -1280,10 +1337,9 @@ def dashboard():
         programme_snapshot=programme_snapshot,
         active_page="home"
     )
-
-@app.route("/cluster-dashboard/<int:cluster_id>")
+@app.route("/cluster-dashboard/<int:cc_id>")
 @login_required
-def cluster_dashboard(cluster_id):
+def cluster_dashboard(cc_id):
 
     allowed_roles = [
         "admin",
@@ -1298,98 +1354,155 @@ def cluster_dashboard(cluster_id):
         return redirect("/dashboard")
 
     # ---------------------------------------------------------
-    # Cluster Incharge can only view their own cluster
+    # Cluster Coordinator can only view their own CC portfolio
     # ---------------------------------------------------------
     if session.get("role") == "cluster_incharge":
-        if session.get("cc_id") != cluster_id:
+
+        if session.get("cc_id") != cc_id:
             return redirect(
                 f"/cluster-dashboard/{session.get('cc_id')}"
             )
 
     # ---------------------------------------------------------
-    # Load Cluster Coordinator / Centre data from database
+    # Load CC, cluster and centre data
     # ---------------------------------------------------------
 
-    cc = get_connection()
+    conn = get_connection()
 
     try:
-        with cc.cursor(cursor_factory=RealDictCursor) as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
 
             # -------------------------------------------------
-            # Coordinator details
+            # Coordinator + Cluster details
             # -------------------------------------------------
+
             cur.execute("""
                 SELECT
-                    cc_id,
-                    cc_name
-                FROM public.cluster_coordinator
-                WHERE cc_id = %s
-                  AND active_flag = TRUE
-            """, (cluster_id,))
+                    cc.cc_id,
+                    cc.cc_name,
+                    cca.cluster_id,
+                    cm.cluster_name
+                FROM public.cluster_coordinator cc
+                JOIN public.cluster_coordinator_assignment cca
+                    ON cca.cc_id = cc.cc_id
+                   AND cca.academic_year_id = 3
+                   AND cca.active_flag = TRUE
+                JOIN public.cluster_master cm
+                    ON cm.cluster_id = cca.cluster_id
+                WHERE cc.cc_id = %s
+                  AND cc.active_flag = TRUE
+                ORDER BY cca.assigned_from DESC NULLS LAST
+                LIMIT 1
+            """, (cc_id,))
 
             coordinator = cur.fetchone()
 
             if not coordinator:
                 return redirect("/dashboard")
 
+            # Keep the cluster context available in the session
+            session["cc_id"] = coordinator["cc_id"]
+            session["cluster_id"] = coordinator["cluster_id"]
+
             # -------------------------------------------------
             # Assigned centres and active students
+            #
+            # Current AEMS model:
+            # CC → Cluster → Cluster Centre → Student Assignment
             # -------------------------------------------------
+
             cur.execute("""
                 SELECT
                     tc.center_id,
                     tc.center_code,
                     tc.center_name,
                     COUNT(sm.student_id) AS students
-                FROM public.cluster_center c
+                FROM public.cluster_coordinator_assignment cca
+
+                JOIN public.cluster_center c
+                    ON c.cluster_id = cca.cluster_id
+                   AND c.academic_year_id = 3
+                   AND c.active_flag = TRUE
+
                 JOIN public.tuition_center tc
                     ON tc.center_id = c.center_id
                    AND tc.status = 'ACTIVE'
+
+                LEFT JOIN public.student_center_assignment sca
+                    ON sca.center_id = tc.center_id
+                   AND sca.academic_year_id = 3
+                   AND sca.active_flag = TRUE
+
                 LEFT JOIN public.student_master sm
-                    ON sm.center_id = tc.center_id
+                    ON sm.student_id = sca.student_id
                    AND sm.active_flag = TRUE
-                WHERE c.cc_id = %s
-                  AND c.active_flag = TRUE
+
+                LEFT JOIN public.student_academic_year say
+                    ON say.student_id = sm.student_id
+                   AND say.academic_year_id = 3
+                   AND say.status = 'ACTIVE'
+
+                WHERE cca.cc_id = %s
+                  AND cca.academic_year_id = 3
+                  AND cca.active_flag = TRUE
+
                 GROUP BY
                     tc.center_id,
                     tc.center_code,
                     tc.center_name
+
                 ORDER BY tc.center_code
-            """, (cluster_id,))
+            """, (cc_id,))
 
             centres = cur.fetchall()
 
             # -------------------------------------------------
             # 5-Day Attendance Trend
             #
-            # Aggregate attendance across ALL centres
-            # belonging to this Cluster Coordinator.
+            # student_attendance has NO center_id.
+            # Centre is obtained through attendance_submission.
             # -------------------------------------------------
+
             cur.execute("""
                 SELECT
                     sa.attendance_date,
                     COUNT(*) AS total,
+
                     COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'Present'
+                        WHERE sa.attendance_status = 'PRESENT'
                     ) AS present,
+
                     COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'Absent'
+                        WHERE sa.attendance_status = 'ABSENT'
                     ) AS absent
+
                 FROM public.student_attendance sa
+
+                JOIN public.attendance_submission ats
+                    ON ats.submission_id = sa.submission_id
+
                 JOIN public.cluster_center c
-                    ON c.center_id = sa.center_id
-                   AND c.cc_id = %s
+                    ON c.center_id = ats.center_id
+                   AND c.academic_year_id = 3
                    AND c.active_flag = TRUE
+
+                JOIN public.cluster_coordinator_assignment cca
+                    ON cca.cluster_id = c.cluster_id
+                   AND cca.cc_id = %s
+                   AND cca.academic_year_id = 3
+                   AND cca.active_flag = TRUE
+
                 WHERE sa.attendance_date >= CURRENT_DATE - INTERVAL '4 days'
                   AND sa.attendance_date <= CURRENT_DATE
+
                 GROUP BY sa.attendance_date
                 ORDER BY sa.attendance_date
-            """, (cluster_id,))
+            """, (cc_id,))
 
             attendance_trend = cur.fetchall()
 
     finally:
-        cc.close()
+        conn.close()
 
     # ---------------------------------------------------------
     # Calculate centre-wise today's attendance
@@ -1407,15 +1520,22 @@ def cluster_dashboard(cluster_id):
                 cur.execute("""
                     SELECT
                         COUNT(*) AS total,
+
                         COUNT(*) FILTER (
-                            WHERE attendance_status = 'Present'
+                            WHERE sa.attendance_status = 'PRESENT'
                         ) AS present,
+
                         COUNT(*) FILTER (
-                            WHERE attendance_status = 'Absent'
+                            WHERE sa.attendance_status = 'ABSENT'
                         ) AS absent
-                    FROM public.student_attendance
-                    WHERE center_id = %s
-                      AND attendance_date = CURRENT_DATE
+
+                    FROM public.student_attendance sa
+
+                    JOIN public.attendance_submission ats
+                        ON ats.submission_id = sa.submission_id
+
+                    WHERE ats.center_id = %s
+                      AND sa.attendance_date = CURRENT_DATE
                 """, (centre["center_id"],))
 
                 result = cur.fetchone()
@@ -1448,7 +1568,7 @@ def cluster_dashboard(cluster_id):
             centre["attendance"] = "—"
 
     # ---------------------------------------------------------
-    # Calculate today's cluster totals
+    # Calculate today's CC totals
     # ---------------------------------------------------------
 
     total_students = sum(
@@ -1478,8 +1598,13 @@ def cluster_dashboard(cluster_id):
 
         attendance_percentage = 0
 
+    # ---------------------------------------------------------
+    # CC summary
+    # ---------------------------------------------------------
+
     cluster = {
         "name": coordinator["cc_name"],
+        "cluster_name": coordinator["cluster_name"],
         "centres": len(centres),
         "students": total_students,
         "attendance": f"{attendance_percentage}%",
@@ -1509,10 +1634,6 @@ def cluster_dashboard(cluster_id):
 
     # ---------------------------------------------------------
     # Calculate 5-day aggregate average
-    #
-    # IMPORTANT:
-    # This is NOT an average of daily percentages.
-    # It is total Present / total attendance records.
     # ---------------------------------------------------------
 
     trend_total = sum(
@@ -1541,7 +1662,7 @@ def cluster_dashboard(cluster_id):
     attendance_date = datetime.today().date()
 
     # ---------------------------------------------------------
-    # Render dashboard
+    # Render CC dashboard
     # ---------------------------------------------------------
 
     return render_template(
@@ -1556,7 +1677,6 @@ def cluster_dashboard(cluster_id):
             session.get("role") == "cluster_incharge"
         )
     )
-
 # =====================================================
 # HOME
 # =====================================================
