@@ -196,7 +196,7 @@ def permission_required(permission_code):
 
     return decorator
 # ============================================================
-# MOBILE ATTENDANCE
+# CC ATTENDANCE CAPTURE
 # ============================================================
 
 @app.route("/mobile/attendance")
@@ -252,6 +252,7 @@ def mobile_attendance():
             JOIN public.cluster_coordinator cc
                 ON cc.cc_id = upa.cc_id
             WHERE upa.user_id = %s
+              AND upa.active_flag = TRUE
               AND cc.active_flag = TRUE
             LIMIT 1
         """, (user_id,))
@@ -277,7 +278,7 @@ def mobile_attendance():
         #   ↓
         # tuition_center
         #
-        # Student count comes through:
+        # Student count:
         # tuition_center
         #   ↓
         # student_center_assignment
@@ -367,16 +368,20 @@ def mobile_attendance():
         cur.close()
         conn.close()
 
+
 # ============================================================
-# MOBILE ATTENDANCE - CENTRE
+# CC ATTENDANCE CAPTURE - CENTRE
 # ============================================================
 
 @app.route("/mobile/attendance/<int:center_id>")
 @login_required
 def mobile_centre_attendance(center_id):
 
+    print("========== NEW CENTRE ATTENDANCE ROUTE ==========")
+    print("CENTER ID RECEIVED:", center_id)
+
     # --------------------------------------------------------
-    # Mobile attendance is ONLY for Cluster Coordinators
+    # Attendance capture is ONLY for Cluster Coordinators
     # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return redirect("/dashboard")
@@ -418,6 +423,7 @@ def mobile_centre_attendance(center_id):
             JOIN public.cluster_coordinator cc
                 ON cc.cc_id = upa.cc_id
             WHERE upa.user_id = %s
+              AND upa.active_flag = TRUE
               AND cc.active_flag = TRUE
             LIMIT 1
         """, (user_id,))
@@ -483,34 +489,28 @@ def mobile_centre_attendance(center_id):
         if not centre:
             return redirect("/mobile/attendance")
 
-        # ----------------------------------------------------
-        # Get active students for this centre
-        # and current academic year
+                # ----------------------------------------------------
+        # Get all active students for this centre
+        # Attendance is based on centre membership.
+        # It does NOT depend on student_academic_year.
         # ----------------------------------------------------
         cur.execute("""
             SELECT
                 sm.student_id,
                 sm.student_code,
-                sm.student_name,
-                say.class_studying
+                sm.student_name
 
             FROM public.student_center_assignment sca
 
             JOIN public.student_master sm
                 ON sm.student_id = sca.student_id
 
-            JOIN public.student_academic_year say
-                ON say.student_id = sm.student_id
-               AND say.academic_year_id = sca.academic_year_id
-
             WHERE sca.center_id = %s
               AND sca.academic_year_id = %s
               AND sca.active_flag = TRUE
               AND sm.active_flag = TRUE
-              AND say.status = 'ACTIVE'
 
             ORDER BY
-                say.class_studying,
                 sm.student_name
         """, (
             center_id,
@@ -518,6 +518,11 @@ def mobile_centre_attendance(center_id):
         ))
 
         students = cur.fetchall()
+
+        print("DEBUG centre:", center_id)
+        print("DEBUG academic year:", academic_year_id)
+        print("DEBUG students returned:", len(students))
+        print("DEBUG student rows:", students)
 
         # ----------------------------------------------------
         # Display centre attendance screen
@@ -540,8 +545,9 @@ def mobile_centre_attendance(center_id):
         cur.close()
         conn.close()
 
+
 # ============================================================
-# SUBMIT MOBILE ATTENDANCE
+# SUBMIT CC ATTENDANCE
 # ============================================================
 
 @app.route(
@@ -552,7 +558,7 @@ def mobile_centre_attendance(center_id):
 def mobile_attendance_submit(center_id):
 
     # --------------------------------------------------------
-    # Mobile attendance is ONLY for Cluster Coordinators
+    # Attendance capture is ONLY for Cluster Coordinators
     # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return {
@@ -606,7 +612,7 @@ def mobile_attendance_submit(center_id):
         academic_year_id = academic_year["academic_year_id"]
 
         # ----------------------------------------------------
-        # Identify the logged-in CC through user assignment
+        # Identify the logged-in CC
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -616,6 +622,7 @@ def mobile_attendance_submit(center_id):
             JOIN public.cluster_coordinator cc
                 ON cc.cc_id = upa.cc_id
             WHERE upa.user_id = %s
+              AND upa.active_flag = TRUE
               AND cc.active_flag = TRUE
             LIMIT 1
         """, (user_id,))
@@ -632,6 +639,16 @@ def mobile_attendance_submit(center_id):
 
         # ----------------------------------------------------
         # Verify that the centre belongs to this CC
+        #
+        # CC
+        #   ↓
+        # cluster_coordinator_assignment
+        #   ↓
+        # cluster
+        #   ↓
+        # cluster_center
+        #   ↓
+        # tuition_center
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -639,20 +656,25 @@ def mobile_attendance_submit(center_id):
                 tc.center_code,
                 tc.center_name
 
-            FROM public.cluster_center ccm
+            FROM public.cluster_coordinator_assignment cca
+
+            JOIN public.cluster_center ccm
+                ON ccm.cluster_id = cca.cluster_id
+               AND ccm.academic_year_id = cca.academic_year_id
+               AND ccm.active_flag = TRUE
 
             JOIN public.tuition_center tc
                 ON tc.center_id = ccm.center_id
 
-            WHERE ccm.cc_id = %s
-              AND ccm.center_id = %s
-              AND ccm.active_flag = TRUE
-              AND ccm.academic_year_id = %s
-        """, (
+            WHERE cca.cc_id = %s
+                AND cca.academic_year_id = %s
+                AND cca.active_flag = TRUE
+                AND tc.center_id = %s
+                        """, (
             cc_id,
-            center_id,
-            academic_year_id
-        ))
+            academic_year_id,
+            center_id
+            ))
 
         centre = cur.fetchone()
 
@@ -676,7 +698,6 @@ def mobile_attendance_submit(center_id):
         existing_submission = cur.fetchone()
 
         if existing_submission:
-
             return {
                 "success": False,
                 "message": (
@@ -691,22 +712,22 @@ def mobile_attendance_submit(center_id):
         # ----------------------------------------------------
         cur.execute("""
             SELECT
-                sm.student_id
+                sm.student_id,
+                sm.student_code,
+                sm.student_name
 
             FROM public.student_center_assignment sca
 
             JOIN public.student_master sm
                 ON sm.student_id = sca.student_id
 
-            JOIN public.student_academic_year say
-                ON say.student_id = sm.student_id
-               AND say.academic_year_id = sca.academic_year_id
-
             WHERE sca.center_id = %s
               AND sca.academic_year_id = %s
               AND sca.active_flag = TRUE
               AND sm.active_flag = TRUE
-              AND say.status = 'ACTIVE'
+
+            ORDER BY
+                sm.student_name
         """, (
             center_id,
             academic_year_id
@@ -856,7 +877,7 @@ def mobile_attendance_submit(center_id):
 
 
 # ============================================================
-# MOBILE ATTENDANCE SUBMISSION CONFIRMATION
+# CC ATTENDANCE SUBMISSION CONFIRMATION
 # ============================================================
 
 @app.route("/mobile/attendance/submitted/<int:submission_id>")
@@ -864,7 +885,7 @@ def mobile_attendance_submit(center_id):
 def mobile_attendance_submitted(submission_id):
 
     # --------------------------------------------------------
-    # Mobile attendance is ONLY for Cluster Coordinators
+    # Attendance capture is ONLY for Cluster Coordinators
     # --------------------------------------------------------
     if session.get("role") != "cluster_incharge":
         return redirect("/dashboard")
@@ -890,6 +911,7 @@ def mobile_attendance_submitted(submission_id):
             JOIN public.cluster_coordinator cc
                 ON cc.cc_id = upa.cc_id
             WHERE upa.user_id = %s
+              AND upa.active_flag = TRUE
               AND cc.active_flag = TRUE
             LIMIT 1
         """, (user_id,))
@@ -920,7 +942,19 @@ def mobile_attendance_submitted(submission_id):
 
         # ----------------------------------------------------
         # Get submission and verify that it belongs to
-        # the logged-in CC
+        # the logged-in CC through the cluster assignment
+        #
+        # attendance_submission
+        #        ↓
+        #     centre
+        #        ↓
+        # cluster_center
+        #        ↓
+        # cluster
+        #        ↓
+        # cluster_coordinator_assignment
+        #        ↓
+        #        CC
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -938,20 +972,26 @@ def mobile_attendance_submitted(submission_id):
             JOIN public.tuition_center tc
                 ON tc.center_id = ats.center_id
 
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = ats.cc_id
-
             JOIN public.cluster_center ccm
-                ON ccm.cc_id = cc.cc_id
-               AND ccm.center_id = ats.center_id
+                ON ccm.center_id = ats.center_id
                AND ccm.academic_year_id = %s
                AND ccm.active_flag = TRUE
 
+            JOIN public.cluster_coordinator_assignment cca
+                ON cca.cluster_id = ccm.cluster_id
+               AND cca.academic_year_id = ccm.academic_year_id
+               AND cca.active_flag = TRUE
+               AND cca.cc_id = %s
+
+            JOIN public.cluster_coordinator cc
+                ON cc.cc_id = cca.cc_id
+               AND cc.active_flag = TRUE
+
             WHERE ats.submission_id = %s
               AND ats.cc_id = %s
-              AND cc.active_flag = TRUE
         """, (
             academic_year_id,
+            cc_id,
             submission_id,
             cc_id
         ))
@@ -988,7 +1028,7 @@ def mobile_attendance_submitted(submission_id):
         summary = cur.fetchone()
 
         # ----------------------------------------------------
-        # Display existing confirmation screen
+        # Display confirmation screen
         # ----------------------------------------------------
         return render_template(
             "mobile/attendance_submitted.html",
