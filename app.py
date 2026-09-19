@@ -26,7 +26,7 @@ from database import (
     get_class_student_strength
 )
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from psycopg2.extras import RealDictCursor
 
 from excel_export import export_report_to_excel
@@ -4197,80 +4197,681 @@ def centre_students(centre_id):
         students_by_class=students_by_class,
         class_stats=class_stats
     )
+# ============================================================
+# CENTRE ATTENDANCE
+# ============================================================
+
 @app.route("/attendance/<int:centre_id>")
 @login_required
 def centre_attendance(centre_id):
 
-    attendance_by_class = {
+    role = session.get("role")
+    user_id = session.get("user_id")
 
-        "I": [
-            {"name": "Anjali", "present": 23, "absent": 2},
-            {"name": "Rahul", "present": 21, "absent": 4},
-            {"name": "Sravani", "present": 24, "absent": 1},
-            {"name": "Kiran", "present": 22, "absent": 3},
-            {"name": "Divya", "present": 23, "absent": 2}
-        ],
+    db = get_connection()
 
-        "II": [
-            {"name": "Kavya", "present": 22, "absent": 3},
-            {"name": "Rohit", "present": 21, "absent": 4},
-            {"name": "Pooja", "present": 24, "absent": 1},
-            {"name": "Arjun", "present": 20, "absent": 5},
-            {"name": "Lakshmi", "present": 23, "absent": 2},
-            {"name": "Manoj", "present": 22, "absent": 3}
-        ],
+    try:
+        with db.cursor(cursor_factory=RealDictCursor) as cur:
 
-        "III": [
-            {"name": "Swathi", "present": 23, "absent": 2},
-            {"name": "Vijay", "present": 21, "absent": 4},
-            {"name": "Keerthi", "present": 24, "absent": 1},
-            {"name": "Naveen", "present": 22, "absent": 3},
-            {"name": "Harika", "present": 23, "absent": 2}
-        ],
+            # ====================================================
+            # 1. CENTRE DETAILS
+            # ====================================================
 
-        "IV": [
-            {"name": "Anusha", "present": 23, "absent": 2},
-            {"name": "Ramesh", "present": 21, "absent": 4},
-            {"name": "Bhavya", "present": 24, "absent": 1},
-            {"name": "Suresh", "present": 20, "absent": 5},
-            {"name": "Meena", "present": 22, "absent": 3},
-            {"name": "Ajay", "present": 23, "absent": 2}
-        ],
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+                FROM public.tuition_center tc
+                WHERE tc.center_id = %s
+                  AND tc.status = 'ACTIVE'
+            """, (centre_id,))
 
-        "V": [
-            {"name": "Sandhya", "present": 22, "absent": 3},
-            {"name": "Praveen", "present": 21, "absent": 4},
-            {"name": "Deepa", "present": 24, "absent": 1},
-            {"name": "Mahesh", "present": 20, "absent": 5},
-            {"name": "Jyothi", "present": 23, "absent": 2}
-        ],
+            centre = cur.fetchone()
 
-        "VI": [
-            {"name": "Sravani", "present": 23, "absent": 2},
-            {"name": "Anjali", "present": 22, "absent": 3},
-            {"name": "Karthik", "present": 21, "absent": 4},
-            {"name": "Divya", "present": 24, "absent": 1},
-            {"name": "Ravi", "present": 22, "absent": 3},
-            {"name": "Pavani", "present": 23, "absent": 2}
-        ]
-    }
+            if not centre:
+                return redirect("/dashboard")
 
-    class_counts = {
-        "I": 5,
-        "II": 6,
-        "III": 5,
-        "IV": 6,
-        "V": 5,
-        "VI": 6
-    }
 
-    return render_template(
-        "attendance/centre_attendance.html",
-        centre_id=centre_id,
-        attendance_by_class=attendance_by_class,
-        class_counts=class_counts,
-        active_page="attendance"
-    )
+            # ====================================================
+            # 2. VERIFY USER ACCESS TO THIS CENTRE
+            # ====================================================
+
+            if role == "tutor":
+
+                cur.execute("""
+                    SELECT 1
+                    FROM public.user_person_assignment upa
+
+                    JOIN public.tutor_centre_assignment tca
+                        ON tca.tutor_id = upa.tutor_id
+                       AND tca.active_flag = TRUE
+
+                    WHERE upa.user_id = %s
+                      AND upa.active_flag = TRUE
+                      AND tca.center_id = %s
+                      AND tca.academic_year_id = 3
+                """, (
+                    user_id,
+                    centre_id
+                ))
+
+                if not cur.fetchone():
+                    return redirect("/dashboard")
+
+
+            elif role == "cluster_incharge":
+
+                cur.execute("""
+                    SELECT 1
+                    FROM public.user_person_assignment upa
+
+                    JOIN public.cluster_coordinator_assignment cca
+                        ON cca.cc_id = upa.cc_id
+                       AND cca.active_flag = TRUE
+
+                    JOIN public.cluster_center cc
+                        ON cc.cluster_id = cca.cluster_id
+                       AND cc.active_flag = TRUE
+                       AND cc.academic_year_id = 3
+
+                    WHERE upa.user_id = %s
+                      AND upa.active_flag = TRUE
+                      AND cca.academic_year_id = 3
+                      AND cc.center_id = %s
+                """, (
+                    user_id,
+                    centre_id
+                ))
+
+                if not cur.fetchone():
+                    return redirect("/dashboard")
+
+
+            # ====================================================
+            # 3. CURRENT TUTOR
+            # ====================================================
+
+            cur.execute("""
+                SELECT
+                    tm.tutor_id,
+                    tm.tutor_name
+                FROM public.tutor_centre_assignment tca
+
+                JOIN public.tutor_master tm
+                    ON tm.tutor_id = tca.tutor_id
+
+                WHERE tca.center_id = %s
+                  AND tca.academic_year_id = 3
+                  AND tca.active_flag = TRUE
+                  AND tm.active_flag = TRUE
+            """, (centre_id,))
+
+            tutor = cur.fetchone()
+
+
+            # ====================================================
+            # 4. SELECTED MONTH
+            #
+            # Default = current month
+            # Example:
+            # /attendance/24?month=2026-09
+            # ====================================================
+
+            selected_month = request.args.get(
+                "month",
+                datetime.today().strftime("%Y-%m")
+            )
+
+            try:
+                month_start = datetime.strptime(
+                    selected_month,
+                    "%Y-%m"
+                ).date()
+            except ValueError:
+                selected_month = datetime.today().strftime("%Y-%m")
+
+                month_start = datetime.strptime(
+                    selected_month,
+                    "%Y-%m"
+                ).date()
+
+
+            # First day of next month
+            if month_start.month == 12:
+                next_month = month_start.replace(
+                    year=month_start.year + 1,
+                    month=1,
+                    day=1
+                )
+            else:
+                next_month = month_start.replace(
+                    month=month_start.month + 1,
+                    day=1
+                )
+
+            month_end = next_month - timedelta(days=1)
+
+
+            # ====================================================
+            # 5. AS-OF DATE
+            #
+            # If supplied, use it.
+            # Otherwise use the latest attendance submission
+            # in the selected month.
+            # ====================================================
+
+            as_of_param = request.args.get("as_of")
+
+            as_of_date = None
+
+            if as_of_param:
+                try:
+                    as_of_date = datetime.strptime(
+                        as_of_param,
+                        "%Y-%m-%d"
+                    ).date()
+                except ValueError:
+                    as_of_date = None
+
+
+            if not as_of_date:
+
+                cur.execute("""
+                    SELECT
+                        MAX(attendance_date) AS latest_date
+                    FROM public.attendance_submission
+                    WHERE center_id = %s
+                      AND attendance_date >= %s
+                      AND attendance_date <= %s
+                """, (
+                    centre_id,
+                    month_start,
+                    month_end
+                ))
+
+                result = cur.fetchone()
+
+                as_of_date = (
+                    result["latest_date"]
+                    if result and result["latest_date"]
+                    else month_end
+                )
+
+
+            # Never allow the as-of date outside the month
+            if as_of_date < month_start:
+                as_of_date = month_start
+
+            if as_of_date > month_end:
+                as_of_date = month_end
+
+
+            # ====================================================
+            # 6. CURRENT STUDENTS
+            # ====================================================
+
+            cur.execute("""
+                SELECT
+                    sm.student_id,
+                    sm.student_code,
+                    sm.student_name,
+                    sm.gender,
+                    say.class_studying,
+                    cgm.group_code
+                FROM public.student_center_assignment sca
+
+                JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+
+                JOIN public.student_academic_year say
+                    ON say.student_id = sm.student_id
+                   AND say.academic_year_id = sca.academic_year_id
+
+                LEFT JOIN public.curriculum_group_master cgm
+                    ON cgm.group_id = say.group_id
+
+                WHERE sca.center_id = %s
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = TRUE
+                  AND say.status = 'ACTIVE'
+
+                ORDER BY
+                    cgm.group_code,
+                    say.class_studying NULLS FIRST,
+                    sm.student_name
+            """, (centre_id,))
+
+            students = cur.fetchall()
+
+
+            # ====================================================
+            # 7. MONTHLY OVERALL SUMMARY
+            #
+            # Working Days:
+            #     distinct submitted attendance dates
+            #
+            # Present:
+            #     all PRESENT student-day records
+            #
+            # Absent:
+            #     all ABSENT student-day records
+            #
+            # Attendance %:
+            #     Present / (Present + Absent) * 100
+            # ====================================================
+
+            cur.execute("""
+                SELECT
+                    COUNT(DISTINCT ats.attendance_date)
+                        AS working_days,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'PRESENT'
+                    ) AS present,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'ABSENT'
+                    ) AS absent
+
+                FROM public.student_attendance sa
+
+                JOIN public.attendance_submission ats
+                    ON ats.submission_id = sa.submission_id
+
+                WHERE ats.center_id = %s
+                  AND ats.attendance_date >= %s
+                  AND ats.attendance_date <= %s
+                  AND ats.attendance_date <= %s
+            """, (
+                centre_id,
+                month_start,
+                month_end,
+                as_of_date
+            ))
+
+            monthly_summary = cur.fetchone()
+
+
+            working_days = monthly_summary["working_days"] or 0
+            monthly_present = monthly_summary["present"] or 0
+            monthly_absent = monthly_summary["absent"] or 0
+
+            monthly_total = (
+                monthly_present +
+                monthly_absent
+            )
+
+            if monthly_total > 0:
+                monthly_percentage = round(
+                    (monthly_present / monthly_total) * 100,
+                    1
+                )
+            else:
+                monthly_percentage = 0
+
+
+            monthly_summary["working_days"] = working_days
+            monthly_summary["present"] = monthly_present
+            monthly_summary["absent"] = monthly_absent
+            monthly_summary["total"] = monthly_total
+            monthly_summary["percentage"] = monthly_percentage
+
+
+            # ====================================================
+            # 8. DAILY ATTENDANCE TREND
+            #
+            # Every submitted attendance day in the month.
+            # No fixed 5-day window.
+            # ====================================================
+
+            cur.execute("""
+                SELECT
+                    ats.attendance_date,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'PRESENT'
+                    ) AS present,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'ABSENT'
+                    ) AS absent
+
+                FROM public.student_attendance sa
+
+                JOIN public.attendance_submission ats
+                    ON ats.submission_id = sa.submission_id
+
+                WHERE ats.center_id = %s
+                  AND ats.attendance_date >= %s
+                  AND ats.attendance_date <= %s
+                  AND ats.attendance_date <= %s
+
+                GROUP BY
+                    ats.attendance_date
+
+                ORDER BY
+                    ats.attendance_date
+            """, (
+                centre_id,
+                month_start,
+                month_end,
+                as_of_date
+            ))
+
+            attendance_trend = cur.fetchall()
+
+
+            for day in attendance_trend:
+
+                total = (
+                    (day["present"] or 0) +
+                    (day["absent"] or 0)
+                )
+
+                present = day["present"] or 0
+
+                day["total"] = total
+
+                if total > 0:
+                    day["percentage"] = round(
+                        (present / total) * 100,
+                        1
+                    )
+                else:
+                    day["percentage"] = 0
+
+
+            # ====================================================
+            # 9. GROUP A / GROUP B SUMMARY
+            # ====================================================
+
+            cur.execute("""
+                SELECT
+                    cgm.group_code,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'PRESENT'
+                    ) AS present,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'ABSENT'
+                    ) AS absent
+
+                FROM public.student_attendance sa
+
+                JOIN public.attendance_submission ats
+                    ON ats.submission_id = sa.submission_id
+
+                JOIN public.student_master sm
+                    ON sm.student_id = sa.student_id
+
+                JOIN public.student_academic_year say
+                    ON say.student_id = sm.student_id
+                   AND say.academic_year_id = 3
+
+                JOIN public.curriculum_group_master cgm
+                    ON cgm.group_id = say.group_id
+
+                WHERE ats.center_id = %s
+                  AND ats.attendance_date >= %s
+                  AND ats.attendance_date <= %s
+                  AND ats.attendance_date <= %s
+
+                GROUP BY
+                    cgm.group_code
+
+                ORDER BY
+                    cgm.group_code
+            """, (
+                centre_id,
+                month_start,
+                month_end,
+                as_of_date
+            ))
+
+            group_rows = cur.fetchall()
+
+            group_summary = {}
+
+            for row in group_rows:
+
+                present = row["present"] or 0
+                absent = row["absent"] or 0
+                total = present + absent
+
+                percentage = (
+                    round((present / total) * 100, 1)
+                    if total > 0
+                    else 0
+                )
+
+                group_summary[row["group_code"]] = {
+                    "present": present,
+                    "absent": absent,
+                    "total": total,
+                    "percentage": percentage
+                }
+
+
+            # ====================================================
+            # 10. STUDENT-WISE ATTENDANCE
+            #
+            # Includes every current student.
+            # Students with no attendance yet remain visible.
+            # ====================================================
+
+            cur.execute("""
+                SELECT
+                    sm.student_id,
+                    sm.student_code,
+                    sm.student_name,
+                    sm.gender,
+                    say.class_studying,
+                    cgm.group_code,
+
+                    COUNT(sa.attendance_id) FILTER (
+                        WHERE sa.attendance_status = 'PRESENT'
+                    ) AS present,
+
+                    COUNT(sa.attendance_id) FILTER (
+                        WHERE sa.attendance_status = 'ABSENT'
+                    ) AS absent
+
+                FROM public.student_center_assignment sca
+
+                JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+
+                JOIN public.student_academic_year say
+                    ON say.student_id = sm.student_id
+                   AND say.academic_year_id = sca.academic_year_id
+
+                LEFT JOIN public.curriculum_group_master cgm
+                    ON cgm.group_id = say.group_id
+
+                LEFT JOIN public.student_attendance sa
+                    ON sa.student_id = sm.student_id
+
+                LEFT JOIN public.attendance_submission ats
+                    ON ats.submission_id = sa.submission_id
+                   AND ats.center_id = sca.center_id
+                   AND ats.attendance_date >= %s
+                   AND ats.attendance_date <= %s
+                   AND ats.attendance_date <= %s
+
+                WHERE sca.center_id = %s
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = TRUE
+                  AND say.status = 'ACTIVE'
+
+                GROUP BY
+                    sm.student_id,
+                    sm.student_code,
+                    sm.student_name,
+                    sm.gender,
+                    say.class_studying,
+                    cgm.group_code
+
+                ORDER BY
+                    cgm.group_code,
+                    say.class_studying NULLS FIRST,
+                    sm.student_name
+            """, (
+                month_start,
+                month_end,
+                as_of_date,
+                centre_id
+            ))
+
+            student_attendance = cur.fetchall()
+
+
+            for student in student_attendance:
+
+                present = student["present"] or 0
+                absent = student["absent"] or 0
+                total = present + absent
+
+                student["total"] = total
+
+                if total > 0:
+                    student["percentage"] = round(
+                        (present / total) * 100,
+                        1
+                    )
+                else:
+                    student["percentage"] = None
+
+
+            # ====================================================
+            # 11. LATEST ATTENDANCE DATE
+            # ====================================================
+
+            latest_attendance_date = None
+
+            cur.execute("""
+                SELECT
+                    MAX(attendance_date) AS latest_date
+                FROM public.attendance_submission
+                WHERE center_id = %s
+                  AND attendance_date >= %s
+                  AND attendance_date <= %s
+                  AND attendance_date <= %s
+            """, (
+                centre_id,
+                month_start,
+                month_end,
+                as_of_date
+            ))
+
+            latest_result = cur.fetchone()
+
+            if latest_result:
+                latest_attendance_date = latest_result["latest_date"]
+
+
+            # ====================================================
+            # 12. LATEST-DAY ABSENTEES
+            # ====================================================
+
+            latest_absentees = []
+
+            if latest_attendance_date:
+
+                cur.execute("""
+                    SELECT
+                        sm.student_id,
+                        sm.student_code,
+                        sm.student_name,
+                        sm.gender,
+                        say.class_studying,
+                        cgm.group_code
+
+                    FROM public.student_attendance sa
+
+                    JOIN public.attendance_submission ats
+                        ON ats.submission_id = sa.submission_id
+
+                    JOIN public.student_master sm
+                        ON sm.student_id = sa.student_id
+
+                    JOIN public.student_academic_year say
+                        ON say.student_id = sm.student_id
+                       AND say.academic_year_id = 3
+
+                    LEFT JOIN public.curriculum_group_master cgm
+                        ON cgm.group_id = say.group_id
+
+                    WHERE ats.center_id = %s
+                      AND ats.attendance_date = %s
+                      AND sa.attendance_status = 'ABSENT'
+
+                    ORDER BY
+                        cgm.group_code,
+                        say.class_studying NULLS FIRST,
+                        sm.student_name
+                """, (
+                    centre_id,
+                    latest_attendance_date
+                ))
+
+                latest_absentees = cur.fetchall()
+
+
+            # ====================================================
+            # 13. DISPLAY NAME
+            # ====================================================
+
+            centre_display_name = (
+                centre["center_name"]
+                if centre["center_name"]
+                and str(centre["center_name"]).strip()
+                else centre["center_code"]
+            )
+
+
+            # ====================================================
+            # 14. RENDER
+            # ====================================================
+
+            return render_template(
+                "attendance/centre_attendance.html",
+
+                centre=centre,
+                centre_display_name=centre_display_name,
+                tutor=tutor,
+
+                selected_month=selected_month,
+                month_start=month_start,
+                month_end=month_end,
+                as_of_date=as_of_date,
+
+                monthly_summary=monthly_summary,
+
+                attendance_trend=attendance_trend,
+
+                group_summary=group_summary,
+
+                students=students,
+                student_attendance=student_attendance,
+
+                latest_attendance_date=latest_attendance_date,
+                latest_absentees=latest_absentees,
+
+                active_page="attendance"
+            )
+
+    except Exception as e:
+
+        print("Centre attendance page error:", e)
+
+        return redirect("/dashboard")
+
+    finally:
+        db.close()
 
 
 @app.route("/performance/<int:centre_id>")

@@ -118,275 +118,287 @@
 
         <div class="collapse navbar-collapse" id="mainmenu">
 
-            <ul class="navbar-nav ms-auto">
+    <ul class="navbar-nav ms-auto">
+
+        {# =====================================================
+           CENTRE CONTEXT
+           A CC remains cluster_incharge internally.
+           This variable only controls the navigation context.
+           ===================================================== #}
+
+        {% set centre_context =
+            request.path.startswith('/centre/')
+            or request.path.startswith('/students/')
+            or request.path.startswith('/attendance/')
+            or request.path.startswith('/performance/')
+        %}
+
+        {% set centre_id = request.view_args.get('centre_id') %}
 
 
-                <!-- ===================================== -->
-                <!-- DASHBOARD -->
-                <!-- ===================================== -->
+        <!-- ===================================== -->
+        <!-- DASHBOARD -->
+        <!-- ===================================== -->
 
-                {% if session.get("role") == "management" %}
+        {% if session.get("role") == "management" %}
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard">
 
-                            <i class="bi bi-speedometer2"></i>
-                            Dashboard
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
 
-                        </a>
-                    </li>
+                </a>
+            </li>
 
-                {% elif session.get("role") == "operational_head" %}
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="/zone-dashboard">
+        {% elif session.get("role") == "operational_head" %}
 
-                            <i class="bi bi-speedometer2"></i>
-                            Dashboard
+            <li class="nav-item">
+                <a class="nav-link" href="/zone-dashboard">
 
-                        </a>
-                    </li>
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
 
-                {% elif session.get("role") == "segment_incharge" %}
+                </a>
+            </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link"
-                        href="/segment/{{ session.get('segment') }}">
 
-                            <i class="bi bi-speedometer2"></i>
-                            Dashboard
+        {% elif session.get("role") == "segment_incharge" %}
 
-                        </a>
-                    </li>
+            <li class="nav-item">
+                <a class="nav-link"
+                   href="/segment/{{ session.get('segment') }}">
 
-                    {% elif session.get("role") == "cluster_incharge" %}
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
 
-                        <li class="nav-item">
+                </a>
+            </li>
 
-                            {% if request.endpoint == "centre_dashboard" %}
 
-                                <a class="nav-link"
-                                    href="/centre/{{ request.view_args.get('centre_id') }}">
+        {% elif session.get("role") == "cluster_incharge" %}
 
-                            {% else %}
+            <li class="nav-item">
 
-                                <a class="nav-link"
-                                    href="/cluster-dashboard/{{ session.get('cc_id') }}">
+                {% if centre_context and centre_id %}
 
-                            {% endif %}
+                    <a class="nav-link"
+                       href="/centre/{{ centre_id }}">
 
-                                <i class="bi bi-speedometer2"></i>
-                                Dashboard
+                {% else %}
 
-                            </a>
-                        </li>
-                {% elif session.get("role") == "tutor" %}
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                        href="/centre/{{ session.get('centre') }}">
-
-                            <i class="bi bi-speedometer2"></i>
-                            Dashboard
-
-                        </a>
-                    </li>
-
-                {% endif %}
-
-                <!-- ===================================== -->
-                <!-- TUITION CENTRES -->
-                <!-- ===================================== -->
-
-                {% if session.get("role") == "management" %}
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                        href="/vidya-vikasam">
-
-                            <i class="bi bi-buildings-fill"></i>
-                            Tuition Centres
-
-                        </a>
-                    </li>
+                    <a class="nav-link"
+                       href="/cluster-dashboard/{{ session.get('cc_id') }}">
 
                 {% endif %}
 
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
 
-                <!-- ===================================== -->
-                <!-- TUTOR SPACE -->
-                <!-- ===================================== -->
+                </a>
 
-                {% if session.get("role") in [
-                    "management",
-                    "operational_head",
-                    "segment_incharge",
-                    "cluster_incharge"
-                ] %}
-
-                    <li class="nav-item">
-
-                        {% if session.get("role") == "cluster_incharge" %}
-
-                            <a class="nav-link"
-                               href="/tutor-space">
-
-                        {% elif session.get("role") == "segment_incharge" %}
-
-                            <a class="nav-link"
-                               href="/tutor-space">
-
-                        {% else %}
-
-                            <a class="nav-link"
-                               href="/zone-tutor-space">
-
-                        {% endif %}
-
-                            <i class="bi bi-person-workspace"></i>
-                            Tutor Space
-
-                        </a>
-
-                    </li>
-
-                {% endif %}
+            </li>
 
 
-                <!-- ===================================== -->
-                <!-- CENTRE-SPECIFIC MENU -->
-                <!-- ===================================== -->
+        {% elif session.get("role") == "tutor" %}
 
-                {% if (
-                    session.get("role") == "cluster_incharge"
-                    and request.endpoint == "centre_dashboard"
-                ) %}
+            <li class="nav-item">
+                <a class="nav-link"
+                   href="/centre/{{ session.get('centre') }}">
 
-                    <li class="nav-item">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+
+                </a>
+            </li>
+
+        {% endif %}
+
+
+        <!-- ===================================== -->
+        <!-- TUTOR SPACE -->
+        <!-- ===================================== -->
+
+        {% if session.get("role") in [
+            "management",
+            "operational_head",
+            "segment_incharge",
+            "cluster_incharge"
+        ] %}
+
+            {# CC sees Tutor Space only at Cluster level #}
+
+            {% if session.get("role") != "cluster_incharge"
+                  or not centre_context %}
+
+                <li class="nav-item">
+
+                    {% if session.get("role") == "cluster_incharge" %}
+
                         <a class="nav-link"
-                           href="/students/{{ request.view_args.get('centre_id') if session.get('role') == 'cluster_incharge' else session.get('centre') }}">
+                           href="/tutor-space">
 
-                            <i class="bi bi-people-fill"></i>
-                            Students
+                    {% elif session.get("role") == "segment_incharge" %}
 
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
                         <a class="nav-link"
-                           href="/attendance/{{ request.view_args.get('centre_id') if session.get('role') == 'cluster_incharge' else session.get('centre') }}">
+                           href="/tutor-space">
 
-                            <i class="bi bi-calendar-check-fill"></i>
-                            Attendance
+                    {% else %}
 
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
                         <a class="nav-link"
-                           href="/performance/{{ request.view_args.get('centre_id') if session.get('role') == 'cluster_incharge' else session.get('centre') }}">
+                           href="/zone-tutor-space">
 
-                            <i class="bi bi-clipboard-data-fill"></i>
-                            Performance
+                    {% endif %}
 
-                        </a>
-                    </li>
+                        <i class="bi bi-person-workspace"></i>
+                        Tutor Space
 
-                {% endif %}
+                    </a>
 
+                </li>
 
-                <!-- ===================================== -->
-                <!-- SCIENCE CENTRES -->
-                <!-- ===================================== -->
+            {% endif %}
 
-                {% if session.get("role") == "management" %}
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="#">
-
-                            <i class="bi bi-flask-fill"></i>
-                            Science Centres
-
-                        </a>
-                    </li>
-
-                {% endif %}
+        {% endif %}
 
 
-                <!-- ===================================== -->
-                <!-- TUTOR-SPECIFIC MENU -->
-                <!-- ===================================== -->
+        <!-- ===================================== -->
+        <!-- CC CENTRE CONTEXT MENU -->
+        <!-- ===================================== -->
 
-                {% if session.get("role") == "tutor" %}
+        {% if session.get("role") == "cluster_incharge"
+              and centre_context
+              and centre_id %}
 
-                    <li class="nav-item">
-                        <a class="nav-link"
-                            href="/students/{{ session.get('centre') }}">
+            <li class="nav-item">
 
-                            <i class="bi bi-people-fill"></i>
-                            Students
+                <a class="nav-link"
+                   href="/students/{{ centre_id }}">
 
-                        </a>
-                    </li>
+                    <i class="bi bi-people-fill"></i>
+                    Students
 
-                    <li class="nav-item">
-                        <a class="nav-link"
-                        href="/attendance/{{ session.get('centre') }}">
+                </a>
 
-                            <i class="bi bi-calendar-check-fill"></i>
-                            Attendance
-
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                        href="/performance/{{ session.get('centre') }}">
-
-                            <i class="bi bi-clipboard-data-fill"></i>
-                            Assessments
-
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                        href="/tutor-reports">
-
-                            <i class="bi bi-bar-chart-fill"></i>
-                            Reports
-
-                        </a>
-                    </li>
-
-                {% endif %}
+            </li>
 
 
-                <!-- ===================================== -->
-                <!-- REPORTS -->
-                <!-- ===================================== -->
+            <li class="nav-item">
 
-                {% if session.get("role") in [
-                    "management",
-                    "operational_head",
-                    "segment_incharge",
-                    "cluster_incharge"
-                ] %}
+                <a class="nav-link"
+                   href="/attendance/{{ centre_id }}">
 
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           href="{{ url_for('reporting_workspace') }}">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    Attendance
 
-                            <i class="bi bi-bar-chart-fill"></i>
-                            Reports
+                </a>
 
-                        </a>
-                    </li>
-
-                {% endif %}
+            </li>
 
 
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="/performance/{{ centre_id }}">
+
+                    <i class="bi bi-clipboard-data-fill"></i>
+                    Performance
+
+                </a>
+
+            </li>
+
+        {% endif %}
+
+
+        <!-- ===================================== -->
+        <!-- TUTOR CENTRE MENU -->
+        <!-- ===================================== -->
+
+        {% if session.get("role") == "tutor" %}
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="/students/{{ session.get('centre') }}">
+
+                    <i class="bi bi-people-fill"></i>
+                    Students
+
+                </a>
+
+            </li>
+
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="/attendance/{{ session.get('centre') }}">
+
+                    <i class="bi bi-calendar-check-fill"></i>
+                    Attendance
+
+                </a>
+
+            </li>
+
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="/performance/{{ session.get('centre') }}">
+
+                    <i class="bi bi-clipboard-data-fill"></i>
+                    Performance
+
+                </a>
+
+            </li>
+
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="/tutor-reports">
+
+                    <i class="bi bi-bar-chart-fill"></i>
+                    Reports
+
+                </a>
+
+            </li>
+
+        {% endif %}
+
+
+        <!-- ===================================== -->
+        <!-- REPORTS -->
+        <!-- ===================================== -->
+
+        {% if session.get("role") in [
+            "management",
+            "operational_head",
+            "segment_incharge",
+            "cluster_incharge"
+        ] %}
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="{{ url_for('reporting_workspace') }}">
+
+                    <i class="bi bi-bar-chart-fill"></i>
+                    Reports
+
+                </a>
+
+            </li>
+
+        {% endif %}
+
+
+        
                 <!-- ===================================== -->
                 <!-- LOGOUT -->
                 <!-- ===================================== -->
