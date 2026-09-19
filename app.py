@@ -1880,6 +1880,19 @@ def centre_dashboard(centre_id):
             # -----------------------------------------
             # 4. STUDENT STRENGTH
             # -----------------------------------------
+           
+            # Do NOT depend on student_academic_year here.
+            # Class information is handled separately where
+            # required.
+            
+            # Centre membership is the source of truth
+            # for current student strength.
+            #
+            # Group A / Group B is the primary AVF
+            # operational classification.
+            #
+            # Class remains secondary information.
+            # -----------------------------------------
             cur.execute("""
                 SELECT
                     COUNT(*) AS total_students,
@@ -1893,8 +1906,36 @@ def centre_dashboard(centre_id):
                     ) AS girls,
 
                     COUNT(*) FILTER (
+                        WHERE cgm.group_code = 'A'
+                    ) AS group_a_students,
+
+                    COUNT(*) FILTER (
+                        WHERE cgm.group_code = 'B'
+                    ) AS group_b_students,
+
+                    COUNT(*) FILTER (
+                        WHERE cgm.group_code = 'A'
+                          AND sm.gender = 'Boy'
+                    ) AS group_a_boys,
+
+                    COUNT(*) FILTER (
+                        WHERE cgm.group_code = 'A'
+                          AND sm.gender = 'Girl'
+                    ) AS group_a_girls,
+
+                    COUNT(*) FILTER (
+                        WHERE cgm.group_code = 'B'
+                          AND sm.gender = 'Boy'
+                    ) AS group_b_boys,
+
+                    COUNT(*) FILTER (
+                        WHERE cgm.group_code = 'B'
+                          AND sm.gender = 'Girl'
+                    ) AS group_b_girls,
+
+                    COUNT(*) FILTER (
                         WHERE sm.caste_category IS NOT NULL
-                        AND TRIM(sm.caste_category) <> ''
+                          AND TRIM(sm.caste_category) <> ''
                     ) AS caste_available
 
                 FROM public.student_center_assignment sca
@@ -1902,21 +1943,26 @@ def centre_dashboard(centre_id):
                 JOIN public.student_master sm
                     ON sm.student_id = sca.student_id
 
-                JOIN public.student_academic_year say
-                    ON say.student_id = sca.student_id
-                AND say.academic_year_id = sca.academic_year_id
+                LEFT JOIN public.student_academic_year say
+                    ON say.student_id = sm.student_id
+                   AND say.academic_year_id = 3
+
+                LEFT JOIN public.curriculum_group_master cgm
+                    ON cgm.group_id = say.group_id
 
                 WHERE sca.center_id = %s
-                AND sca.academic_year_id = 3
-                AND sca.active_flag = TRUE
-                AND sm.active_flag = TRUE
-                AND say.status = 'ACTIVE'
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = TRUE
             """, (centre_id,))
-            strength = cur.fetchone()
 
+            strength = cur.fetchone()
 
             # -----------------------------------------
             # 5. STUDENT LIST
+            # -----------------------------------------
+            # Student membership comes directly from
+            # student_center_assignment.
             # -----------------------------------------
             cur.execute("""
                 SELECT
@@ -1924,26 +1970,22 @@ def centre_dashboard(centre_id):
                     sm.student_code,
                     sm.student_name,
                     sm.gender
+
                 FROM public.student_center_assignment sca
 
                 JOIN public.student_master sm
                     ON sm.student_id = sca.student_id
 
-                JOIN public.student_academic_year say
-                    ON say.student_id = sca.student_id
-                AND say.academic_year_id = sca.academic_year_id
-
                 WHERE sca.center_id = %s
-                AND sca.academic_year_id = 3
-                AND sca.active_flag = TRUE
-                AND sm.active_flag = TRUE
-                AND say.status = 'ACTIVE'
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = TRUE
 
-                ORDER BY sm.student_name
+                ORDER BY
+                    sm.student_name
             """, (centre_id,))
 
             students = cur.fetchall()
-
 
             # -----------------------------------------
             # 6. LATEST ATTENDANCE DATE
@@ -2153,6 +2195,30 @@ def centre_dashboard(centre_id):
 
             centre["girls"] = (
                 strength["girls"] or 0
+            )
+
+            centre["group_a_students"] = (
+                strength["group_a_students"] or 0
+            )
+
+            centre["group_b_students"] = (
+                strength["group_b_students"] or 0
+            )
+
+            centre["group_a_boys"] = (
+                strength["group_a_boys"] or 0
+            )
+
+            centre["group_a_girls"] = (
+                strength["group_a_girls"] or 0
+            )
+
+            centre["group_b_boys"] = (
+                strength["group_b_boys"] or 0
+            )
+
+            centre["group_b_girls"] = (
+                strength["group_b_girls"] or 0
             )
 
             centre["caste_available"] = (
@@ -3970,25 +4036,24 @@ def centre_students(centre_id):
 
     # ---------------------------------------------------------
     # Get students for this centre and academic year
+    #
+    # Group A / Group B is the primary AVF classification.
+    # Class remains available as secondary student information.
     # ---------------------------------------------------------
-
-    cur.execute("""
-        SELECT
-            current_database(),
-            current_user,
-            current_schema()
-    """)
-
-   
     cur.execute("""
         SELECT
             sm.student_id,
             sm.student_code,
             sm.student_name,
             sm.gender,
-                                
+
             say.class_studying,
-            say.status
+            say.status,
+
+            cgm.group_id,
+            cgm.group_code,
+            cgm.group_name
+
         FROM student_center_assignment sca
 
         JOIN student_master sm
@@ -3998,24 +4063,91 @@ def centre_students(centre_id):
             ON say.student_id = sm.student_id
            AND say.academic_year_id = %s
 
+        LEFT JOIN curriculum_group_master cgm
+            ON cgm.group_id = say.group_id
+
         WHERE sca.center_id = %s
           AND sca.academic_year_id = %s
           AND sca.active_flag = TRUE
           AND say.status = 'ACTIVE'
-          
+
         ORDER BY
-            say.class_studying,
+            cgm.group_code,
+            say.class_studying NULLS LAST,
             sm.student_name
     """, (3, centre_id, 3))
 
     students = cur.fetchall()
 
+    # ---------------------------------------------------------
+    # Group students by AVF curriculum group
+    # ---------------------------------------------------------
+    students_by_group = {
+        "A": [],
+        "B": []
+    }
 
-    cur.close()
-    conn.close()
+    for student in students:
+        group_code = student["group_code"]
+
+        if group_code in students_by_group:
+            students_by_group[group_code].append(student)
 
     # ---------------------------------------------------------
-    # Group students by class
+    # Group statistics
+    # ---------------------------------------------------------
+    group_stats = {}
+
+    for group_code in ["A", "B"]:
+
+        group_students = students_by_group[group_code]
+
+        boys = sum(
+            1
+            for student in group_students
+            if str(student["gender"]).strip().upper() == "BOY"
+        )
+
+        girls = sum(
+            1
+            for student in group_students
+            if str(student["gender"]).strip().upper() == "GIRL"
+        )
+
+        group_stats[group_code] = {
+            "total": len(group_students),
+            "boys": boys,
+            "girls": girls
+        }
+
+    # ---------------------------------------------------------
+    # Total student statistics
+    # ---------------------------------------------------------
+    total_students = len(students)
+
+    total_boys = sum(
+        1
+        for student in students
+        if str(student["gender"]).strip().upper() == "BOY"
+    )
+
+    total_girls = sum(
+        1
+        for student in students
+        if str(student["gender"]).strip().upper() == "GIRL"
+    )
+
+    total_stats = {
+        "total": total_students,
+        "boys": total_boys,
+        "girls": total_girls
+    }
+
+    # ---------------------------------------------------------
+    # Class-wise distribution
+    #
+    # Class is secondary information.
+    # Core AVF cards continue to show Classes 1–6.
     # ---------------------------------------------------------
     students_by_class = {}
 
@@ -4028,24 +4160,43 @@ def centre_students(centre_id):
 
         students_by_class[class_no].append(student)
 
-    # ---------------------------------------------------------
-    # Class-wise student counts
-    # ---------------------------------------------------------
-    class_counts = {
-        class_no: len(students_by_class.get(class_no, []))
-        for class_no in range(1, 8)
-    }
+    class_stats = {}
+
+    for class_no in range(1, 7):
+
+        class_students = students_by_class.get(class_no, [])
+
+        boys = sum(
+            1
+            for student in class_students
+            if str(student["gender"]).strip().upper() == "BOY"
+        )
+
+        girls = sum(
+            1
+            for student in class_students
+            if str(student["gender"]).strip().upper() == "GIRL"
+        )
+
+        class_stats[class_no] = {
+            "total": len(class_students),
+            "boys": boys,
+            "girls": girls
+        }
+
+    cur.close()
+    conn.close()
 
     return render_template(
         "students/centre_students.html",
         centre=centre,
-        centre_id=centre_id,
+        students=students,
+        students_by_group=students_by_group,
+        group_stats=group_stats,
+        total_stats=total_stats,
         students_by_class=students_by_class,
-        class_counts=class_counts,
-        total_students=len(students),
-        active_page="students"
+        class_stats=class_stats
     )
-
 @app.route("/attendance/<int:centre_id>")
 @login_required
 def centre_attendance(centre_id):

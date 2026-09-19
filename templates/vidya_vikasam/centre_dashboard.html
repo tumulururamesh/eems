@@ -163,75 +163,121 @@ Centre Dashboard
     <!-- STUDENT & ATTENDANCE SNAPSHOT -->
     <!-- ========================================= -->
 
-    <div class="row g-4 mb-4">
+    <div class="dashboard-card mb-4">
 
-        <!-- STUDENTS -->
+        <div class="dashboard-header">
 
-        <div class="col-md-4">
+            <i class="bi bi-people-fill me-2"></i>
 
-            <div class="dashboard-card text-center h-100">
-
-                <div class="card-body py-4">
-
-                    <i class="bi bi-people-fill display-5 text-primary"></i>
-
-                    <h2 class="mt-3">
-                        {{ centre.total_students }}
-                    </h2>
-
-                    <h6 class="text-muted">
-                        Students
-                    </h6>
-
-                </div>
-
-            </div>
+            Student Distribution
 
         </div>
 
+        <div class="card-body">
 
-        <!-- BOYS -->
+            <div class="row g-4 text-center">
 
-        <div class="col-md-4">
+                <!-- GROUP A -->
 
-            <div class="dashboard-card text-center h-100">
+                <div class="col-md-4">
 
-                <div class="card-body py-4">
+                    <div class="student-group-card h-100">
 
-                    <i class="bi bi-person-fill display-5 text-primary"></i>
+                        <i class="bi bi-people-fill display-5 text-primary"></i>
 
-                    <h2 class="mt-3">
-                        {{ centre.boys }}
-                    </h2>
+                        <h2 class="mt-3">
+                            {{ centre.group_a_students }}
+                        </h2>
 
-                    <h6 class="text-muted">
-                        Boys
-                    </h6>
+                        <h6 class="text-muted">
+                            Group A
+                        </h6>
+
+                        <div class="group-gender-summary">
+
+                            <span>
+                                <i class="bi bi-gender-male"></i>
+                                {{ centre.group_a_boys }} Boys
+                            </span>
+
+                            <span>
+                                <i class="bi bi-gender-female"></i>
+                                {{ centre.group_a_girls }} Girls
+                            </span>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-            </div>
 
-        </div>
+                <!-- GROUP B -->
+
+                <div class="col-md-4">
+
+                    <div class="student-group-card h-100">
+
+                        <i class="bi bi-people-fill display-5 text-primary"></i>
+
+                        <h2 class="mt-3">
+                            {{ centre.group_b_students }}
+                        </h2>
+
+                        <h6 class="text-muted">
+                            Group B
+                        </h6>
+
+                        <div class="group-gender-summary">
+
+                            <span>
+                                <i class="bi bi-gender-male"></i>
+                                {{ centre.group_b_boys }} Boys
+                            </span>
+
+                            <span>
+                                <i class="bi bi-gender-female"></i>
+                                {{ centre.group_b_girls }} Girls
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
 
-        <!-- GIRLS -->
+                <!-- TOTAL -->
 
-        <div class="col-md-4">
+                <div class="col-md-4">
 
-            <div class="dashboard-card text-center h-100">
+                    <div class="student-group-card h-100">
 
-                <div class="card-body py-4">
+                        <i class="bi bi-people-fill display-5 text-primary"></i>
 
-                    <i class="bi bi-person-fill display-5 text-success"></i>
+                        <h2 class="mt-3">
+                            {{ centre.total_students }}
+                        </h2>
 
-                    <h2 class="mt-3">
-                        {{ centre.girls }}
-                    </h2>
+                        <h6 class="text-muted">
+                            Total Students
+                        </h6>
 
-                    <h6 class="text-muted">
-                        Girls
-                    </h6>
+                        <div class="group-gender-summary">
+
+                            <span>
+                                <i class="bi bi-gender-male"></i>
+                                {{ centre.boys }} Boys
+                            </span>
+
+                            <span>
+                                <i class="bi bi-gender-female"></i>
+                                {{ centre.girls }} Girls
+                            </span>
+
+                        </div>
+
+                    </div>
 
                 </div>
 

@@ -15,11 +15,12 @@ Students
         <div>
 
             <h1 class="display-6 fw-bold text-primary mb-1">
-                Centre {{ centre_id }} — Students
+                {{ centre.center_name }} — Students
             </h1>
 
             <p class="text-muted mb-0">
                 Student Information
+                · Academic Year 2026–27
             </p>
 
         </div>
@@ -35,15 +36,17 @@ Students
     </div>
 
 
-    <!-- Class Cards -->
+    <!-- =====================================================
+         PRIMARY AVF VIEW — GROUP DISTRIBUTION
+         ===================================================== -->
 
     <div class="dashboard-card mb-4">
 
         <div class="dashboard-header">
 
-            <i class="bi bi-mortarboard-fill me-2"></i>
+            <i class="bi bi-people-fill me-2"></i>
 
-            Students by Class
+            Student Distribution by Group
 
         </div>
 
@@ -51,37 +54,133 @@ Students
 
             <div class="row g-3">
 
-                {% for class_name, count in class_counts.items() %}
+                <!-- Group A -->
 
-                <!-- 4 cards per row on large screens -->
-
-                <div class="col-12 col-sm-6 col-lg-3">
+                <div class="col-12 col-md-4">
 
                     <button
                         type="button"
-                        class="class-card w-100"
-                        data-class="{{ class_name }}">
+                        class="group-card group-a-card w-100"
+                        data-group="A">
 
                         <i class="bi bi-people-fill"></i>
 
-                        <div class="class-name">
-                            Class {{ class_name }}
+                        <div class="group-name">
+                            Group A
                         </div>
 
-                        <div class="class-count">
-                            {{ count }}
-                            {% if count == 1 %}
+                        <div class="group-count">
+                            {{ group_stats["A"]["total"] }}
+
+                            {% if group_stats["A"]["total"] == 1 %}
                                 Student
                             {% else %}
                                 Students
                             {% endif %}
                         </div>
 
+                        <div class="gender-summary">
+
+                            <span>
+                                <i class="bi bi-gender-male"></i>
+                                {{ group_stats["A"]["boys"] }} Boys
+                            </span>
+
+                            <span>
+                                <i class="bi bi-gender-female"></i>
+                                {{ group_stats["A"]["girls"] }} Girls
+                            </span>
+
+                        </div>
+
                     </button>
 
                 </div>
 
-                {% endfor %}
+
+                <!-- Group B -->
+
+                <div class="col-12 col-md-4">
+
+                    <button
+                        type="button"
+                        class="group-card group-b-card w-100"
+                        data-group="B">
+
+                        <i class="bi bi-people-fill"></i>
+
+                        <div class="group-name">
+                            Group B
+                        </div>
+
+                        <div class="group-count">
+                            {{ group_stats["B"]["total"] }}
+
+                            {% if group_stats["B"]["total"] == 1 %}
+                                Student
+                            {% else %}
+                                Students
+                            {% endif %}
+                        </div>
+
+                        <div class="gender-summary">
+
+                            <span>
+                                <i class="bi bi-gender-male"></i>
+                                {{ group_stats["B"]["boys"] }} Boys
+                            </span>
+
+                            <span>
+                                <i class="bi bi-gender-female"></i>
+                                {{ group_stats["B"]["girls"] }} Girls
+                            </span>
+
+                        </div>
+
+                    </button>
+
+                </div>
+
+
+                <!-- Total -->
+
+                <div class="col-12 col-md-4">
+
+                    <div class="group-card total-card w-100">
+
+                        <i class="bi bi-people-fill"></i>
+
+                        <div class="group-name">
+                            Total Students
+                        </div>
+
+                        <div class="group-count">
+                            {{ total_stats["total"] }}
+
+                            {% if total_stats["total"] == 1 %}
+                                Student
+                            {% else %}
+                                Students
+                            {% endif %}
+                        </div>
+
+                        <div class="gender-summary">
+
+                            <span>
+                                <i class="bi bi-gender-male"></i>
+                                {{ total_stats["boys"] }} Boys
+                            </span>
+
+                            <span>
+                                <i class="bi bi-gender-female"></i>
+                                {{ total_stats["girls"] }} Girls
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -90,16 +189,18 @@ Students
     </div>
 
 
-    <!-- Student Table -->
+    <!-- =====================================================
+         STUDENTS BY GROUP
+         ===================================================== -->
 
-    <div class="dashboard-card">
+    <div class="dashboard-card mb-4">
 
         <div class="dashboard-header">
 
             <i class="bi bi-person-lines-fill me-2"></i>
 
             <span id="student-table-title">
-                Select a class to view students
+                Select a group to view students
             </span>
 
         </div>
@@ -113,10 +214,75 @@ Students
                     <i class="bi bi-hand-index-thumb display-5"></i>
 
                     <p class="mt-3 mb-0">
-                        Select a class above to view student information.
+                        Select Group A or Group B above to view students.
                     </p>
 
                 </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SECONDARY VIEW — CLASS DISTRIBUTION
+         ===================================================== -->
+
+    <div class="dashboard-card">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-mortarboard-fill me-2"></i>
+
+            Class-wise Distribution
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                {% for class_no in range(1, 7) %}
+
+                <div class="col-12 col-sm-6 col-lg-2">
+
+                    <div class="class-summary-card">
+
+                        <i class="bi bi-mortarboard-fill"></i>
+
+                        <div class="class-name">
+                            Class {{ class_no }}
+                        </div>
+
+                        <div class="class-count">
+                            {{ class_stats[class_no]["total"] }}
+
+                            {% if class_stats[class_no]["total"] == 1 %}
+                                Student
+                            {% else %}
+                                Students
+                            {% endif %}
+                        </div>
+
+                        <div class="gender-summary">
+
+                            <span>
+                                {{ class_stats[class_no]["boys"] }} Boys
+                            </span>
+
+                            <span>
+                                {{ class_stats[class_no]["girls"] }} Girls
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
 
             </div>
 
@@ -129,15 +295,17 @@ Students
 
 <style>
 
-.class-card {
+/* =========================================================
+   GROUP CARDS
+   ========================================================= */
+
+.group-card {
 
     border: 1px solid #dee2e6;
-
     background: #ffffff;
-
     border-radius: 10px;
 
-    padding: 18px 10px;
+    padding: 20px 10px;
 
     text-align: center;
 
@@ -147,34 +315,30 @@ Students
 
 }
 
-.class-card:hover {
+.group-card:hover {
 
     border-color: #0d6efd;
-
     transform: translateY(-2px);
 
 }
 
-.class-card.active {
+.group-card.active {
 
     border: 2px solid #0d6efd;
-
     background: #f4f8ff;
 
 }
 
-.class-card i {
+.group-card i {
 
-    font-size: 1.8rem;
-
+    font-size: 1.9rem;
     color: #0d6efd;
 
 }
 
-.class-name {
+.group-name {
 
-    font-size: 1.05rem;
-
+    font-size: 1.1rem;
     font-weight: 600;
 
     color: #0d6efd;
@@ -183,13 +347,120 @@ Students
 
 }
 
-.class-count {
+.group-count {
+
+    font-size: 1rem;
+
+    color: #495057;
+
+    margin-top: 4px;
+
+}
+
+.gender-summary {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 18px;
+
+    margin-top: 8px;
+
+    font-size: 0.82rem;
+
+    color: #6c757d;
+
+}
+
+.gender-summary i {
 
     font-size: 0.85rem;
+
+}
+
+
+/* =========================================================
+   TOTAL CARD
+   ========================================================= */
+
+.total-card {
+
+    cursor: default;
+
+}
+
+
+/* =========================================================
+   CLASS SUMMARY CARDS
+   ========================================================= */
+
+.class-summary-card {
+
+    border: 1px solid #dee2e6;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 16px 8px;
+
+    text-align: center;
+
+}
+
+.class-summary-card > i {
+
+    font-size: 1.5rem;
+
+    color: #0d6efd;
+
+}
+
+.class-summary-card .class-name {
+
+    font-size: 0.95rem;
+
+    font-weight: 600;
+
+    color: #0d6efd;
+
+    margin-top: 6px;
+
+}
+
+.class-summary-card .class-count {
+
+    font-size: 0.82rem;
 
     color: #6c757d;
 
     margin-top: 3px;
+
+}
+
+.class-summary-card .gender-summary {
+
+    display: block;
+
+    margin-top: 6px;
+
+}
+
+.class-summary-card .gender-summary span {
+
+    margin: 0 4px;
+
+}
+
+
+/* =========================================================
+   STUDENT TABLE
+   ========================================================= */
+
+#student-table table {
+
+    font-size: 0.92rem;
 
 }
 
@@ -198,36 +469,46 @@ Students
 
 <script>
 
-const studentsByClass =
-    {{ students_by_class | tojson }};
+const studentsByGroup =
+    {{ students_by_group | tojson }};
 
 
-function showStudents(className) {
+/* =========================================================
+   SHOW STUDENTS FOR SELECTED GROUP
+   ========================================================= */
 
-    const students = studentsByClass[className] || [];
+function showStudents(groupCode) {
+
+    const students =
+        studentsByGroup[groupCode] || [];
+
 
     /*
-     * Remove active state from all cards
+     * Remove active state from all group cards
      */
 
-    document.querySelectorAll(".class-card").forEach(
+    document.querySelectorAll(".group-card").forEach(
         function(card) {
+
             card.classList.remove("active");
+
         }
     );
 
 
     /*
-     * Highlight selected class
+     * Highlight selected group
      */
 
     const selectedCard =
         document.querySelector(
-            '[data-class="' + className + '"]'
+            '[data-group="' + groupCode + '"]'
         );
 
     if (selectedCard) {
+
         selectedCard.classList.add("active");
+
     }
 
 
@@ -235,10 +516,16 @@ function showStudents(className) {
      * Update table heading
      */
 
+    const groupName =
+        groupCode === "A"
+            ? "Group A"
+            : "Group B";
+
+
     document.getElementById(
         "student-table-title"
     ).textContent =
-        "Students — Class " + className;
+        "Students — " + groupName;
 
 
     /*
@@ -257,12 +544,12 @@ function showStudents(className) {
 
                 <p class="mt-3 mb-0">
                     No students currently assigned to
-                    Class ${className}
+                    ${groupName}
                     at this centre.
                 </p>
 
                 <small>
-                    Academic Year 2026-2027
+                    Academic Year 2026–2027
                 </small>
 
             </div>
@@ -270,6 +557,7 @@ function showStudents(className) {
         `;
 
         return;
+
     }
 
 
@@ -286,19 +574,34 @@ function showStudents(className) {
                 <thead>
 
                     <tr>
+
                         <th>#</th>
+
                         <th>Student Code</th>
+
                         <th>Student Name</th>
+
                         <th>Gender</th>
+
+                        <th>Class</th>
+
                     </tr>
 
                 </thead>
 
                 <tbody>
+
     `;
 
 
     students.forEach(function(student, index) {
+
+        const classValue =
+            student.class_studying === null ||
+            student.class_studying === undefined
+                ? "-"
+                : student.class_studying;
+
 
         html += `
 
@@ -318,6 +621,10 @@ function showStudents(className) {
 
                 <td>
                     ${student.gender || "-"}
+                </td>
+
+                <td>
+                    ${classValue}
                 </td>
 
             </tr>
@@ -344,11 +651,12 @@ function showStudents(className) {
 
 }
 
-/*
- * Class card click handlers
- */
 
-document.querySelectorAll(".class-card").forEach(
+/* =========================================================
+   GROUP CARD CLICK HANDLERS
+   ========================================================= */
+
+document.querySelectorAll(".group-card[data-group]").forEach(
     function(card) {
 
         card.addEventListener(
@@ -356,7 +664,7 @@ document.querySelectorAll(".class-card").forEach(
             function() {
 
                 showStudents(
-                    this.dataset.class
+                    this.dataset.group
                 );
 
             }
