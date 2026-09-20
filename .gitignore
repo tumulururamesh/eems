@@ -33,3 +33,12 @@ Thumbs.db
 
 # Configuration containing credentials
 config.py
+
+# PostgreSQL backups
+*.dump
+*.backup
+*.sql.gz
+
+# Local data / reconciliation files
+*_reconciliation_*.csv
+*_duplicate_code_exceptions.csv
