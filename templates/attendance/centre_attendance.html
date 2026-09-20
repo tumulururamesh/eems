@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 
 {% block title %}
-Centre Attendance
+Tutor Attendance
 {% endblock %}
+
 
 {% block content %}
 
@@ -11,160 +12,48 @@ Centre Attendance
     <!-- ===================================================== -->
     <!-- HEADER -->
     <!-- ===================================================== -->
-<div class="attendance-page-header">
 
-    <div>
+    <div class="attendance-page-header">
 
-        <h2 class="attendance-page-title">
-            <i class="bi bi-calendar-check-fill me-2"></i>
-            {{ centre_display_name }}
-        </h2>
+        <div>
 
-        <div class="attendance-page-meta">
+            <h2 class="attendance-page-title">
+                <i class="bi bi-calendar-check-fill me-2"></i>
+                {{ centre_display_name }}
+            </h2>
 
-            {{ centre.center_code }}
+            <div class="attendance-page-meta">
 
-            {% if tutor %}
-                <span class="mx-2">•</span>
-                Tutor: <strong>{{ tutor.tutor_name }}</strong>
-            {% endif %}
+                {{ centre.center_code }}
 
-        </div>
+                {% if tutor %}
+                    <span class="mx-2">•</span>
+                    Tutor:
+                    <strong>{{ tutor.tutor_name }}</strong>
+                {% endif %}
 
-        <div class="attendance-page-meta">
-            Attendance • {{ month_start.strftime('%B %Y') }}
-        </div>
+            </div>
 
-    </div>
-
-
-    <div class="attendance-page-asof">
-
-        <div class="attendance-page-asof-label">
-            Attendance As of
-        </div>
-
-        <div class="attendance-page-asof-date">
-
-            {% if latest_attendance_date %}
-                {{ latest_attendance_date.strftime('%d %B %Y') }}
-            {% else %}
-                No attendance captured
-            {% endif %}
+            <div class="attendance-page-meta">
+                Attendance
+            </div>
 
         </div>
 
-    </div>
 
-</div>
+        <div class="attendance-page-asof">
 
-    <!-- ===================================================== -->
-    <!-- MONTHLY SUMMARY -->
-    <!-- ===================================================== -->
+            <div class="attendance-page-asof-label">
+                Attendance As of
+            </div>
 
-    <div class="dashboard-card mb-4">
+            <div class="attendance-page-asof-date">
 
-        <div class="attendance-section-header">
-
-            <i class="bi bi-bar-chart-fill"></i>
-
-            {{ month_start.strftime('%B %Y') }} Attendance Summary
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="row g-3 text-center">
-
-                <!-- WORKING DAYS -->
-
-                <div class="col-md-3">
-
-                    <div class="attendance-summary-box">
-
-                        <div class="attendance-summary-label">
-                            Working Days
-                        </div>
-
-                        <div class="attendance-summary-value">
-                            {{ monthly_summary.working_days }}
-                        </div>
-
-                        <div class="attendance-summary-note">
-                            Attendance captured
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <!-- PRESENT -->
-
-                <div class="col-md-3">
-
-                    <div class="attendance-summary-box">
-
-                        <div class="attendance-summary-label">
-                            Present
-                        </div>
-
-                        <div class="attendance-summary-value">
-                            {{ monthly_summary.present }}
-                        </div>
-
-                        <div class="attendance-summary-note">
-                            Student-days
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ABSENT -->
-
-                <div class="col-md-3">
-
-                   <div class="attendance-summary-box">
-
-                        <div class="attendance-summary-label">
-                            Absent
-                        </div>
-
-                        <div class="attendance-summary-value">
-                            {{ monthly_summary.absent }}
-                        </div>
-
-                        <div class="attendance-summary-note">
-                            Student-days
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ATTENDANCE -->
-
-                <div class="col-md-3">
-
-                    <div class="attendance-summary-box">
-
-                        <div class="attendance-summary-label">
-                            Average Attendance
-                        </div>
-
-                        <div class="attendance-summary-value">
-                            {{ monthly_summary.percentage }}%
-                        </div>
-
-                        <div class="attendance-summary-note">
-                            Present ÷ (Present + Absent)
-                        </div>
-
-                    </div>
-
-                </div>
+                {% if latest_attendance_date %}
+                    {{ latest_attendance_date.strftime('%d %B %Y') }}
+                {% else %}
+                    No attendance captured
+                {% endif %}
 
             </div>
 
@@ -174,523 +63,420 @@ Centre Attendance
 
 
     <!-- ===================================================== -->
-    <!-- ATTENDANCE TREND -->
+    <!-- WEEK NAVIGATION -->
     <!-- ===================================================== -->
 
     <div class="dashboard-card mb-4">
 
         <div class="attendance-section-header">
 
-            <i class="bi bi-graph-up"></i>
+            <i class="bi bi-calendar-week"></i>
 
-            Attendance Trend — {{ month_start.strftime('%B %Y') }}
+            Weekly Attendance
 
         </div>
+
 
         <div class="card-body">
 
-            {% if attendance_trend %}
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
 
-                <p class="text-muted small">
-                    Shows every day for which attendance was captured.
-                </p>
+                <!-- PREVIOUS WEEK -->
 
-                <div style="height: 300px;">
-
-                    <canvas id="centreAttendanceTrendChart"></canvas>
-
-                </div>
-
-            {% else %}
-
-                <div class="text-center text-muted py-5">
-
-                    <i class="bi bi-calendar-x display-5"></i>
-
-                    <p class="mt-3 mb-0">
-                        No attendance has been captured for this month.
-                    </p>
-
-                </div>
-
-            {% endif %}
-
-        </div>
-
-    </div>
+                <a
+                    href="{{ url_for(
+                        'centre_attendance',
+                        centre_id=centre.center_id,
+                        week=previous_week.strftime('%Y-%m-%d'),
+                        group=selected_group
+                    ) }}"
+                    class="btn btn-outline-primary"
+                >
+                    <i class="bi bi-arrow-left"></i>
+                    Previous Week
+                </a>
 
 
-    <!-- ===================================================== -->
-    <!-- GROUP ATTENDANCE -->
-    <!-- ===================================================== -->
+                <!-- CURRENT WEEK -->
 
-    <div class="dashboard-card mb-4">
+                <div class="text-center">
 
-        <div class="attendance-section-header">
+                    <div class="fw-semibold fs-5">
 
-            <i class="bi bi-people-fill"></i>
-
-            Attendance by Group
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="row g-4">
-
-                <!-- GROUP A -->
-
-                <div class="col-md-6">
-
-                    <div class="border rounded p-4 h-100">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-
-                            <h4 class="mb-0">
-                                Group A
-                            </h4>
-
-                            <span class="badge bg-primary">
-                                {{ group_summary.get('A', {}).get('percentage', 0) }}%
-                            </span>
-
-                        </div>
-
-                        {% set group_a = group_summary.get('A', {}) %}
-
-                        <div class="row text-center">
-
-                            <div class="col-4">
-
-                                <div class="text-muted small">
-                                    Student-days
-                                </div>
-
-                                <strong class="fs-5">
-                                    {{ group_a.get('total', 0) }}
-                                </strong>
-
-                            </div>
-
-                            <div class="col-4">
-
-                                <div class="text-muted small">
-                                    Present
-                                </div>
-
-                                <strong class="fs-5 text-success">
-                                    {{ group_a.get('present', 0) }}
-                                </strong>
-
-                            </div>
-
-                            <div class="col-4">
-
-                                <div class="text-muted small">
-                                    Absent
-                                </div>
-
-                                <strong class="fs-5 text-danger">
-                                    {{ group_a.get('absent', 0) }}
-                                </strong>
-
-                            </div>
-
-                        </div>
+                        {{ week_start.strftime('%d %b') }}
+                        –
+                        {{ week_end.strftime('%d %b %Y') }}
 
                     </div>
 
                 </div>
 
 
-                <!-- GROUP B -->
+                <!-- NEXT WEEK -->
 
-                <div class="col-md-6">
-
-                    <div class="border rounded p-4 h-100">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-
-                            <h4 class="mb-0">
-                                Group B
-                            </h4>
-
-                            <span class="badge bg-primary">
-                                {{ group_summary.get('B', {}).get('percentage', 0) }}%
-                            </span>
-
-                        </div>
-
-                        {% set group_b = group_summary.get('B', {}) %}
-
-                        <div class="row text-center">
-
-                            <div class="col-4">
-
-                                <div class="text-muted small">
-                                    Student-days
-                                </div>
-
-                                <strong class="fs-5">
-                                    {{ group_b.get('total', 0) }}
-                                </strong>
-
-                            </div>
-
-                            <div class="col-4">
-
-                                <div class="text-muted small">
-                                    Present
-                                </div>
-
-                                <strong class="fs-5 text-success">
-                                    {{ group_b.get('present', 0) }}
-                                </strong>
-
-                            </div>
-
-                            <div class="col-4">
-
-                                <div class="text-muted small">
-                                    Absent
-                                </div>
-
-                                <strong class="fs-5 text-danger">
-                                    {{ group_b.get('absent', 0) }}
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
+                <a
+                    href="{{ url_for(
+                        'centre_attendance',
+                        centre_id=centre.center_id,
+                        week=next_week.strftime('%Y-%m-%d'),
+                        group=selected_group
+                    ) }}"
+                    class="btn btn-outline-primary"
+                >
+                    Next Week
+                    <i class="bi bi-arrow-right"></i>
+                </a>
 
             </div>
 
-        </div>
 
-    </div>
+            {% if not selected_group %}
 
+                <!-- ================================================= -->
+                <!-- GROUP SELECTION -->
+                <!-- ================================================= -->
 
-    <!-- ===================================================== -->
-    <!-- STUDENT ATTENDANCE -->
-    <!-- ===================================================== -->
+                <div class="row g-4 mt-3">
 
-    <div class="dashboard-card mb-4">
+                    <!-- GROUP A -->
 
-        <div class="attendance-section-header">
+                    <div class="col-md-6">
 
-            <i class="bi bi-person-lines-fill"></i>
+                        <a
+                            href="{{ url_for(
+                                'centre_attendance',
+                                centre_id=centre.center_id,
+                                week=week_start.strftime('%Y-%m-%d'),
+                                group='A'
+                            ) }}"
+                            class="text-decoration-none"
+                        >
 
-            Student Attendance Pattern
+                            <div class="group-attendance-card group-a-card">
 
-        </div>
-
-        <div class="card-body">
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>Student</th>
-
-                            <th>Group</th>
-
-                            <th>Class</th>
-
-                            <th class="text-center">Present</th>
-
-                            <th class="text-center">Absent</th>
-
-                            <th class="text-center">Attendance</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {% for student in student_attendance %}
-
-                        <tr>
-
-                            <td>
-
-                                <div class="fw-semibold">
-                                    {{ student.student_name }}
+                                <div class="group-card-icon">
+                                    <i class="bi bi-people-fill"></i>
                                 </div>
 
-                                <div class="small text-muted">
-                                    {{ student.student_code }}
-                                </div>
+                                <div class="group-card-content">
 
-                            </td>
-
-                            <td>
-
-                                {% if student.group_code == 'A' %}
-
-                                    <span class="badge bg-primary">
+                                    <h3>
                                         Group A
-                                    </span>
+                                    </h3>
 
-                                {% elif student.group_code == 'B' %}
+                                    <div class="group-student-count">
 
-                                    <span class="badge bg-secondary">
+                                        {{ group_counts.get('A', 0) }}
+                                        Students
+
+                                    </div>
+
+                                </div>
+
+                                <div class="group-card-arrow">
+
+                                    <i class="bi bi-arrow-right-circle-fill"></i>
+
+                                </div>
+
+                            </div>
+
+                        </a>
+
+                    </div>
+
+
+                    <!-- GROUP B -->
+
+                    <div class="col-md-6">
+
+                        <a
+                            href="{{ url_for(
+                                'centre_attendance',
+                                centre_id=centre.center_id,
+                                week=week_start.strftime('%Y-%m-%d'),
+                                group='B'
+                            ) }}"
+                            class="text-decoration-none"
+                        >
+
+                            <div class="group-attendance-card group-b-card">
+
+                                <div class="group-card-icon">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+
+                                <div class="group-card-content">
+
+                                    <h3>
                                         Group B
-                                    </span>
+                                    </h3>
 
-                                {% else %}
+                                    <div class="group-student-count">
 
-                                    <span class="badge bg-light text-dark">
-                                        —
-                                    </span>
+                                        {{ group_counts.get('B', 0) }}
+                                        Students
 
-                                {% endif %}
-
-                            </td>
-
-                            <td>
-
-                                {% if student.class_studying is not none %}
-                                    {{ student.class_studying }}
-                                {% else %}
-                                    —
-                                {% endif %}
-
-                            </td>
-
-                            <td class="text-center text-success fw-semibold">
-                                {{ student.present or 0 }}
-                            </td>
-
-                            <td class="text-center text-danger fw-semibold">
-                                {{ student.absent or 0 }}
-                            </td>
-
-                            <td class="text-center">
-
-                                {% if student.percentage is not none %}
-
-                                    <strong>
-                                        {{ student.percentage }}%
-                                    </strong>
-
-                                {% else %}
-
-                                    <span class="text-muted">
-                                        No data
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                        </tr>
-
-                        {% else %}
-
-                        <tr>
-
-                            <td colspan="6"
-                                class="text-center text-muted py-4">
-
-                                No students found.
-
-                            </td>
-
-                        </tr>
-
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- ===================================================== -->
-    <!-- LATEST DAY ABSENTEES -->
-    <!-- ===================================================== -->
-
-    <div class="dashboard-card mb-4">
-
-        <div class="attendance-section-header">
-
-            <i class="bi bi-person-x-fill"></i>
-
-            Latest Day Absentees
-
-            {% if latest_attendance_date %}
-
-                <span class="ms-2 fw-normal">
-
-                    — {{ latest_attendance_date.strftime('%d %B %Y') }}
-
-                </span>
-
-            {% endif %}
-
-        </div>
-
-        <div class="card-body">
-
-            {% if latest_absentees %}
-
-                <div class="table-responsive">
-
-                    <table class="table table-hover align-middle">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>Student</th>
-                                <th>Group</th>
-                                <th>Class</th>
-                                <th>Gender</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {% for student in latest_absentees %}
-
-                            <tr>
-
-                                <td>
-
-                                    <div class="fw-semibold">
-                                        {{ student.student_name }}
                                     </div>
 
-                                    <div class="small text-muted">
-                                        {{ student.student_code }}
-                                    </div>
+                                </div>
 
-                                </td>
+                                <div class="group-card-arrow">
 
-                                <td>
+                                    <i class="bi bi-arrow-right-circle-fill"></i>
 
-                                    {% if student.group_code == 'A' %}
+                                </div>
 
-                                        <span class="badge bg-primary">
-                                            Group A
-                                        </span>
+                            </div>
 
-                                    {% elif student.group_code == 'B' %}
+                        </a>
 
-                                        <span class="badge bg-secondary">
-                                            Group B
-                                        </span>
-
-                                    {% endif %}
-
-                                </td>
-
-                                <td>
-
-                                    {% if student.class_studying is not none %}
-                                        {{ student.class_studying }}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-
-                                </td>
-
-                                <td>
-                                    {{ student.gender }}
-                                </td>
-
-                            </tr>
-
-                            {% endfor %}
-
-                        </tbody>
-
-                    </table>
+                    </div>
 
                 </div>
 
-            {% elif latest_attendance_date %}
-
-                <div class="text-center text-success py-4">
-
-                    <i class="bi bi-check-circle display-6"></i>
-
-                    <p class="mt-3 mb-0">
-                        All students were present on
-                        {{ latest_attendance_date.strftime('%d %B %Y') }}.
-                    </p>
-
-                </div>
 
             {% else %}
 
-                <div class="text-center text-muted py-4">
 
-                    <i class="bi bi-calendar-x display-6"></i>
+                <!-- ================================================= -->
+                <!-- SELECTED GROUP ATTENDANCE -->
+                <!-- ================================================= -->
 
-                    <p class="mt-3 mb-0">
-                        No attendance has been captured yet.
-                    </p>
+                <div class="mt-4">
+
+
+                    <!-- BACK TO GROUPS -->
+
+                    <div class="mb-3">
+
+                        <a
+                            href="{{ url_for(
+                                'centre_attendance',
+                                centre_id=centre.center_id,
+                                week=week_start.strftime('%Y-%m-%d')
+                            ) }}"
+                            class="btn btn-outline-secondary"
+                        >
+                            <i class="bi bi-arrow-left"></i>
+                            Back to Groups
+                        </a>
+
+                    </div>
+
+
+                    <!-- GROUP TITLE -->
+
+                    <div class="attendance-section-header">
+
+                        <i class="bi bi-people-fill"></i>
+
+                        Group {{ selected_group }}
+                        – Weekly Attendance
+
+                    </div>
+
+
+                    <!-- ATTENDANCE TABLE -->
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle attendance-week-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Student Name
+                                    </th>
+
+                                    <th class="text-center">
+                                        Student ID
+                                    </th>
+
+                                    <th class="text-center">
+                                        Class
+                                    </th>
+
+
+                                    {% for day in week_days %}
+
+                                        <th class="text-center">
+
+                                            {{ day.strftime('%a') }}
+
+                                            <br>
+
+                                            <small>
+                                                {{ day.strftime('%d %b') }}
+                                            </small>
+
+                                        </th>
+
+                                    {% endfor %}
+
+
+                                    <th class="text-center">
+                                        Attendance
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                {% for student in weekly_students %}
+
+                                    <tr>
+
+                                        <td>
+                                            <div class="fw-semibold">
+                                                {{ student.student_name }}
+                                            </div>
+                                        </td>
+
+                                        <td class="text-center">
+                                            <span class="small text-muted">
+                                                {{ student.student_code }}
+                                            </span>
+                                        </td>
+
+                                        <td class="text-center">
+                                            {% if student.class_studying is not none %}
+                                                {{ student.class_studying }}
+                                            {% else %}
+                                                –
+                                            {% endif %}
+                                        </td>
+
+
+                                        {% for day in student.weekly_attendance %}
+
+                                            <td class="text-center">
+
+                                                {% if day.status == 'PRESENT' %}
+
+                                                    <span
+                                                        class="attendance-present"
+                                                        title="Present"
+                                                    >
+                                                        ✓
+                                                    </span>
+
+                                                {% elif day.status == 'ABSENT' %}
+
+                                                    <span
+                                                        class="attendance-absent"
+                                                        title="Absent"
+                                                    >
+                                                        ✕
+                                                    </span>
+
+                                                {% else %}
+
+                                                    <span
+                                                        class="attendance-not-recorded"
+                                                        title="No attendance captured"
+                                                    >
+                                                        –
+                                                    </span>
+
+                                                {% endif %}
+
+                                            </td>
+
+                                        {% endfor %}
+
+
+                                        <td class="text-center">
+
+                                            {% if student.attendance_percentage is not none %}
+
+                                                <strong
+                                                    class="
+                                                        {% if student.attendance_percentage >= 90 %}
+                                                            text-success
+                                                        {% elif student.attendance_percentage >= 75 %}
+                                                            text-primary
+                                                        {% else %}
+                                                            text-danger
+                                                        {% endif %}
+                                                    "
+                                                >
+                                                    {{ student.attendance_percentage }}%
+                                                </strong>
+
+                                            {% else %}
+
+                                                <span class="text-muted">
+                                                    –
+                                                </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+                                    </tr>
+
+
+                                {% else %}
+
+                                    <tr>
+
+                                        <td
+                                            colspan="9"
+                                            class="text-center text-muted py-5"
+                                        >
+
+                                            <i class="bi bi-people display-6"></i>
+
+                                            <p class="mt-3 mb-0">
+                                                No students found in Group
+                                                {{ selected_group }}.
+                                            </p>
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- ================================================= -->
+                    <!-- LEGEND -->
+                    <!-- ================================================= -->
+
+                    <div class="attendance-legend mt-3">
+
+                        <span>
+                            <strong class="attendance-present">✓</strong>
+                            = Present
+                        </span>
+
+                        <span>
+                            <strong class="attendance-absent">✕</strong>
+                            = Absent
+                        </span>
+
+                        <span>
+                            <strong class="attendance-not-recorded">–</strong>
+                            = No attendance
+                        </span>
+
+                    </div>
 
                 </div>
 
             {% endif %}
-
-        </div>
-
-    </div>
-
-
-    <!-- ===================================================== -->
-    <!-- FORMULA -->
-    <!-- ===================================================== -->
-
-    <div class="dashboard-card mb-4">
-
-        <div class="attendance-section-header">
-
-            <i class="bi bi-info-circle"></i>
-
-            Attendance Calculation
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="text-muted">
-
-                <strong>Average Attendance</strong>
-                =
-                Present Student-Days
-                ÷
-                (Present Student-Days + Absent Student-Days)
-                × 100
-
-            </div>
-
-            <div class="small text-muted mt-2">
-
-                Working Days are the distinct dates for which attendance
-                was successfully captured. Previous months remain available
-                and attendance records are never deleted when a new month begins.
-
-            </div>
 
         </div>
 
@@ -700,115 +486,233 @@ Centre Attendance
 
 
 <!-- ========================================================= -->
-<!-- CHART.JS -->
+<!-- PAGE STYLES -->
 <!-- ========================================================= -->
 
-{% if attendance_trend %}
+<style>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+.group-attendance-card {
 
-<script>
+    min-height: 150px;
 
-const attendanceLabels = [
-    {% for day in attendance_trend %}
-        "{{ day.attendance_date.strftime('%d %b') }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
+    border-radius: 12px;
 
-const attendanceValues = [
-    {% for day in attendance_trend %}
-        {{ day.percentage }}{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
+    border: 1px solid #dbe7f3;
 
-const ctx = document.getElementById(
-    "centreAttendanceTrendChart"
-);
+    padding: 28px;
 
-new Chart(ctx, {
+    display: flex;
 
-    type: "line",
+    align-items: center;
 
-    data: {
+    gap: 20px;
 
-        labels: attendanceLabels,
+    transition: all 0.2s ease;
 
-        datasets: [{
+    cursor: pointer;
 
-            label: "Attendance %",
+}
 
-            data: attendanceValues,
 
-            tension: 0.3,
+.group-attendance-card:hover {
 
-            fill: false,
+    transform: translateY(-2px);
 
-            pointRadius: 5,
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 
-            pointHoverRadius: 7
+}
 
-        }]
 
-    },
+.group-a-card {
 
-    options: {
+    background: linear-gradient(
+        135deg,
+        #eef7ff,
+        #ffffff
+    );
 
-        responsive: true,
+    border-color: #b9dcff;
 
-        maintainAspectRatio: false,
+}
 
-        scales: {
 
-            y: {
+.group-b-card {
 
-                beginAtZero: true,
+    background: linear-gradient(
+        135deg,
+        #eefbf3,
+        #ffffff
+    );
 
-                max: 100,
+    border-color: #b8e4c8;
 
-                ticks: {
+}
 
-                    callback: function(value) {
-                        return value + "%";
-                    }
 
-                }
+.group-card-icon {
 
-            }
+    font-size: 42px;
 
-        },
+    color: #1261a0;
 
-        plugins: {
+}
 
-            legend: {
 
-                display: true
+.group-b-card .group-card-icon {
 
-            },
+    color: #198754;
 
-            tooltip: {
+}
 
-                callbacks: {
 
-                    label: function(context) {
+.group-card-content {
 
-                        return "Attendance: "
-                            + context.parsed.y
-                            + "%";
+    flex-grow: 1;
 
-                    }
+}
 
-                }
 
-            }
+.group-card-content h3 {
 
-        }
+    margin: 0;
+
+    font-weight: 600;
+
+    color: #123f68;
+
+}
+
+
+.group-b-card .group-card-content h3 {
+
+    color: #176b45;
+
+}
+
+
+.group-student-count {
+
+    margin-top: 6px;
+
+    color: #555;
+
+    font-size: 16px;
+
+}
+
+
+.group-card-arrow {
+
+    font-size: 28px;
+
+    color: #1261a0;
+
+}
+
+
+.group-b-card .group-card-arrow {
+
+    color: #198754;
+
+}
+
+
+.attendance-week-table th {
+
+    background-color: #07558f;
+
+    color: white;
+
+    vertical-align: middle;
+
+}
+
+
+.attendance-week-table th small {
+
+    font-weight: normal;
+
+}
+
+
+.attendance-week-table td {
+
+    vertical-align: middle;
+
+}
+
+
+.attendance-present {
+
+    color: #198754;
+
+    font-weight: 700;
+
+    font-size: 22px;
+
+}
+
+
+.attendance-absent {
+
+    color: #dc3545;
+
+    font-weight: 700;
+
+    font-size: 22px;
+
+}
+
+
+.attendance-not-recorded {
+
+    color: #9aa4ad;
+
+    font-weight: 700;
+
+    font-size: 20px;
+
+}
+
+
+.attendance-legend {
+
+    display: flex;
+
+    gap: 25px;
+
+    flex-wrap: wrap;
+
+    padding: 12px 16px;
+
+    background: #f5f8fb;
+
+    border-radius: 8px;
+
+    color: #555;
+
+}
+
+
+@media (max-width: 768px) {
+
+    .group-attendance-card {
+
+        min-height: 120px;
+
+        padding: 20px;
 
     }
 
-});
 
-</script>
+    .attendance-week-table {
 
-{% endif %}
+        min-width: 850px;
+
+    }
+
+}
+
+</style>
 
 {% endblock %}

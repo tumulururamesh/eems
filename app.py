@@ -4311,100 +4311,65 @@ def centre_attendance(centre_id):
 
 
             # ====================================================
-            # 4. SELECTED MONTH
+            # 4. SELECTED WEEK
             #
-            # Default = current month
+            # Week is Monday to Saturday.
+            #
             # Example:
-            # /attendance/24?month=2026-09
+            # /attendance/26?week=2026-09-14
             # ====================================================
 
-            selected_month = request.args.get(
-                "month",
-                datetime.today().strftime("%Y-%m")
-            )
+            week_param = request.args.get("week")
 
-            try:
-                month_start = datetime.strptime(
-                    selected_month,
-                    "%Y-%m"
-                ).date()
-            except ValueError:
-                selected_month = datetime.today().strftime("%Y-%m")
-
-                month_start = datetime.strptime(
-                    selected_month,
-                    "%Y-%m"
-                ).date()
-
-
-            # First day of next month
-            if month_start.month == 12:
-                next_month = month_start.replace(
-                    year=month_start.year + 1,
-                    month=1,
-                    day=1
-                )
-            else:
-                next_month = month_start.replace(
-                    month=month_start.month + 1,
-                    day=1
-                )
-
-            month_end = next_month - timedelta(days=1)
-
-
-            # ====================================================
-            # 5. AS-OF DATE
-            #
-            # If supplied, use it.
-            # Otherwise use the latest attendance submission
-            # in the selected month.
-            # ====================================================
-
-            as_of_param = request.args.get("as_of")
-
-            as_of_date = None
-
-            if as_of_param:
+            if week_param:
                 try:
-                    as_of_date = datetime.strptime(
-                        as_of_param,
+                    week_start = datetime.strptime(
+                        week_param,
                         "%Y-%m-%d"
                     ).date()
+
                 except ValueError:
-                    as_of_date = None
+                    today = datetime.today().date()
+                    week_start = today - timedelta(
+                        days=today.weekday()
+                    )
+            else:
+                today = datetime.today().date()
 
-
-            if not as_of_date:
-
-                cur.execute("""
-                    SELECT
-                        MAX(attendance_date) AS latest_date
-                    FROM public.attendance_submission
-                    WHERE center_id = %s
-                      AND attendance_date >= %s
-                      AND attendance_date <= %s
-                """, (
-                    centre_id,
-                    month_start,
-                    month_end
-                ))
-
-                result = cur.fetchone()
-
-                as_of_date = (
-                    result["latest_date"]
-                    if result and result["latest_date"]
-                    else month_end
+                # Monday of current week
+                week_start = today - timedelta(
+                    days=today.weekday()
                 )
 
 
-            # Never allow the as-of date outside the month
-            if as_of_date < month_start:
-                as_of_date = month_start
+            # Ensure week_start is Monday
+            week_start = week_start - timedelta(
+                days=week_start.weekday()
+            )
 
-            if as_of_date > month_end:
-                as_of_date = month_end
+            # AVF attendance week = Monday to Saturday
+            week_end = week_start + timedelta(days=5)
+
+            previous_week = week_start - timedelta(days=7)
+            next_week = week_start + timedelta(days=7)
+
+            week_days = [
+                week_start + timedelta(days=i)
+                for i in range(6)
+            ]
+
+
+            # ====================================================
+            # 5. SELECTED GROUP
+            #
+            # No group = show Group A / Group B cards.
+            # A or B = show weekly attendance for that group.
+            # ====================================================
+
+            selected_group = request.args.get("group")
+
+            if selected_group not in ("A", "B"):
+                selected_group = None
 
 
             # ====================================================
@@ -4447,96 +4412,36 @@ def centre_attendance(centre_id):
 
 
             # ====================================================
-            # 7. MONTHLY OVERALL SUMMARY
+            # 7. GROUP COUNTS
             #
-            # Working Days:
-            #     distinct submitted attendance dates
+            # Keep this deliberately simple.
+            # Tutor only needs to know how many students
+            # are in each group.
+            # ====================================================
+
+            group_counts = {
+                "A": 0,
+                "B": 0
+            }
+
+            for student in students:
+                group_code = student["group_code"]
+
+                if group_code in group_counts:
+                    group_counts[group_code] += 1
+
+
+            # ====================================================
+            # 8. WEEKLY ATTENDANCE RECORDS
             #
-            # Present:
-            #     all PRESENT student-day records
-            #
-            # Absent:
-            #     all ABSENT student-day records
-            #
-            # Attendance %:
-            #     Present / (Present + Absent) * 100
+            # Retrieve attendance only for the selected week.
             # ====================================================
 
             cur.execute("""
                 SELECT
-                    COUNT(DISTINCT ats.attendance_date)
-                        AS working_days,
-
-                    COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'PRESENT'
-                    ) AS present,
-
-                    COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'ABSENT'
-                    ) AS absent
-
-                FROM public.student_attendance sa
-
-                JOIN public.attendance_submission ats
-                    ON ats.submission_id = sa.submission_id
-
-                WHERE ats.center_id = %s
-                  AND ats.attendance_date >= %s
-                  AND ats.attendance_date <= %s
-                  AND ats.attendance_date <= %s
-            """, (
-                centre_id,
-                month_start,
-                month_end,
-                as_of_date
-            ))
-
-            monthly_summary = cur.fetchone()
-
-
-            working_days = monthly_summary["working_days"] or 0
-            monthly_present = monthly_summary["present"] or 0
-            monthly_absent = monthly_summary["absent"] or 0
-
-            monthly_total = (
-                monthly_present +
-                monthly_absent
-            )
-
-            if monthly_total > 0:
-                monthly_percentage = round(
-                    (monthly_present / monthly_total) * 100,
-                    1
-                )
-            else:
-                monthly_percentage = 0
-
-
-            monthly_summary["working_days"] = working_days
-            monthly_summary["present"] = monthly_present
-            monthly_summary["absent"] = monthly_absent
-            monthly_summary["total"] = monthly_total
-            monthly_summary["percentage"] = monthly_percentage
-
-
-            # ====================================================
-            # 8. DAILY ATTENDANCE TREND
-            #
-            # Every submitted attendance day in the month.
-            # No fixed 5-day window.
-            # ====================================================
-
-            cur.execute("""
-                SELECT
+                    sa.student_id,
                     ats.attendance_date,
-
-                    COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'PRESENT'
-                    ) AS present,
-
-                    COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'ABSENT'
-                    ) AS absent
+                    sa.attendance_status
 
                 FROM public.student_attendance sa
 
@@ -4546,211 +4451,111 @@ def centre_attendance(centre_id):
                 WHERE ats.center_id = %s
                   AND ats.attendance_date >= %s
                   AND ats.attendance_date <= %s
-                  AND ats.attendance_date <= %s
-
-                GROUP BY
-                    ats.attendance_date
 
                 ORDER BY
-                    ats.attendance_date
+                    ats.attendance_date,
+                    sa.student_id
             """, (
                 centre_id,
-                month_start,
-                month_end,
-                as_of_date
+                week_start,
+                week_end
             ))
 
-            attendance_trend = cur.fetchall()
-
-
-            for day in attendance_trend:
-
-                total = (
-                    (day["present"] or 0) +
-                    (day["absent"] or 0)
-                )
-
-                present = day["present"] or 0
-
-                day["total"] = total
-
-                if total > 0:
-                    day["percentage"] = round(
-                        (present / total) * 100,
-                        1
-                    )
-                else:
-                    day["percentage"] = 0
+            attendance_rows = cur.fetchall()
 
 
             # ====================================================
-            # 9. GROUP A / GROUP B SUMMARY
-            # ====================================================
-
-            cur.execute("""
-                SELECT
-                    cgm.group_code,
-
-                    COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'PRESENT'
-                    ) AS present,
-
-                    COUNT(*) FILTER (
-                        WHERE sa.attendance_status = 'ABSENT'
-                    ) AS absent
-
-                FROM public.student_attendance sa
-
-                JOIN public.attendance_submission ats
-                    ON ats.submission_id = sa.submission_id
-
-                JOIN public.student_master sm
-                    ON sm.student_id = sa.student_id
-
-                JOIN public.student_academic_year say
-                    ON say.student_id = sm.student_id
-                   AND say.academic_year_id = 3
-
-                JOIN public.curriculum_group_master cgm
-                    ON cgm.group_id = say.group_id
-
-                WHERE ats.center_id = %s
-                  AND ats.attendance_date >= %s
-                  AND ats.attendance_date <= %s
-                  AND ats.attendance_date <= %s
-
-                GROUP BY
-                    cgm.group_code
-
-                ORDER BY
-                    cgm.group_code
-            """, (
-                centre_id,
-                month_start,
-                month_end,
-                as_of_date
-            ))
-
-            group_rows = cur.fetchall()
-
-            group_summary = {}
-
-            for row in group_rows:
-
-                present = row["present"] or 0
-                absent = row["absent"] or 0
-                total = present + absent
-
-                percentage = (
-                    round((present / total) * 100, 1)
-                    if total > 0
-                    else 0
-                )
-
-                group_summary[row["group_code"]] = {
-                    "present": present,
-                    "absent": absent,
-                    "total": total,
-                    "percentage": percentage
-                }
-
-
-            # ====================================================
-            # 10. STUDENT-WISE ATTENDANCE
+            # 9. CREATE QUICK ATTENDANCE LOOKUP
             #
-            # Includes every current student.
-            # Students with no attendance yet remain visible.
+            # Key = (student_id, attendance_date)
+            # Value = PRESENT / ABSENT
             # ====================================================
 
-            cur.execute("""
-                SELECT
-                    sm.student_id,
-                    sm.student_code,
-                    sm.student_name,
-                    sm.gender,
-                    say.class_studying,
-                    cgm.group_code,
+            attendance_lookup = {}
 
-                    COUNT(sa.attendance_id) FILTER (
-                        WHERE sa.attendance_status = 'PRESENT'
-                    ) AS present,
+            for row in attendance_rows:
 
-                    COUNT(sa.attendance_id) FILTER (
-                        WHERE sa.attendance_status = 'ABSENT'
-                    ) AS absent
-
-                FROM public.student_center_assignment sca
-
-                JOIN public.student_master sm
-                    ON sm.student_id = sca.student_id
-
-                JOIN public.student_academic_year say
-                    ON say.student_id = sm.student_id
-                   AND say.academic_year_id = sca.academic_year_id
-
-                LEFT JOIN public.curriculum_group_master cgm
-                    ON cgm.group_id = say.group_id
-
-                LEFT JOIN public.student_attendance sa
-                    ON sa.student_id = sm.student_id
-
-                LEFT JOIN public.attendance_submission ats
-                    ON ats.submission_id = sa.submission_id
-                   AND ats.center_id = sca.center_id
-                   AND ats.attendance_date >= %s
-                   AND ats.attendance_date <= %s
-                   AND ats.attendance_date <= %s
-
-                WHERE sca.center_id = %s
-                  AND sca.academic_year_id = 3
-                  AND sca.active_flag = TRUE
-                  AND sm.active_flag = TRUE
-                  AND say.status = 'ACTIVE'
-
-                GROUP BY
-                    sm.student_id,
-                    sm.student_code,
-                    sm.student_name,
-                    sm.gender,
-                    say.class_studying,
-                    cgm.group_code
-
-                ORDER BY
-                    cgm.group_code,
-                    say.class_studying NULLS FIRST,
-                    sm.student_name
-            """, (
-                month_start,
-                month_end,
-                as_of_date,
-                centre_id
-            ))
-
-            student_attendance = cur.fetchall()
+                attendance_lookup[
+                    (
+                        row["student_id"],
+                        row["attendance_date"]
+                    )
+                ] = row["attendance_status"]
 
 
-            for student in student_attendance:
+            # ====================================================
+            # 10. BUILD WEEKLY ATTENDANCE FOR EACH STUDENT
+            # ====================================================
 
-                present = student["present"] or 0
-                absent = student["absent"] or 0
-                total = present + absent
+            weekly_students = []
 
-                student["total"] = total
+            for student in students:
 
-                if total > 0:
-                    student["percentage"] = round(
-                        (present / total) * 100,
+                if selected_group:
+                    if student["group_code"] != selected_group:
+                        continue
+
+                daily_attendance = []
+
+                present_days = 0
+                absent_days = 0
+
+                for day in week_days:
+
+                    status = attendance_lookup.get(
+                        (
+                            student["student_id"],
+                            day
+                        )
+                    )
+
+                    if status == "PRESENT":
+                        symbol = "P"
+                        present_days += 1
+
+                    elif status == "ABSENT":
+                        symbol = "A"
+                        absent_days += 1
+
+                    else:
+                        symbol = "-"
+
+                    daily_attendance.append({
+                        "date": day,
+                        "status": status,
+                        "symbol": symbol
+                    })
+
+
+                # Attendance percentage:
+                #
+                # Present / (Present + Absent) * 100
+                #
+                # Days with no attendance captured are
+                # deliberately excluded.
+
+                recorded_days = present_days + absent_days
+
+                if recorded_days > 0:
+                    percentage = round(
+                        (present_days / recorded_days) * 100,
                         1
                     )
                 else:
-                    student["percentage"] = None
+                    percentage = None
+
+
+                student["weekly_attendance"] = daily_attendance
+                student["present_days"] = present_days
+                student["absent_days"] = absent_days
+                student["attendance_percentage"] = percentage
+
+                weekly_students.append(student)
 
 
             # ====================================================
-            # 11. LATEST ATTENDANCE DATE
+            # 11. LATEST ATTENDANCE DATE IN SELECTED WEEK
             # ====================================================
-
-            latest_attendance_date = None
 
             cur.execute("""
                 SELECT
@@ -4759,70 +4564,22 @@ def centre_attendance(centre_id):
                 WHERE center_id = %s
                   AND attendance_date >= %s
                   AND attendance_date <= %s
-                  AND attendance_date <= %s
             """, (
                 centre_id,
-                month_start,
-                month_end,
-                as_of_date
+                week_start,
+                week_end
             ))
 
             latest_result = cur.fetchone()
+
+            latest_attendance_date = None
 
             if latest_result:
                 latest_attendance_date = latest_result["latest_date"]
 
 
             # ====================================================
-            # 12. LATEST-DAY ABSENTEES
-            # ====================================================
-
-            latest_absentees = []
-
-            if latest_attendance_date:
-
-                cur.execute("""
-                    SELECT
-                        sm.student_id,
-                        sm.student_code,
-                        sm.student_name,
-                        sm.gender,
-                        say.class_studying,
-                        cgm.group_code
-
-                    FROM public.student_attendance sa
-
-                    JOIN public.attendance_submission ats
-                        ON ats.submission_id = sa.submission_id
-
-                    JOIN public.student_master sm
-                        ON sm.student_id = sa.student_id
-
-                    JOIN public.student_academic_year say
-                        ON say.student_id = sm.student_id
-                       AND say.academic_year_id = 3
-
-                    LEFT JOIN public.curriculum_group_master cgm
-                        ON cgm.group_id = say.group_id
-
-                    WHERE ats.center_id = %s
-                      AND ats.attendance_date = %s
-                      AND sa.attendance_status = 'ABSENT'
-
-                    ORDER BY
-                        cgm.group_code,
-                        say.class_studying NULLS FIRST,
-                        sm.student_name
-                """, (
-                    centre_id,
-                    latest_attendance_date
-                ))
-
-                latest_absentees = cur.fetchall()
-
-
-            # ====================================================
-            # 13. DISPLAY NAME
+            # 12. DISPLAY NAME
             # ====================================================
 
             centre_display_name = (
@@ -4834,7 +4591,7 @@ def centre_attendance(centre_id):
 
 
             # ====================================================
-            # 14. RENDER
+            # 13. RENDER
             # ====================================================
 
             return render_template(
@@ -4844,25 +4601,27 @@ def centre_attendance(centre_id):
                 centre_display_name=centre_display_name,
                 tutor=tutor,
 
-                selected_month=selected_month,
-                month_start=month_start,
-                month_end=month_end,
-                as_of_date=as_of_date,
+                week_start=week_start,
+                week_end=week_end,
+                week_days=week_days,
 
-                monthly_summary=monthly_summary,
+                previous_week=previous_week,
+                next_week=next_week,
 
-                attendance_trend=attendance_trend,
+                selected_group=selected_group,
 
-                group_summary=group_summary,
+                group_counts=group_counts,
 
                 students=students,
-                student_attendance=student_attendance,
+                weekly_students=weekly_students,
 
                 latest_attendance_date=latest_attendance_date,
-                latest_absentees=latest_absentees,
+
+                
 
                 active_page="attendance"
             )
+
 
     except Exception as e:
 
@@ -4871,8 +4630,8 @@ def centre_attendance(centre_id):
         return redirect("/dashboard")
 
     finally:
-        db.close()
 
+        db.close()
 
 @app.route("/performance/<int:centre_id>")
 @login_required
