@@ -1695,6 +1695,184 @@ def cluster_dashboard(cc_id):
 
         trend_average = 0
 
+
+
+
+    # ---------------------------------------------------------
+    # Weekly Centre Attendance
+    # Monday to Saturday
+    # ---------------------------------------------------------
+
+    requested_week = request.args.get("week")
+
+    if requested_week:
+        try:
+            week_start = datetime.strptime(
+                requested_week, "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            week_start = (
+                datetime.today().date()
+                - timedelta(
+                    days=datetime.today().date().weekday()
+                )
+            )
+    else:
+        week_start = (
+            datetime.today().date()
+            - timedelta(
+                days=datetime.today().date().weekday()
+            )
+        )
+
+    week_days = [
+        week_start + timedelta(days=i)
+        for i in range(6)
+    ]
+
+    week_end = week_days[-1]
+
+    previous_week = week_start - timedelta(days=7)
+    next_week = week_start + timedelta(days=7)
+
+    # ---------------------------------------------------------
+    # Fetch weekly attendance for all centres
+    # ---------------------------------------------------------
+
+    weekly_rows = {}
+
+    weekly_conn = get_connection()
+
+    try:
+        with weekly_conn.cursor(
+            cursor_factory=RealDictCursor
+        ) as cur:
+
+            cur.execute("""
+                SELECT
+                    ats.center_id,
+                    sa.attendance_date,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'PRESENT'
+                    ) AS present,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'ABSENT'
+                    ) AS absent
+
+                FROM public.student_attendance sa
+
+                JOIN public.attendance_submission ats
+                    ON ats.submission_id = sa.submission_id
+
+                JOIN public.cluster_center c
+                    ON c.center_id = ats.center_id
+                   AND c.academic_year_id = 3
+                   AND c.active_flag = TRUE
+
+                JOIN public.cluster_coordinator_assignment cca
+                    ON cca.cluster_id = c.cluster_id
+                   AND cca.cc_id = %s
+                   AND cca.academic_year_id = 3
+                   AND cca.active_flag = TRUE
+
+                WHERE sa.attendance_date >= %s
+                  AND sa.attendance_date <= %s
+
+                GROUP BY
+                    ats.center_id,
+                    sa.attendance_date
+
+                ORDER BY
+                    ats.center_id,
+                    sa.attendance_date
+            """, (
+                cc_id,
+                week_start,
+                week_end
+            ))
+
+            attendance_rows = cur.fetchall()
+
+    finally:
+        weekly_conn.close()
+
+    # ---------------------------------------------------------
+    # Prepare centre-wise weekly structure
+    # ---------------------------------------------------------
+
+    for centre in centres:
+
+        weekly_rows[centre["center_id"]] = {
+            "center_id": centre["center_id"],
+            "center_code": centre["center_code"],
+            "center_name": centre["center_name"],
+            "days": {},
+            "week_present": 0,
+            "week_absent": 0,
+            "week_total": 0,
+            "week_percentage": None
+        }
+
+        for day in week_days:
+            weekly_rows[
+                centre["center_id"]
+            ]["days"][day] = None
+
+    # ---------------------------------------------------------
+    # Calculate daily and weekly percentages
+    # ---------------------------------------------------------
+
+    for row in attendance_rows:
+
+        center_id = row["center_id"]
+        attendance_date = row["attendance_date"]
+
+        present = row["present"] or 0
+        absent = row["absent"] or 0
+        total = present + absent
+
+        if center_id not in weekly_rows:
+            continue
+
+        if total > 0:
+            daily_percentage = round(
+                (present / total) * 100,
+                1
+            )
+        else:
+            daily_percentage = None
+
+        weekly_rows[center_id]["days"][
+            attendance_date
+        ] = daily_percentage
+
+        weekly_rows[center_id]["week_present"] += present
+        weekly_rows[center_id]["week_absent"] += absent
+        weekly_rows[center_id]["week_total"] += total
+
+    # ---------------------------------------------------------
+    # Final weekly percentage
+    # ---------------------------------------------------------
+
+    for centre in weekly_rows.values():
+
+        if centre["week_total"] > 0:
+
+            centre["week_percentage"] = round(
+                (
+                    centre["week_present"]
+                    / centre["week_total"]
+                ) * 100,
+                1
+            )
+
+    weekly_centre_attendance = list(
+        weekly_rows.values()
+    )
+
+
     # ---------------------------------------------------------
     # Attendance date
     # ---------------------------------------------------------
@@ -1712,6 +1890,12 @@ def cluster_dashboard(cc_id):
         attendance_date=attendance_date,
         attendance_trend=attendance_trend,
         trend_average=trend_average,
+        weekly_centre_attendance=weekly_centre_attendance,
+        week_days=week_days,
+        week_start=week_start,
+        week_end=week_end,
+        previous_week=previous_week,
+        next_week=next_week,
         active_page="cluster",
         show_mobile_attendance=(
             session.get("role") == "cluster_incharge"

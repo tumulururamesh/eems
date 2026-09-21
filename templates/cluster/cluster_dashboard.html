@@ -215,6 +215,196 @@ Cluster Coordinator Dashboard
 
 
     <!-- ===================================================== -->
+    <!-- Weekly Centre Attendance -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-calendar-week me-2"></i>
+
+            Weekly Attendance — Centre Comparison
+
+        </div>
+
+        <div class="card-body">
+
+            <!-- Week Navigation -->
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+
+                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?week={{ previous_week.strftime('%Y-%m-%d') }}"
+                   class="btn btn-sm btn-outline-primary">
+
+                    <i class="bi bi-chevron-left"></i>
+                    Previous Week
+
+                </a>
+
+                <div class="text-center">
+
+                    <div class="fw-semibold">
+
+                        {{ week_start.strftime('%d %b %Y') }}
+                        –
+                        {{ week_end.strftime('%d %b %Y') }}
+
+                    </div>
+
+                    <small class="text-muted">
+                        Monday – Saturday
+                    </small>
+
+                </div>
+
+                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?week={{ next_week.strftime('%Y-%m-%d') }}"
+                   class="btn btn-sm btn-outline-primary">
+
+                    Next Week
+                    <i class="bi bi-chevron-right"></i>
+
+                </a>
+
+            </div>
+
+
+
+                        <!-- Weekly Attendance Table -->
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle"
+                       style="table-layout: fixed; width: 100%;">
+
+                    <colgroup>
+
+                        <col style="width: 34%;">
+
+                        {% for day in week_days %}
+                            <col style="width: 9%;">
+                        {% endfor %}
+
+                        <col style="width: 12%;">
+
+                    </colgroup>
+
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Learning Centre
+                            </th>
+
+                            {% for day in week_days %}
+
+                            <th class="text-center"
+                                style="white-space: nowrap;">
+
+                                {{ day.strftime('%a') }}
+
+                            </th>
+
+                            {% endfor %}
+
+                            <th class="text-center"
+                                style="white-space: nowrap;">
+
+                                Week Avg
+
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for centre in weekly_centre_attendance %}
+
+                        <tr>
+
+                            <!-- Centre -->
+
+                            <td class="fw-semibold">
+
+                                <a href="/centre/{{ centre.center_id }}"
+                                   class="text-decoration-none">
+
+                                    {{ centre.center_code }}
+
+                                </a>
+
+                            </td>
+
+
+                            <!-- Daily Attendance -->
+
+                            {% for day in week_days %}
+
+                            <td class="text-center"
+                                style="white-space: nowrap;">
+
+                                {% set value = centre.days[day] %}
+
+                                {% if value is not none %}
+
+                                    <span class="fw-semibold">
+                                        {{ value }}%
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            {% endfor %}
+
+
+                            <!-- Week Average -->
+
+                            <td class="text-center fw-bold"
+                                style="white-space: nowrap;">
+
+                                {% if centre.week_percentage is not none %}
+
+                                    {{ centre.week_percentage }}%
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
     <!-- Daily Attendance Mobile -->
     <!-- ===================================================== -->
 
@@ -481,9 +671,7 @@ Cluster Coordinator Dashboard
                         </tr>
 
                     </tfoot>
-
                 </table>
-
             </div>
 
         </div>
