@@ -1206,6 +1206,25 @@ def login():
 
 
                 # -------------------------------------------------
+                # SEGMENT INCHARGE
+                # -------------------------------------------------
+
+                if db_user["role_code"] == "SEGMENT_INCHARGE":
+
+                    segment_id = session.get("access_segment_id")
+
+                    if not segment_id:
+                        return redirect("/dashboard")
+
+                    # Store segment context for existing AEMS routes
+                    session["segment"] = segment_id
+
+                    return redirect(
+                        f"/segment/{segment_id}"
+                    )
+
+
+                # -------------------------------------------------
                 # TUTOR
                 # -------------------------------------------------
 
@@ -3969,63 +3988,395 @@ def export_tutor_class_performance_comparison():
 @login_required
 def segment_dashboard(segment_id):
 
-    segment = {
-        "name": "Segment 1",
-        "incharge": "Smt. Anitha",
-        "clusters": 4,
-        "centres": 20,
-        "students": 600,
-        "attendance": "87%",
-        "assessment": "71%"
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # ---------------------------------------------------------
+    # Segment details
+    # ---------------------------------------------------------
+    cur.execute("""
+        SELECT
+            segment_id,
+            segment_name
+        FROM segment_master
+        WHERE segment_id = %s
+          AND active_flag = TRUE
+    """, (segment_id,))
+
+    segment_row = cur.fetchone()
+
+    if not segment_row:
+        cur.close()
+        conn.close()
+        return "Segment not found", 404
+
+    # ---------------------------------------------------------
+    # Cluster details for the segment
+    # ---------------------------------------------------------
+    cur.execute("""
+        SELECT
+            c.cluster_id,
+            c.cluster_name,
+            COUNT(DISTINCT cc.center_id) AS centres,
+            COUNT(DISTINCT sm.student_id) AS students
+        FROM cluster_master c
+
+        LEFT JOIN cluster_center cc
+            ON cc.cluster_id = c.cluster_id
+           AND cc.academic_year_id = 3
+           AND cc.active_flag = TRUE
+
+        LEFT JOIN student_center_assignment sca
+            ON sca.center_id = cc.center_id
+           AND sca.academic_year_id = 3
+           AND sca.active_flag = TRUE
+
+        LEFT JOIN student_master sm
+            ON sm.student_id = sca.student_id
+           AND sm.active_flag = TRUE
+
+        WHERE c.segment_id = %s
+          AND c.active_flag = TRUE
+
+        GROUP BY
+            c.cluster_id,
+            c.cluster_name
+
+        ORDER BY c.cluster_id
+    """, (segment_id,))
+
+    cluster_rows = cur.fetchall()
+
+    # ---------------------------------------------------------
+    # Today's attendance by cluster
+    # ---------------------------------------------------------
+    cur.execute("""
+        SELECT
+            c.cluster_id,
+
+            COUNT(sa.attendance_id) AS attendance_total,
+
+            COUNT(sa.attendance_id) FILTER (
+                WHERE sa.attendance_status = 'PRESENT'
+            ) AS present,
+
+            COUNT(sa.attendance_id) FILTER (
+                WHERE sa.attendance_status = 'ABSENT'
+            ) AS absent
+
+        FROM cluster_master c
+
+        JOIN cluster_center cc
+            ON cc.cluster_id = c.cluster_id
+           AND cc.academic_year_id = 3
+           AND cc.active_flag = TRUE
+
+        LEFT JOIN attendance_submission ats
+            ON ats.center_id = cc.center_id
+           AND ats.attendance_date = CURRENT_DATE
+
+        LEFT JOIN student_attendance sa
+            ON sa.submission_id = ats.submission_id
+           AND sa.attendance_date = CURRENT_DATE
+
+        WHERE c.segment_id = %s
+          AND c.active_flag = TRUE
+
+        GROUP BY
+            c.cluster_id
+
+        ORDER BY
+            c.cluster_id
+    """, (segment_id,))
+
+    attendance_rows = cur.fetchall()
+
+    # Map attendance results by cluster
+    attendance_by_cluster = {
+        row["cluster_id"]: row
+        for row in attendance_rows
     }
 
-    clusters = [
-        {
-            "id": 1,
-            "name": "Cluster 1",
-            "centres": 5,
-            "students": 168,
-            "attendance": "91%",
-            "attendance_value": 91,
-            "assessment": "74%",
-            "assessment_value": 74
-        },
-        {
-            "id": 2,
-            "name": "Cluster 2",
-            "centres": 5,
-            "students": 152,
-            "attendance": "88%",
-            "attendance_value": 88,
-            "assessment": "72%",
-            "assessment_value": 72
-        },
-        {
-            "id": 3,
-            "name": "Cluster 3",
-            "centres": 5,
-            "students": 141,
-            "attendance": "84%",
-            "attendance_value": 84,
-            "assessment": "69%",
-            "assessment_value": 69
-        },
-        {
-            "id": 4,
-            "name": "Cluster 4",
-            "centres": 5,
-            "students": 139,
-            "attendance": "81%",
-            "attendance_value": 81,
-            "assessment": "65%",
-            "assessment_value": 65
-        }
+    # Add today's attendance to each cluster
+    for cluster in cluster_rows:
+
+        attendance = attendance_by_cluster.get(
+            cluster["cluster_id"]
+        )
+
+        if attendance:
+            total = attendance["attendance_total"] or 0
+            present = attendance["present"] or 0
+            absent = attendance["absent"] or 0
+
+            cluster["attendance_total"] = total
+            cluster["present"] = present
+            cluster["absent"] = absent
+
+            if total > 0:
+                cluster["attendance_value"] = round(
+                    (present / total) * 100,
+                    1
+                )
+                cluster["attendance"] = (
+                    f'{cluster["attendance_value"]}%'
+                )
+            else:
+                cluster["attendance_value"] = 0
+                cluster["attendance"] = "—"
+
+        else:
+            cluster["attendance_total"] = 0
+            cluster["present"] = 0
+            cluster["absent"] = 0
+            cluster["attendance_value"] = 0
+            cluster["attendance"] = "—"
+
+
+    # ---------------------------------------------------------
+    # Calculate Segment today's attendance
+    # ---------------------------------------------------------
+
+    segment_attendance_total = sum(
+        cluster["attendance_total"]
+        for cluster in cluster_rows
+    )
+
+    segment_present = sum(
+        cluster["present"]
+        for cluster in cluster_rows
+    )
+
+    segment_absent = sum(
+        cluster["absent"]
+        for cluster in cluster_rows
+    )
+
+    if segment_attendance_total > 0:
+
+        segment_attendance_percentage = round(
+            (
+                segment_present
+                / segment_attendance_total
+            ) * 100,
+            1
+        )
+
+        segment_attendance = (
+            f"{segment_attendance_percentage}%"
+        )
+
+    else:
+
+        segment_attendance = "—"
+
+
+    # ---------------------------------------------------------
+    # Weekly Attendance — Cluster Comparison
+    # Monday to Saturday
+    # ---------------------------------------------------------
+
+    requested_week = request.args.get("week")
+
+    if requested_week:
+        try:
+            week_start = datetime.strptime(
+                requested_week, "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            week_start = (
+                datetime.today().date()
+                - timedelta(
+                    days=datetime.today().date().weekday()
+                )
+            )
+    else:
+        week_start = (
+            datetime.today().date()
+            - timedelta(
+                days=datetime.today().date().weekday()
+            )
+        )
+
+    week_days = [
+        week_start + timedelta(days=i)
+        for i in range(6)
     ]
+
+    week_end = week_days[-1]
+
+    previous_week = week_start - timedelta(days=7)
+    next_week = week_start + timedelta(days=7)
+
+    # ---------------------------------------------------------
+    # Fetch weekly attendance by cluster
+    # ---------------------------------------------------------
+
+    cur.execute("""
+        SELECT
+            c.cluster_id,
+            sa.attendance_date,
+
+            COUNT(*) FILTER (
+                WHERE sa.attendance_status = 'PRESENT'
+            ) AS present,
+
+            COUNT(*) FILTER (
+                WHERE sa.attendance_status = 'ABSENT'
+            ) AS absent
+
+        FROM cluster_master c
+
+        JOIN cluster_center cc
+            ON cc.cluster_id = c.cluster_id
+           AND cc.academic_year_id = 3
+           AND cc.active_flag = TRUE
+
+        JOIN attendance_submission ats
+            ON ats.center_id = cc.center_id
+           AND ats.attendance_date >= %s
+           AND ats.attendance_date <= %s
+
+        JOIN student_attendance sa
+            ON sa.submission_id = ats.submission_id
+           AND sa.attendance_date >= %s
+           AND sa.attendance_date <= %s
+
+        WHERE c.segment_id = %s
+          AND c.active_flag = TRUE
+
+        GROUP BY
+            c.cluster_id,
+            sa.attendance_date
+
+        ORDER BY
+            c.cluster_id,
+            sa.attendance_date
+
+    """, (
+        week_start,
+        week_end,
+        week_start,
+        week_end,
+        segment_id
+    ))
+
+    weekly_rows = cur.fetchall()
+
+    # ---------------------------------------------------------
+    # Prepare cluster-wise weekly structure
+    # ---------------------------------------------------------
+
+    weekly_cluster_rows = {}
+
+    for cluster in cluster_rows:
+
+        cluster_id = cluster["cluster_id"]
+
+        weekly_cluster_rows[cluster_id] = {
+            "cluster_id": cluster_id,
+            "cluster_name": cluster["cluster_name"],
+            "days": {},
+            "week_present": 0,
+            "week_absent": 0,
+            "week_total": 0
+        }
+
+    # ---------------------------------------------------------
+    # Populate daily attendance
+    # ---------------------------------------------------------
+
+    for row in weekly_rows:
+
+        cluster_id = row["cluster_id"]
+        attendance_date = row["attendance_date"]
+
+        present = row["present"] or 0
+        absent = row["absent"] or 0
+        total = present + absent
+
+        if total > 0:
+            daily_percentage = round(
+                (present / total) * 100,
+                1
+            )
+        else:
+            daily_percentage = None
+
+        weekly_cluster_rows[cluster_id]["days"][
+            attendance_date
+        ] = daily_percentage
+
+        weekly_cluster_rows[cluster_id]["week_present"] += present
+        weekly_cluster_rows[cluster_id]["week_absent"] += absent
+        weekly_cluster_rows[cluster_id]["week_total"] += total
+
+    # ---------------------------------------------------------
+    # Calculate weekly aggregate percentage
+    # ---------------------------------------------------------
+
+    for cluster in weekly_cluster_rows.values():
+
+        if cluster["week_total"] > 0:
+
+            cluster["week_percentage"] = round(
+                (
+                    cluster["week_present"]
+                    / cluster["week_total"]
+                ) * 100,
+                1
+            )
+
+        else:
+            cluster["week_percentage"] = None
+
+    weekly_cluster_attendance = list(
+        weekly_cluster_rows.values()
+    )
+
+    cur.close()
+    conn.close()
+
+    
+    # ---------------------------------------------------------
+    # Prepare Segment summary
+    # ---------------------------------------------------------
+    segment = {
+        "id": segment_row["segment_id"],
+        "name": segment_row["segment_name"],
+        "clusters": len(cluster_rows),
+        "centres": sum(row["centres"] for row in cluster_rows),
+        "students": sum(row["students"] for row in cluster_rows),
+        "attendance": segment_attendance
+    }
+
+    # ---------------------------------------------------------
+    # Prepare cluster data for template
+    # ---------------------------------------------------------
+    clusters = []
+
+    for row in cluster_rows:
+        clusters.append({
+            "id": row["cluster_id"],
+            "name": row["cluster_name"],
+            "centres": row["centres"],
+            "students": row["students"],
+            "attendance": row["attendance"],
+            "attendance_value": row["attendance_value"],
+            "present": row["present"],
+            "absent": row["absent"]
+        })
 
     return render_template(
         "segment/segment_dashboard.html",
         segment=segment,
         clusters=clusters,
+        weekly_cluster_attendance=weekly_cluster_attendance,
+        week_days=week_days,
+        week_start=week_start,
+        week_end=week_end,
+        previous_week=previous_week,
+        next_week=next_week,
         active_page="vidya_vikasam"
     )
 
