@@ -11,19 +11,6 @@ from io import BytesIO
 
 from database import (
     get_connection,
-    search_students as db_search_students,
-    get_student_journey,
-    get_centre_directory,
-    get_village_mapping,
-    get_center_student_strength,
-    get_academic_year_id,
-    get_all_centres,
-    get_classwise_student_strength,
-    get_centre_fee_summary,
-    get_centre_monthly_attendance_summary,
-    get_smartlabs_dashboard_summary,
-    get_school_student_strength,
-    get_class_student_strength
 )
 
 from datetime import datetime, timedelta
@@ -1929,39 +1916,6 @@ def index():
 
     return redirect("/login")
 
-#====================================================
-# VIDYA VAHINI LANDING
-# =====================================================
-
-@app.route("/vidya-vahini")
-def vidya_vahini():
-
-    return render_template(
-        "vidya_vahini/landing.html",
-        active_page="vidya_vahini"
-    )
-
-
-@app.route("/vidya-vikasam")
-def vidya_vikasam_dashboard():
-   
-    return render_template(
-        "vidya_vikasam/dashboard.html",
-        active_page="vidya_vikasam"
-    )
-
-@app.route("/search")
-def search_students():
-
-    search_text = request.args.get("search", "").strip()
-
-    students = db_search_students(search_text)
-
-    return render_template(
-        "vidya_vahini/search_results.html",
-        search_text=search_text,
-        students=students
-)
 
 # =========================================
 # CENTRE / TUTOR DASHBOARD
@@ -2454,83 +2408,8 @@ def centre_dashboard(centre_id):
 
     attendance_trend=attendance_trend,
 
-    active_page="vidya_vikasam"
+    active_page="avlc"
 )
-@app.route("/student/<int:student_id>")
-def student_summary(student_id):
-
-    print("1. Entered function")
-
-    conn = get_connection()
-    print("2. Connected to database")
-
-    cur = conn.cursor()
-    print("3. Cursor created")
-
-    cur.execute("""
-        SELECT *
-        FROM vidya_vahini.vw_student_summary_profile
-        WHERE student_id = %s
-    """, (student_id,))
-
-    print("4. Query executed")
-
-    student = cur.fetchone()
-    print("5. Row fetched")
-
-    # Get Educational Journey
-    journey_events = get_student_journey(student_id)
-
-    print("Journey Events:")
-    print(journey_events)
-
-
-   # =====================================================
-    # PRESENTATION LAYER
-    # =====================================================
-
-    if student:
-        # Employment Status is derived from the Student Lifecycle View
-        student["employment_status"] = student.get("current_stage")
-
-        fields = [
-            "company_name",
-            "designation",
-            "employment_category",
-            "employment_city",
-            "employment_state",
-            "joining_date",
-            "annual_salary",
-            "placement_source"
-        ]
-
-        for field in fields:
-            if student[field] is None:
-                student[field] = "—"
-
-        city = student["employment_city"]
-        state = student["employment_state"]
-
-        if city == "—" and state == "—":
-            student["employment_location"] = "—"
-        elif city == "—":
-            student["employment_location"] = state
-        elif state == "—":
-            student["employment_location"] = city
-        else:
-            student["employment_location"] = f"{city}, {state}"
-
-        print("Employment Status =", student["employment_status"])
-    cur.close()
-    conn.close()
-    print("6. Connection closed")
-
-    return render_template(
-        "vidya_vahini/student_lifecycle_dashboard.html",
-        student=student,
-        journey_events=journey_events,
-        active_page="vidya_vahini"
-    )
 
 
 # --------------- TUTOR SPACE ---------------
@@ -3519,7 +3398,7 @@ def segment_dashboard(segment_id):
         week_end=week_end,
         previous_week=previous_week,
         next_week=next_week,
-        active_page="vidya_vikasam"
+        active_page="segment"
     )
 
 @app.route("/zone-dashboard")
