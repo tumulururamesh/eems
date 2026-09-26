@@ -2438,7 +2438,7 @@ def centre_dashboard(centre_id):
     # -----------------------------------------
 
     return render_template(
-    "vidya_vikasam/centre_dashboard.html",
+    "aems/avlc/dashboard.html",
 
     centre=centre,
 
