@@ -2,11 +2,254 @@
 
 {% block content %}
 
-<div class="container py-5">
+<div class="container-fluid py-4">
 
-    <h1>Operations Dashboard</h1>
+<!-- Academic Year -->
 
-    <p>Operations Head Dashboard</p>
+<div class="d-flex justify-content-end mb-2">
+    <span class="badge bg-light text-dark border px-3 py-2">
+        <i class="bi bi-calendar3 me-1"></i>
+        Academic Year: 2026–27
+    </span>
+</div>
+<!-- Dashboard Header -->
+<div class="mb-4">
+
+    <div class="row align-items-start">
+
+        <div class="col-md-8">
+
+            <h1 class="mb-1 text-primary">
+                Operations Head Dashboard
+            </h1>
+
+            <p class="text-muted mb-1">
+                Organisation-wide operational view
+            </p>
+
+            <p class="text-muted mb-0">
+                As of: {{ dashboard_date.strftime('%d %B %Y') }}
+            </p>
+        </div>
+
+        
+
+    </div>
+
+</div>
+
+    <!-- Summary Cards -->
+<div class="row g-4 mb-5">
+
+    <!-- AVLCs -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card h-100 text-center">
+            <div class="card-body py-4">
+
+                <div class="fs-1 text-primary mb-2">
+                    <i class="bi bi-building"></i>
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ summary.total_avlcs }}
+                </div>
+
+                <div class="text-muted mt-1">
+                    AVLCs
+                </div>
+
+                <div class="small text-muted mt-2">
+                    Inactive: {{ summary.inactive_avlcs }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Enrolments -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card h-100 text-center">
+            <div class="card-body py-4">
+
+                <div class="fs-1 text-success mb-2">
+                    <i class="bi bi-people"></i>
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ summary.total_enrolments }}
+                </div>
+
+                <div class="text-muted mt-1">
+                    Enrolments
+                </div>
+
+                <div class="small text-muted mt-2">
+                    Inactive: {{ summary.inactive_enrolments }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Boys -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card h-100 text-center">
+            <div class="card-body py-4">
+
+                <div class="fs-1 text-info mb-2">
+                    <i class="bi bi-person"></i>
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ summary.boys }}
+                </div>
+
+                <div class="text-muted mt-1">
+                    Boys
+                </div>
+
+                <div class="small text-muted mt-2">
+                    {{ summary.boys_percentage }}%
+                    of enrolments
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Girls -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card h-100 text-center">
+            <div class="card-body py-4">
+
+                <div class="fs-1 text-warning mb-2">
+                    <i class="bi bi-person"></i>
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ summary.girls }}
+                </div>
+
+                <div class="text-muted mt-1">
+                    Girls
+                </div>
+
+                <div class="small text-muted mt-2">
+                    {{ summary.girls_percentage }}%
+                    of enrolments
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+    <!-- Quick Access -->
+    <div class="mb-4">
+
+        <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-grid me-2 text-primary"></i>
+            <h4 class="mb-0">Quick Access</h4>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- AVLC -->
+            <div class="col-12 col-lg-6">
+                <a href="/avlc-dashboard"
+   class="dashboard-card h-100 text-decoration-none text-dark d-block">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex align-items-start">
+
+            <div class="display-5 text-primary me-4">
+                <i class="bi bi-building"></i>
+            </div>
+
+            <div class="flex-grow-1">
+
+                <div class="d-flex justify-content-between
+                            align-items-center">
+
+                    <h4 class="mb-1">
+                        AVLCs
+                    </h4>
+
+                    <span class="text-primary fs-4">
+                        <i class="bi bi-arrow-right"></i>
+                    </span>
+
+                </div>
+
+                <p class="text-muted mb-0 mt-2">
+                    Organisation-wide AVLC overview,
+                    segment comparison and operational performance.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</a>
+            </div>
+
+
+            <!-- Tutor Space -->
+            <div class="col-12 col-lg-6">
+                <a href="/operations-tutor-space"
+   class="dashboard-card h-100 text-decoration-none text-dark d-block">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex align-items-start">
+
+            <div class="display-5 text-success me-4">
+                <i class="bi bi-person-workspace"></i>
+            </div>
+
+            <div class="flex-grow-1">
+
+                <div class="d-flex justify-content-between
+                            align-items-center">
+
+                    <h4 class="mb-1">
+                        Tutor Space
+                    </h4>
+
+                    <span class="text-success fs-4">
+                        <i class="bi bi-arrow-right"></i>
+                    </span>
+
+                </div>
+
+                <p class="text-muted mb-0 mt-2">
+                    Organisation-wide tutor information,
+                    education and career journey.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</a>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    
 
 </div>
 

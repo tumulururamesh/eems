@@ -1,0 +1,640 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container py-4">
+<!-- ===================================================== -->
+<!-- PAGE HEADER -->
+<!-- ===================================================== -->
+
+<div class="card shadow-sm mb-4 border-0">
+
+    <div class="card-body py-3">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-8">
+
+                <h1 class="mb-1">
+                    AVLC Dashboard
+                </h1>
+
+                <p class="text-muted mb-0">
+                    Organisation-wide AVLC and Segment Overview
+                </p>
+
+            </div>
+
+            <div class="col-md-4 text-md-end mt-2 mt-md-0">
+
+                <div class="small text-muted">
+                    Academic Year
+                </div>
+
+                <div class="fw-bold fs-5">
+                    {{ academic_year.academic_year }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- SEGMENT SELECTION + SELECTED SEGMENT PROFILE -->
+<!-- ===================================================== -->
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <div class="row align-items-center">
+
+            <!-- Segment selector -->
+
+            <div class="col-lg-6">
+
+                <label for="segment"
+                       class="form-label fw-semibold">
+
+                    Select Segment
+
+                </label>
+
+                <select
+                    id="segment"
+                    class="form-select"
+                    onchange="changeSegment(this.value)"
+                >
+
+                    {% for segment in segments %}
+
+                        <option
+                            value="{{ segment.segment_id }}"
+                            {% if selected_segment
+                               and segment.segment_id
+                               == selected_segment.segment_id %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ segment.segment_name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+<!-- ===================================================== -->
+<!-- SELECTED SEGMENT PROFILE -->
+<!-- ===================================================== -->
+
+<div class="col-lg-6 mt-4 mt-lg-0">
+
+    {% if selected_segment_profile %}
+
+    <div class="border-start ps-lg-4">
+
+        <!-- Segment Incharge -->
+
+        <div class="mb-3">
+
+            <div class="small text-muted">
+                Segment Incharge
+            </div>
+
+            <div class="fw-semibold">
+                {% if selected_segment_profile.segment_incharge %}
+                    {{ selected_segment_profile.segment_incharge }}
+                {% else %}
+                    Not Assigned
+                {% endif %}
+            </div>
+
+        </div>
+
+
+        <!-- KPI Grid -->
+
+        <div class="row g-3">
+
+            <!-- Clusters -->
+
+            <div class="col-4">
+
+                <div class="small text-muted">
+                    Clusters
+                </div>
+
+                <div class="fw-bold fs-5">
+                    {{ selected_segment_profile.clusters }}
+                </div>
+
+            </div>
+
+
+            <!-- Enrolments -->
+
+            <div class="col-4">
+
+                <div class="small text-muted">
+                    Enrolments
+                </div>
+
+                <div class="fw-bold fs-5">
+                    {{ selected_segment_profile.total_enrolments }}
+                </div>
+
+            </div>
+
+
+            <!-- Inactive -->
+
+            <div class="col-4">
+
+                <div class="small text-muted">
+                    Inactive
+                </div>
+
+                <div class="fw-bold fs-5">
+                    {{ selected_segment_profile.inactive_enrolments }}
+                </div>
+
+            </div>
+
+
+            <!-- Boys -->
+
+            <div class="col-4">
+
+                <div class="small text-muted">
+                    Boys
+                </div>
+
+                <div class="fw-bold fs-5">
+                    {{ selected_segment_profile.boys }}
+                </div>
+
+                <div class="small text-muted">
+                    {{ selected_segment_profile.boys_percentage }}%
+                </div>
+
+            </div>
+
+
+            <!-- Girls -->
+
+            <div class="col-4">
+
+                <div class="small text-muted">
+                    Girls
+                </div>
+
+                <div class="fw-bold fs-5">
+                    {{ selected_segment_profile.girls }}
+                </div>
+
+                <div class="small text-muted">
+                    {{ selected_segment_profile.girls_percentage }}%
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+        </div>
+
+    </div>
+
+</div>
+
+   <!-- ========================================= -->
+<!-- Weekly Attendance — Segment Comparison -->
+<!-- ========================================= -->
+
+<div class="dashboard-card mt-4 mb-4">
+
+    <div class="dashboard-header d-flex justify-content-between align-items-center">
+
+        <div>
+            <i class="bi bi-calendar-week me-2"></i>
+            Weekly Attendance — Segment Comparison
+        </div>
+
+        <div class="btn-group btn-group-sm">
+
+            <a href="{{ url_for(
+                'avlc_dashboard',
+                segment=selected_segment.segment_id,
+                week=previous_week.isoformat()
+            ) }}"
+               class="btn btn-outline-primary">
+
+                &laquo; Previous Week
+
+            </a>
+
+
+            <a href="{{ url_for(
+                'avlc_dashboard',
+                segment=selected_segment.segment_id,
+                week=next_week.isoformat()
+            ) }}"
+               class="btn btn-outline-primary">
+
+                Next Week &raquo;
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body">
+
+        <!-- Week information -->
+
+        <div class="d-flex justify-content-between
+                    align-items-center mb-3">
+
+            <div class="text-muted">
+
+                Week:
+
+                <strong>
+
+                    {{ week_start.strftime('%d %b %Y') }}
+
+                    -
+
+                    {{ week_end.strftime('%d %b %Y') }}
+
+                </strong>
+
+            </div>
+
+
+            <div class="text-muted small">
+
+                Monday to Saturday
+
+            </div>
+
+        </div>
+
+
+        <!-- Weekly Attendance Table -->
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+                        <th>
+                            Segment
+                        </th>
+
+
+                        {% for day in week_days %}
+
+                        <th class="text-center">
+
+                            {{ day.strftime('%a') }}
+
+                            <br>
+
+                            <small class="text-muted">
+                                {{ day.strftime('%d') }}
+                            </small>
+
+                        </th>
+
+                        {% endfor %}
+
+
+                        <th class="text-center">
+                            Week Avg
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for segment in weekly_segment_attendance %}
+
+                    <tr>
+
+                        <td class="fw-bold">
+                            {{ loop.index }}
+                        </td>
+
+
+                        <td class="fw-semibold">
+                            {{ segment.segment_name }}
+                        </td>
+
+
+                        {% for day in week_days %}
+
+                        <td class="text-center">
+
+                            {% if segment.days[day] is not none %}
+
+                                <strong>
+                                    {{ segment.days[day] }}%
+                                </strong>
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    —
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        {% endfor %}
+
+
+                        <td class="text-center fw-bold">
+
+                            {% if segment.week_percentage
+                                  is not none %}
+
+                                {{ segment.week_percentage }}%
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    —
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================================= -->
+<!-- Monthly Attendance & Performance -->
+<!-- Segment Comparison -->
+<!-- ========================================= -->
+
+<div class="dashboard-card mt-4 mb-4">
+
+    <div class="dashboard-header d-flex
+                justify-content-between
+                align-items-center">
+
+        <div>
+            <i class="bi bi-bar-chart-line me-2"></i>
+            Monthly Attendance &amp; Performance —
+            Segment Comparison
+        </div>
+
+        <div class="btn-group btn-group-sm">
+
+            <a href="{{ url_for(
+                'avlc_dashboard',
+                segment=selected_segment.segment_id,
+                week=week_start.isoformat(),
+                month=previous_month_window.strftime('%Y-%m')
+            ) }}"
+               class="btn btn-outline-primary">
+                &laquo; Previous 3 Months
+            </a>
+
+            <a href="{{ url_for(
+                'avlc_dashboard',
+                segment=selected_segment.segment_id,
+                week=week_start.isoformat(),
+                month=next_month_window.strftime('%Y-%m')
+            ) }}"
+               class="btn btn-outline-primary">
+                Next 3 Months &raquo;
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body">
+
+        <div class="d-flex
+                    justify-content-between
+                    align-items-center
+                    mb-3">
+
+            <div class="text-muted">
+
+                Period:
+
+                <strong>
+                    {{ monthly_start.strftime('%b %Y') }}
+                    -
+                    {{ monthly_end.strftime('%b %Y') }}
+                </strong>
+
+            </div>
+
+            <div class="text-muted small">
+                Three-month rolling view
+            </div>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th rowspan="2">
+                            #
+                        </th>
+
+                        <th rowspan="2">
+                            Segment
+                        </th>
+
+                        {% for month in monthly_months %}
+
+                        <th colspan="2"
+                            class="text-center">
+
+                            {{ month.strftime('%b %Y') }}
+
+                        </th>
+
+                        {% endfor %}
+
+                    </tr>
+
+                    <tr>
+
+                        {% for month in monthly_months %}
+
+                        <th class="text-center">
+                            Attendance
+                        </th>
+
+                        <th class="text-center">
+                            Performance
+                        </th>
+
+                        {% endfor %}
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for segment in monthly_segment_data %}
+
+                    <tr>
+
+                        <td class="fw-bold">
+                            {{ loop.index }}
+                        </td>
+
+                        <td class="fw-semibold">
+                            {{ segment.segment_name }}
+                        </td>
+
+                        {% for month in monthly_months %}
+
+                            {% set month_key =
+                                month.strftime('%Y-%m') %}
+
+                            {% set month_data =
+                                segment.months[month_key] %}
+
+                            <!-- Attendance -->
+
+                            <td class="text-center">
+
+                                {% if month_data.attendance
+                                      is not none %}
+
+                                    <strong>
+                                        {{ month_data.attendance }}%
+                                    </strong>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <!-- Performance -->
+
+                            <td class="text-center">
+
+                                {% if month_data.performance
+                                      is not none %}
+
+                                    <strong>
+                                        {{ month_data.performance }}%
+                                    </strong>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        {% endfor %}
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SEGMENT SELECTION SCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+function changeSegment(segmentId) {
+
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    params.set("segment", segmentId);
+
+    window.location.href =
+        window.location.pathname +
+        "?" +
+        params.toString();
+
+}
+
+</script>
+
+{% endblock %}

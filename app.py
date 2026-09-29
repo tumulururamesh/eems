@@ -3277,16 +3277,872 @@ def segment_dashboard(segment_id):
         next_week=next_week,
         active_page="segment"
     )
-
 @app.route("/operations-dashboard")
 @login_required
 @permission_required("VIEW_DASHBOARD")
 def operations_dashboard():
-    return render_template(
-        "operations/operations_dashboard.html",
-        active_page="dashboard"
-    )
 
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # Current academic year
+        cur.execute("""
+            SELECT academic_year_id
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # Operations Dashboard summary
+        cur.execute("""
+            SELECT
+                (SELECT COUNT(*)
+                 FROM tuition_center
+                 WHERE status IN ('ACTIVE', 'INACTIVE')) AS total_avlcs,
+
+                (SELECT COUNT(*)
+                 FROM tuition_center
+                 WHERE status = 'INACTIVE') AS inactive_avlcs,
+
+                COUNT(*) AS total_enrolments,
+
+                COUNT(*) FILTER (
+                    WHERE sm.active_flag = FALSE
+                ) AS inactive_enrolments,
+
+                COUNT(*) FILTER (
+                    WHERE sm.gender = 'Boy'
+                ) AS boys,
+
+                COUNT(*) FILTER (
+                    WHERE sm.gender = 'Girl'
+                ) AS girls
+
+            FROM student_center_assignment sca
+
+            JOIN tuition_center tc
+                ON tc.center_id = sca.center_id
+               AND tc.status = 'ACTIVE'
+
+            JOIN student_master sm
+                ON sm.student_id = sca.student_id
+
+            JOIN student_academic_year say
+                ON say.student_id = sca.student_id
+               AND say.academic_year_id = sca.academic_year_id
+
+            WHERE sca.academic_year_id = %s
+              AND sca.active_flag = TRUE
+              AND say.status = 'ACTIVE'
+        """, (academic_year_id,))
+
+        summary = cur.fetchone()
+
+        total_enrolments = summary["total_enrolments"] or 0
+        boys = summary["boys"] or 0
+        girls = summary["girls"] or 0
+
+        summary["boys_percentage"] = (
+            round((boys / total_enrolments) * 100, 1)
+            if total_enrolments else 0
+        )
+
+        summary["girls_percentage"] = (
+            round((girls / total_enrolments) * 100, 1)
+            if total_enrolments else 0
+        )
+
+        return render_template(
+            "operations/operations_dashboard.html",
+            active_page="dashboard",
+            summary=summary,
+            academic_year_id=academic_year_id,
+            dashboard_date=datetime.today()
+        )
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ============================================================
+# AVLC DASHBOARD
+# Operations Head - Organisation-wide AVLC / Segment View
+# ============================================================
+
+@app.route("/avlc-dashboard")
+@login_required
+@permission_required("VIEW_DASHBOARD")
+def avlc_dashboard():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        # --------------------------------------------------------
+        # Current academic year
+        # --------------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+
+        # --------------------------------------------------------
+        # Active Segments
+        # --------------------------------------------------------
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE active_flag = TRUE
+            ORDER BY segment_id
+        """)
+
+        segments = cur.fetchall()
+
+
+        # --------------------------------------------------------
+        # Selected Segment
+        #
+        # The dropdown will pass:
+        # /avlc-dashboard?segment=2
+        #
+        # If nothing is selected, select the first active segment.
+        # --------------------------------------------------------
+        requested_segment = request.args.get(
+            "segment",
+            type=int
+        )
+
+        selected_segment = None
+
+        if requested_segment:
+
+            for segment in segments:
+
+                if segment["segment_id"] == requested_segment:
+                    selected_segment = segment
+                    break
+
+        if selected_segment is None and segments:
+            selected_segment = segments[0]
+
+                    # --------------------------------------------------------
+        # Selected Segment Profile
+        # --------------------------------------------------------
+        selected_segment_profile = None
+
+        if selected_segment:
+
+            selected_segment_id = selected_segment["segment_id"]
+
+            # Segment Incharge
+            cur.execute("""
+                SELECT
+                    u.full_name AS segment_incharge
+                FROM user_access ua
+
+                JOIN aems_user u
+                    ON u.user_id = ua.user_id
+
+                JOIN user_role ur
+                    ON ur.user_id = u.user_id
+                   AND ur.active_flag = TRUE
+
+                JOIN role_master rm
+                    ON rm.role_id = ur.role_id
+                   AND rm.role_code = 'SEGMENT_INCHARGE'
+                   AND rm.active_flag = TRUE
+
+                WHERE ua.segment_id = %s
+                  AND ua.access_scope = 'SEGMENT'
+                  AND ua.active_flag = TRUE
+                  AND ua.assigned_from <= CURRENT_DATE
+                  AND (
+                      ua.assigned_to IS NULL
+                      OR ua.assigned_to >= CURRENT_DATE
+                  )
+
+                ORDER BY ua.assigned_from DESC
+
+                LIMIT 1
+            """, (selected_segment_id,))
+
+            incharge_row = cur.fetchone()
+
+
+                        # Segment structure and enrolment
+            cur.execute("""
+                SELECT
+
+                    COUNT(DISTINCT cm.cluster_id)
+                        AS cluster_count,
+
+                    COUNT(DISTINCT sca.student_id)
+                        AS total_enrolments,
+
+                    COUNT(DISTINCT sca.student_id)
+                        FILTER (
+                            WHERE sm.active_flag = FALSE
+                        )
+                        AS inactive_enrolments,
+
+                    COUNT(DISTINCT sca.student_id)
+                        FILTER (
+                            WHERE sm.gender = 'Boy'
+                        )
+                        AS boys,
+
+                    COUNT(DISTINCT sca.student_id)
+                        FILTER (
+                            WHERE sm.gender = 'Girl'
+                        )
+                        AS girls
+
+                FROM cluster_master cm
+
+                LEFT JOIN cluster_center cc
+                    ON cc.cluster_id = cm.cluster_id
+                   AND cc.academic_year_id = %s
+                   AND cc.active_flag = TRUE
+
+                LEFT JOIN tuition_center tc
+                    ON tc.center_id = cc.center_id
+                   AND tc.status = 'ACTIVE'
+
+                LEFT JOIN student_center_assignment sca
+                    ON sca.center_id = cc.center_id
+                   AND sca.academic_year_id = %s
+                   AND sca.active_flag = TRUE
+
+                LEFT JOIN student_master sm
+                    ON sm.student_id = sca.student_id
+
+                LEFT JOIN student_academic_year say
+                    ON say.student_id = sca.student_id
+                   AND say.academic_year_id = %s
+                   AND say.status = 'ACTIVE'
+
+                WHERE cm.segment_id = %s
+                  AND cm.active_flag = TRUE
+
+                  AND (
+                      sca.student_id IS NULL
+                      OR say.student_id IS NOT NULL
+                  )
+            """, (
+                academic_year_id,
+                academic_year_id,
+                academic_year_id,
+                selected_segment_id
+            ))
+
+            profile_row = cur.fetchone()
+
+
+            selected_segment_profile = {
+                "segment_name":
+                    selected_segment["segment_name"],
+
+                "segment_incharge":
+                    (
+                        incharge_row["segment_incharge"]
+                        if incharge_row
+                        else None
+                    ),
+
+                "clusters":
+                    profile_row["cluster_count"] or 0,
+
+                "total_enrolments":
+                    profile_row["total_enrolments"] or 0,
+
+                "inactive_enrolments":
+                    profile_row["inactive_enrolments"] or 0,
+
+                    "boys":
+                        profile_row["boys"] or 0,
+
+                    "girls":
+                        profile_row["girls"] or 0,
+
+                    "boys_percentage": (
+                        round(
+                            (profile_row["boys"] or 0)
+                            / profile_row["total_enrolments"]
+                            * 100,
+                            1
+                        )
+                        if profile_row["total_enrolments"]
+                        else 0
+                    ),
+
+                    "girls_percentage": (
+                        round(
+                            (profile_row["girls"] or 0)
+                            / profile_row["total_enrolments"]
+                            * 100,
+                            1
+                        )
+                        if profile_row["total_enrolments"]
+                        else 0
+                    )
+
+
+            }
+
+
+        # --------------------------------------------------------
+        # Weekly period
+        #
+        # Same navigation principle as the existing
+        # Cluster / Segment Dashboard.
+        # Monday to Saturday.
+        # --------------------------------------------------------
+        requested_week = request.args.get("week")
+
+        if requested_week:
+
+            try:
+
+                week_start = datetime.strptime(
+                    requested_week,
+                    "%Y-%m-%d"
+                ).date()
+
+            except ValueError:
+
+                week_start = (
+                    datetime.today().date()
+                    - timedelta(
+                        days=datetime.today().date().weekday()
+                    )
+                )
+
+        else:
+
+            week_start = (
+                datetime.today().date()
+                - timedelta(
+                    days=datetime.today().date().weekday()
+                )
+            )
+
+
+        week_days = [
+            week_start + timedelta(days=i)
+            for i in range(6)
+        ]
+
+        week_end = week_days[-1]
+
+        previous_week = week_start - timedelta(days=7)
+        next_week = week_start + timedelta(days=7)
+
+
+        # --------------------------------------------------------
+        # Weekly attendance
+        #
+        # One row per Segment.
+        #
+        # Segment
+        #   ↓
+        # Clusters
+        #   ↓
+        # AVLCs
+        #   ↓
+        # Attendance submissions
+        #   ↓
+        # Student attendance
+        # --------------------------------------------------------
+        weekly_rows = {}
+
+        for segment in segments:
+
+            weekly_rows[segment["segment_id"]] = {
+
+                "segment_id":
+                    segment["segment_id"],
+
+                "segment_name":
+                    segment["segment_name"],
+
+                "days": {},
+
+                "week_present": 0,
+
+                "week_absent": 0,
+
+                "week_total": 0,
+
+                "week_percentage": None
+            }
+
+            for day in week_days:
+
+                weekly_rows[
+                    segment["segment_id"]
+                ]["days"][day] = None
+
+
+        # --------------------------------------------------------
+        # Fetch attendance for selected week
+        # --------------------------------------------------------
+        cur.execute("""
+            SELECT
+
+                sm.segment_id,
+
+                sa.attendance_date,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'PRESENT'
+                ) AS present,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'ABSENT'
+                ) AS absent
+
+            FROM student_attendance sa
+
+            JOIN attendance_submission ats
+                ON ats.submission_id = sa.submission_id
+
+            JOIN cluster_center cc
+                ON cc.center_id = ats.center_id
+               AND cc.academic_year_id = %s
+               AND cc.active_flag = TRUE
+
+            JOIN cluster_master cm
+                ON cm.cluster_id = cc.cluster_id
+               AND cm.active_flag = TRUE
+
+            JOIN segment_master sm
+                ON sm.segment_id = cm.segment_id
+               AND sm.active_flag = TRUE
+
+            WHERE sa.attendance_date >= %s
+              AND sa.attendance_date <= %s
+
+            GROUP BY
+                sm.segment_id,
+                sa.attendance_date
+
+            ORDER BY
+                sm.segment_id,
+                sa.attendance_date
+
+        """, (
+            academic_year_id,
+            week_start,
+            week_end
+        ))
+
+        attendance_rows = cur.fetchall()
+
+
+        # --------------------------------------------------------
+        # Calculate daily and weekly percentages
+        # --------------------------------------------------------
+        for row in attendance_rows:
+
+            segment_id = row["segment_id"]
+
+            attendance_date = row["attendance_date"]
+
+            present = row["present"] or 0
+
+            absent = row["absent"] or 0
+
+            total = present + absent
+
+
+            if segment_id not in weekly_rows:
+                continue
+
+
+            if total > 0:
+
+                daily_percentage = round(
+                    (present / total) * 100,
+                    1
+                )
+
+            else:
+
+                daily_percentage = None
+
+
+            weekly_rows[
+                segment_id
+            ]["days"][attendance_date] = (
+                daily_percentage
+            )
+
+            weekly_rows[
+                segment_id
+            ]["week_present"] += present
+
+            weekly_rows[
+                segment_id
+            ]["week_absent"] += absent
+
+            weekly_rows[
+                segment_id
+            ]["week_total"] += total
+
+
+        # --------------------------------------------------------
+        # Final weekly percentage
+        # --------------------------------------------------------
+        for segment in weekly_rows.values():
+
+            if segment["week_total"] > 0:
+
+                segment["week_percentage"] = round(
+                    (
+                        segment["week_present"]
+                        / segment["week_total"]
+                    ) * 100,
+                    1
+                )
+
+            else:
+
+                segment["week_percentage"] = None
+
+
+        weekly_segment_attendance = list(
+            weekly_rows.values()
+        )
+
+        # --------------------------------------------------------
+        # Monthly Attendance & Performance
+        # Three-month rolling view
+        # --------------------------------------------------------
+
+        requested_month = request.args.get("month")
+
+        if requested_month:
+
+            try:
+                monthly_anchor = datetime.strptime(
+                    requested_month,
+                    "%Y-%m"
+                ).date().replace(day=1)
+
+            except ValueError:
+
+                monthly_anchor = (
+                    datetime.today()
+                    .date()
+                    .replace(day=1)
+                )
+
+        else:
+
+            monthly_anchor = (
+                datetime.today()
+                .date()
+                .replace(day=1)
+            )
+
+
+        # --------------------------------------------------------
+        # Helper: move a date by N months
+        # --------------------------------------------------------
+
+        def add_months(source_date, months):
+
+            month_index = (
+                source_date.year * 12
+                + source_date.month
+                - 1
+                + months
+            )
+
+            year = month_index // 12
+
+            month = month_index % 12 + 1
+
+            return source_date.replace(
+                year=year,
+                month=month,
+                day=1
+            )
+
+
+        # --------------------------------------------------------
+        # Three displayed months
+        # --------------------------------------------------------
+
+        monthly_months = [
+            add_months(monthly_anchor, -2),
+            add_months(monthly_anchor, -1),
+            monthly_anchor
+        ]
+
+
+        monthly_start = monthly_months[0]
+
+        monthly_end = (
+            add_months(monthly_anchor, 1)
+            - timedelta(days=1)
+        )
+
+
+        previous_month_window = add_months(
+            monthly_anchor,
+            -3
+        )
+
+        next_month_window = add_months(
+            monthly_anchor,
+            3
+        )
+
+
+        # --------------------------------------------------------
+        # Create monthly structure for every segment
+        # --------------------------------------------------------
+
+        monthly_rows = {}
+
+        for segment in segments:
+
+            monthly_rows[
+                segment["segment_id"]
+            ] = {
+
+                "segment_id":
+                    segment["segment_id"],
+
+                "segment_name":
+                    segment["segment_name"],
+
+                "months": {}
+
+            }
+
+            for month in monthly_months:
+
+                month_key = month.strftime("%Y-%m")
+
+                monthly_rows[
+                    segment["segment_id"]
+                ]["months"][month_key] = {
+
+                    "month": month,
+
+                    "attendance": None,
+
+                    "performance": None
+
+                }
+
+
+        # --------------------------------------------------------
+        # Monthly attendance
+        #
+        # Only WORKING days are included.
+        # Attendance = Present / (Present + Absent)
+        # --------------------------------------------------------
+
+        cur.execute("""
+            SELECT
+
+                cm.segment_id,
+
+                DATE_TRUNC(
+                    'month',
+                    ats.attendance_date
+                )::date AS month_start,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'PRESENT'
+                ) AS present,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'ABSENT'
+                ) AS absent
+
+            FROM student_attendance sa
+
+            JOIN attendance_submission ats
+                ON ats.submission_id = sa.submission_id
+
+            JOIN cluster_center cc
+                ON cc.center_id = ats.center_id
+               AND cc.academic_year_id = %s
+               AND cc.active_flag = TRUE
+
+            JOIN cluster_master cm
+                ON cm.cluster_id = cc.cluster_id
+               AND cm.active_flag = TRUE
+
+            WHERE ats.attendance_date >= %s
+              AND ats.attendance_date <= %s
+
+              AND ats.day_status = 'WORKING'
+
+            GROUP BY
+
+                cm.segment_id,
+
+                DATE_TRUNC(
+                    'month',
+                    ats.attendance_date
+                )::date
+
+            ORDER BY
+                cm.segment_id,
+                month_start
+
+        """, (
+            academic_year_id,
+            monthly_start,
+            monthly_end
+        ))
+
+
+        monthly_attendance_rows = cur.fetchall()
+
+
+        # --------------------------------------------------------
+        # Put attendance into monthly structure
+        # --------------------------------------------------------
+
+        for row in monthly_attendance_rows:
+
+            segment_id = row["segment_id"]
+
+            month_start = row["month_start"]
+
+            month_key = month_start.strftime("%Y-%m")
+
+            present = row["present"] or 0
+
+            absent = row["absent"] or 0
+
+            recorded = present + absent
+
+
+            if (
+                segment_id in monthly_rows
+                and month_key in
+                    monthly_rows[
+                        segment_id
+                    ]["months"]
+            ):
+
+                if recorded > 0:
+
+                    monthly_rows[
+                        segment_id
+                    ]["months"][
+                        month_key
+                    ]["attendance"] = round(
+                        (
+                            present
+                            / recorded
+                        ) * 100,
+                        1
+                    )
+
+
+        # --------------------------------------------------------
+        # Performance
+        #
+        # Performance data is not being calculated yet.
+        # It remains None until assessment data is available.
+        # --------------------------------------------------------
+
+        monthly_segment_data = list(
+            monthly_rows.values()
+        )
+
+
+        # --------------------------------------------------------
+        # Render AVLC Dashboard
+        #
+        # Monthly attendance/performance will be added next.
+        # --------------------------------------------------------
+
+        return render_template(
+            "operations/avlc_dashboard.html",
+
+            segments=segments,
+
+            selected_segment=selected_segment,
+
+            selected_segment_profile=selected_segment_profile,
+
+            weekly_segment_attendance=(
+                weekly_segment_attendance
+            ),
+
+            week_days=week_days,
+
+            week_start=week_start,
+
+            week_end=week_end,
+
+            previous_week=previous_week,
+
+            next_week=next_week,
+
+            # ---------------------------------------------
+            # Monthly Attendance & Performance
+            # ---------------------------------------------
+
+            monthly_segment_data=(
+                monthly_segment_data
+            ),
+
+            monthly_months=monthly_months,
+
+            monthly_start=monthly_start,
+
+            monthly_end=monthly_end,
+
+            previous_month_window=(
+                previous_month_window
+            ),
+
+            next_month_window=(
+                next_month_window
+            ),
+
+            academic_year=academic_year,
+
+            active_page="avlc"
+        )
+    finally:
+
+        cur.close()
+        conn.close()
 
 
 @app.route("/students/<int:centre_id>")
