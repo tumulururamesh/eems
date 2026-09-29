@@ -447,12 +447,14 @@
 
             </div>
 
-            <div class="text-muted small">
-
-                <span class="me-3">
-                    <strong>Role:</strong>
+            <span class="me-3">
+                <strong>Role:</strong>
+                {% if session.get("role") == "operational_head" %}
+                    Operations Head
+                {% else %}
                     {{ session.get("role") | replace("_", " ") | title }}
-                </span>
+                {% endif %}
+            </span>
 
                 {% if session.get("role") == "management" %}
 
@@ -463,8 +465,7 @@
                 {% elif session.get("role") == "operational_head" %}
 
                     <span>
-                        <strong>Zone:</strong>
-                        {{ session.get("zone") }}
+                        <strong>Scope:</strong> Entire AVF
                     </span>
 
                 {% elif session.get("role") == "segment_incharge" %}
@@ -536,7 +537,7 @@
 
             <div class="col-md-6 text-md-end">
 
-                EEMS Version 1.0 | Education Management Platform
+                AEMS Version 1.0 | Education Management Platform
 
             </div>
 
