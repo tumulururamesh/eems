@@ -26,88 +26,6 @@ app = Flask(__name__)
 app.secret_key = "aems-demo-secret-key"
 
 
-# =====================================================
-# AEMS DEMO USERS
-# =====================================================
-
-AEMS_USERS = {
-
-    # =========================================
-    # AVF MANAGEMENT
-    # =========================================
-
-    "director": {
-        "password": "demo123",
-        "role": "management",
-        "name": "Programme Director",
-        "centres": "all"
-    },
-
-
-    # =========================================
-    # OPERATIONAL HEAD
-    # =========================================
-
-    "operations": {
-        "password": "demo123",
-        "role": "operational_head",
-        "name": "Operational Head",
-        "zone": 1
-    },
-
-
-    # =========================================
-    # SEGMENT INCHARGE
-    # =========================================
-
-    "segment1": {
-        "password": "demo123",
-        "role": "segment_incharge",
-        "name": "Segment Incharge",
-        "zone": 1,
-        "segment": 1
-    },
-
-
-    # =========================================
-    # CLUSTER COORDINATOR
-    # =========================================
-
-    "cluster1": {
-        "password": "demo123",
-        "role": "cluster_incharge",
-        "name": "Cluster Coordinator",
-        "zone": 1,
-        "segment": 1,
-        "cluster": 1,
-        "centres": [1, 2, 3, 4, 5]
-    },
-
-    "swetha": {
-    "password": "demo123",
-    "role": "cluster_incharge",
-    "name": "Swetha",
-    "zone": 1,
-    "segment": 1,
-    "cluster": 1
-},
-
-
-    # =========================================
-    # TUTOR
-    # =========================================
-
-    "tutor2": {
-        "password": "demo123",
-        "role": "tutor",
-        "name": "Centre 2 Tutor",
-        "zone": 1,
-        "segment": 1,
-        "cluster": 1,
-        "centre": 2
-    }
-
-}
 from functools import wraps
 
 
@@ -1191,7 +1109,12 @@ def login():
                 if db_user["role_code"] == "ADMIN":
                     return redirect("/dashboard")
 
+                # -------------------------------------------------
+                # OPERATIONS HEAD
+                # -------------------------------------------------
 
+                if db_user["role_code"] == "OPERATIONS_HEAD":
+                    return redirect("/operations-dashboard")
                 # -------------------------------------------------
                 # SEGMENT INCHARGE
                 # -------------------------------------------------
@@ -1310,52 +1233,6 @@ def login():
                 error="Invalid username or password."
             )
 
-        # =====================================================
-        # EXISTING HARD-CODED USERS
-        #
-        # Keep temporarily for POC/demo compatibility.
-        # =====================================================
-
-        user = AEMS_USERS.get(username)
-
-        if user and user["password"] == password:
-
-            session.clear()
-
-            session["username"] = username
-            session["role"] = user["role"]
-            session["name"] = user["name"]
-
-            session["zone"] = user.get("zone")
-            session["segment"] = user.get("segment")
-            session["cluster"] = user.get("cluster")
-            session["centre"] = user.get("centre")
-            session["centres"] = user.get("centres")
-
-            # Existing POC routing
-            if user["role"] == "management":
-                return redirect("/dashboard")
-
-            elif user["role"] == "operational_head":
-                return redirect("/zone-dashboard")
-
-            elif user["role"] == "segment_incharge":
-                return redirect(f"/segment/{user['segment']}")
-
-            elif user["role"] == "cluster_incharge":
-                return redirect(
-                    f"/cluster-dashboard/{user['cluster']}"
-                )
-
-            elif user["role"] == "tutor":
-                return redirect("/centre/2")
-
-            return redirect("/dashboard")
-
-        return render_template(
-            "auth/login.html",
-            error="Invalid username or password."
-        )
 
     return render_template("auth/login.html")
 
@@ -3401,167 +3278,16 @@ def segment_dashboard(segment_id):
         active_page="segment"
     )
 
-@app.route("/zone-dashboard")
-def zone_dashboard():
-
-    zone = {
-        "name": "Zone 1",
-        "head": "Smt. Anitha",
-        "segments": 5,
-        "clusters": 20,
-        "centres": 100,
-        "students": 3000,
-        "attendance": "85%",
-        "assessment": "69%"
-    }
-
-    segments = [
-        {
-            "id": 1,
-            "name": "Segment 1",
-            "clusters": 4,
-            "centres": 20,
-            "students": 620,
-            "attendance": "90%",
-            "attendance_value": 90,
-            "assessment": "75%",
-            "assessment_value": 75
-        },
-        {
-            "id": 2,
-            "name": "Segment 2",
-            "clusters": 4,
-            "centres": 20,
-            "students": 605,
-            "attendance": "88%",
-            "attendance_value": 88,
-            "assessment": "72%",
-            "assessment_value": 72
-        },
-        {
-            "id": 3,
-            "name": "Segment 3",
-            "clusters": 4,
-            "centres": 20,
-            "students": 590,
-            "attendance": "86%",
-            "attendance_value": 86,
-            "assessment": "70%",
-            "assessment_value": 70
-        },
-        {
-            "id": 4,
-            "name": "Segment 4",
-            "clusters": 4,
-            "centres": 20,
-            "students": 610,
-            "attendance": "82%",
-            "attendance_value": 82,
-            "assessment": "66%",
-            "assessment_value": 66
-        },
-        {
-            "id": 5,
-            "name": "Segment 5",
-            "clusters": 4,
-            "centres": 20,
-            "students": 575,
-            "attendance": "79%",
-            "attendance_value": 79,
-            "assessment": "63%",
-            "assessment_value": 63
-        }
-    ]
-
-    return render_template(
-        "zone/zone_dashboard.html",
-        zone=zone,
-        segments=segments,
-        active_page="tutor_space"
-    )
-
-
-# --------------- ZONE TUTOR SPACE ---------------
-
-@app.route("/zone-tutor-space")
+@app.route("/operations-dashboard")
 @login_required
-def zone_tutor_space():
-
-    zone = {
-        "name": "Zone 1",
-        "head": "Smt. Anitha",
-        "tutors": 100,
-        "higher_education": 82,
-        "education_support": 81,
-        "pending_support": 11
-    }
-
-    segments = [
-        {
-            "id": 1,
-            "name": "Segment 1",
-            "tutors": 20,
-            "higher_education": 18,
-            "education_support": 19,
-            "pending_support": 1
-        },
-        {
-            "id": 2,
-            "name": "Segment 2",
-            "tutors": 20,
-            "higher_education": 17,
-            "education_support": 18,
-            "pending_support": 2
-        },
-        {
-            "id": 3,
-            "name": "Segment 3",
-            "tutors": 20,
-            "higher_education": 16,
-            "education_support": 15,
-            "pending_support": 3
-        },
-        {
-            "id": 4,
-            "name": "Segment 4",
-            "tutors": 20,
-            "higher_education": 15,
-            "education_support": 14,
-            "pending_support": 2
-        },
-        {
-            "id": 5,
-            "name": "Segment 5",
-            "tutors": 20,
-            "higher_education": 16,
-            "education_support": 15,
-            "pending_support": 3
-        }
-    ]
-
-    qualification = [
-        {"name": "Class 10", "tutors": 18},
-        {"name": "Intermediate", "tutors": 27},
-        {"name": "Degree", "tutors": 42},
-        {"name": "Post-Graduation", "tutors": 8},
-        {"name": "Other", "tutors": 5}
-    ]
-
-    education_status = [
-        {"name": "Intermediate", "tutors": 25},
-        {"name": "Degree", "tutors": 52},
-        {"name": "Post-Graduation", "tutors": 5},
-        {"name": "Completed", "tutors": 18}
-    ]
-
+@permission_required("VIEW_DASHBOARD")
+def operations_dashboard():
     return render_template(
-        "zone/zone_tutor_space.html",
-        zone=zone,
-        segments=segments,
-        qualification=qualification,
-        education_status=education_status,
-        active_page="tutor_space"
+        "operations/operations_dashboard.html",
+        active_page="dashboard"
     )
+
+
 
 @app.route("/students/<int:centre_id>")
 @login_required
@@ -4265,8 +3991,14 @@ def centre_performance(centre_id):
     )
 
 
-
-
+@app.route("/manage")
+@login_required
+@permission_required("MANAGE_CENTRES")
+def manage():
+    return render_template(
+        "manage/index.html",
+        active_page="manage"
+    )
 
 
 if __name__ == "__main__":

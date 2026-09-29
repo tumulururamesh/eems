@@ -9,7 +9,7 @@
 
     <title>
         {% block title %}
-        Vidya Vahini Student Lifecycle Management System
+        Akshaya Vidya Education Management System
         {% endblock %}
     </title>
 
@@ -155,7 +155,7 @@
         {% elif session.get("role") == "operational_head" %}
 
             <li class="nav-item">
-                <a class="nav-link" href="/zone-dashboard">
+                <a class="nav-link" href="/operations-dashboard">
 
                     <i class="bi bi-speedometer2"></i>
                     Dashboard
@@ -257,6 +257,15 @@
                     </a>
 
                 </li>
+
+
+                {% if session.get("role") == "operational_head" %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('manage') }}">
+                    <i class="fas fa-cogs"></i> Manage
+                </a>
+            </li>
+            {% endif %}
 
             {% endif %}
 
