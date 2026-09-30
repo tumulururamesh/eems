@@ -1,0 +1,417 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+ <!-- ================================================== -->
+<!-- PAGE HEADER -->
+<!-- ================================================== -->
+
+<div class="bg-primary text-white rounded-3 p-3 mb-4">
+
+    <div class="d-flex justify-content-between align-items-center">
+
+        <div>
+            <h2 class="mb-1 text-white">
+                Manage Students
+            </h2>
+
+            <div class="text-white-50">
+                Manage student enrolments and operational status.
+            </div>
+        </div>
+
+        <div class="text-end">
+
+            <div class="small text-white-50">
+                Academic Year
+            </div>
+
+            <div class="fw-bold fs-5 text-white">
+                {{ academic_year.academic_year
+                   | replace("2026-2027", "2026-27") }}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+    <!-- ================================================== -->
+    <!-- SUMMARY CARDS -->
+    <!-- ================================================== -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card h-100">
+
+                <div class="small text-muted">
+                    Enrolments
+                </div>
+
+                <div class="fs-3 fw-bold">
+                    {{ summary.enrolments or 0 }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6">
+
+            <div class="dashboard-card h-100">
+
+                <div class="small text-muted">
+                    Inactive
+                </div>
+
+                <div class="fs-3 fw-bold">
+                    {{ summary.inactive or 0 }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- SEARCH / FILTER -->
+    <!-- ================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="card-header bg-primary text-white">
+            <strong>Search & Filter</strong>
+        </div>
+
+        <div class="card-body">
+
+            <form method="GET"
+                  action="{{ url_for('manage_students') }}">
+
+                <div class="row g-3 align-items-end">
+
+                    <!-- Search -->
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Student
+                        </label>
+
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ search }}"
+                            class="form-control"
+                            placeholder="Code, name or mobile"
+                        >
+
+                    </div>
+
+
+                    <!-- Class -->
+
+                    <div class="col-md-2">
+
+                        <label class="form-label">
+                            Class
+                        </label>
+
+                        <select
+                            name="class"
+                            class="form-select"
+                        >
+
+                            <option value="">
+                                All
+                            </option>
+
+                            {% for item in classes %}
+
+                                <option
+                                    value="{{ item }}"
+                                    {% if class_filter == item|string %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ item }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Status -->
+
+                    <div class="col-md-2">
+
+                        <label class="form-label">
+                            Status
+                        </label>
+
+                        <select
+                            name="status"
+                            class="form-select"
+                        >
+
+                            <option
+                                value="ACTIVE"
+                                {% if status_filter == "ACTIVE" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Active
+                            </option>
+
+                            <option
+                                value="INACTIVE"
+                                {% if status_filter == "INACTIVE" %}
+                                    selected
+                                {% endif %}
+                            >
+                                Inactive
+                            </option>
+
+                            <option
+                                value="ALL"
+                                {% if status_filter == "ALL" %}
+                                    selected
+                                {% endif %}
+                            >
+                                All
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- AVLC -->
+
+                    <div class="col-md-3">
+
+                        <label class="form-label">
+                            AVLC
+                        </label>
+
+                        <select
+                            name="centre"
+                            class="form-select"
+                        >
+
+                            <option value="">
+                                All AVLCs
+                            </option>
+
+                            {% for centre in centres %}
+
+                                <option
+                                    value="{{ centre.center_id }}"
+                                    {% if centre_filter|string == centre.center_id|string %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ centre.center_code }}
+                                    -
+                                    {{ centre.center_name }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Search button -->
+
+                    <div class="col-md-1">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100"
+                        >
+                            <i class="bi bi-search"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- STUDENT LIST -->
+    <!-- ================================================== -->
+
+    <div class="dashboard-card">
+
+        <div class="card-header bg-primary text-white
+                    d-flex justify-content-between
+                    align-items-center">
+
+            <strong>Student Enrolments</strong>
+
+            <span class="small">
+                {{ students|length }} shown
+            </span>
+
+        </div>
+
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover
+                              align-middle mb-0">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Student Code</th>
+                            <th>Student Name</th>
+                            <th>Class</th>
+                            <th>Group</th>
+                            <th>Mobile</th>
+                            <th>Current AVLC</th>
+                            <th>Status</th>
+                            <th>Action</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for student in students %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ student.student_code }}
+                                </strong>
+                            </td>
+
+
+                            <td>
+                                {{ student.student_name }}
+                            </td>
+
+
+                            <td>
+                                {{ student.class_studying or "—" }}
+                            </td>
+
+
+                            <td>
+                                {{ student.group_code or "—" }}
+                            </td>
+
+
+                            <td>
+                                {{ student.mobile_no or "—" }}
+                            </td>
+
+
+                            <td>
+
+                                {% if student.center_code %}
+
+                                    <strong>
+                                        {{ student.center_code }}
+                                    </strong>
+
+                                    <div class="small text-muted">
+                                        {{ student.center_name }}
+                                    </div>
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if student.active_flag %}
+
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    disabled
+                                >
+                                    View
+                                </button>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td
+                                colspan="8"
+                                class="text-center py-4 text-muted"
+                            >
+                                No students found.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

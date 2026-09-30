@@ -1,0 +1,723 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+/* ============================================================
+   MANAGE TUTORS
+   Page-specific layout
+   ============================================================ */
+
+.manage-page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 28px 50px;
+}
+
+/* ---------- Page Header ---------- */
+
+.manage-page-header {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 22px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.manage-page-header h1 {
+    margin: 0;
+    color: #0d4f8b;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.manage-page-header p {
+    margin: 6px 0 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.manage-academic-year {
+    text-align: right;
+    color: #6c757d;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.manage-academic-year strong {
+    display: block;
+    margin-top: 3px;
+    color: #0d4f8b;
+    font-size: 17px;
+}
+
+
+/* ---------- KPI Cards ---------- */
+
+.manage-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.manage-kpi-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 18px 22px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
+.manage-kpi-title {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.manage-kpi-value {
+    color: #0d4f8b;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+
+/* ---------- Section ---------- */
+
+.manage-section {
+    background: #ffffff;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+}
+
+.manage-section-header {
+    background: #0d4f8b;
+    color: #ffffff;
+    padding: 12px 18px;
+}
+
+.manage-section-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* ---------- Manage Tutor List Header ---------- */
+
+.tutor-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.add-tutor-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #0d4f8b;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.add-tutor-btn:hover {
+    background: #f1f5f9;
+}
+
+
+.manage-section-body {
+    padding: 20px;
+}
+
+
+/* ---------- Filters ---------- */
+
+.tutor-filter-form {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.6fr)
+                           minmax(150px, 0.7fr)
+                           minmax(230px, 1.2fr)
+                           auto;
+    gap: 16px;
+    align-items: end;
+}
+
+.tutor-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tutor-filter-group label {
+    color: #495057;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tutor-filter-group input,
+.tutor-filter-group select {
+    width: 100%;
+    height: 40px;
+    padding: 7px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #212529;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.tutor-filter-group input:focus,
+.tutor-filter-group select:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.12);
+}
+
+.tutor-filter-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tutor-btn-primary,
+.tutor-btn-secondary {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tutor-btn-primary {
+    border: 1px solid #0d4f8b;
+    background: #0d4f8b;
+    color: #ffffff;
+}
+
+.tutor-btn-primary:hover {
+    background: #0b4375;
+}
+
+.tutor-btn-secondary {
+    border: 1px solid #adb5bd;
+    background: #ffffff;
+    color: #495057;
+}
+
+.tutor-btn-secondary:hover {
+    background: #f8f9fa;
+}
+
+
+/* ---------- Tutor Table ---------- */
+
+.tutor-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tutor-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 14px;
+}
+
+.tutor-table th {
+    background: #f1f5f9;
+    color: #344054;
+    font-weight: 700;
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.tutor-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e9ecef;
+    color: #343a40;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.tutor-table tbody tr:hover {
+    background: #f8fbff;
+}
+
+.tutor-table th:nth-child(1),
+.tutor-table td:nth-child(1) {
+    min-width: 110px;
+}
+
+.tutor-table th:nth-child(2),
+.tutor-table td:nth-child(2) {
+    min-width: 210px;
+}
+
+.tutor-table th:nth-child(3),
+.tutor-table td:nth-child(3) {
+    min-width: 120px;
+}
+
+.tutor-table th:nth-child(4),
+.tutor-table td:nth-child(4) {
+    min-width: 220px;
+}
+
+.tutor-table th:nth-child(5),
+.tutor-table td:nth-child(5) {
+    min-width: 100px;
+}
+
+.tutor-table th:nth-child(6),
+.tutor-table td:nth-child(6) {
+    width: 80px;
+}
+
+.tutor-code {
+    font-weight: 600;
+    color: #0d4f8b;
+}
+
+.tutor-name {
+    font-weight: 600;
+    color: #212529;
+}
+
+.tutor-avlc {
+    color: #495057;
+}
+
+
+/* ---------- Status ---------- */
+
+.tutor-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tutor-status-active {
+    background: #d1e7dd;
+    color: #146c43;
+}
+
+.tutor-status-inactive {
+    background: #f8d7da;
+    color: #842029;
+}
+
+
+/* ---------- View Button ---------- */
+
+.tutor-view-btn {
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    background: #f8f9fa;
+    color: #6c757d;
+    font-size: 13px;
+    cursor: not-allowed;
+}
+
+
+/* ---------- Empty ---------- */
+
+.tutor-empty {
+    text-align: center;
+    padding: 30px 15px !important;
+    color: #6c757d !important;
+}
+
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+
+    .tutor-filter-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .tutor-filter-actions {
+        grid-column: 1 / -1;
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .manage-page {
+        padding: 18px 14px 40px;
+    }
+
+    .manage-page-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .manage-academic-year {
+        text-align: left;
+    }
+
+    .manage-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tutor-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .tutor-filter-actions {
+        grid-column: auto;
+    }
+
+}
+</style>
+
+
+<div class="manage-page">
+{% if message %}
+<div class="manage-success">
+    {{ message }}
+</div>
+{% endif %}
+
+    <!-- ========================================================
+         PAGE HEADER
+         ======================================================== -->
+
+    <div class="manage-page-header">
+
+        <div>
+            <h1>Manage Tutors</h1>
+
+            <p>
+                Tutor records and current AVLC assignments
+            </p>
+        </div>
+
+        <div class="manage-academic-year">
+            Academic Year
+            <strong>
+                {{ academic_year.academic_year
+                    |replace("2026-2027", "2026-27") }}
+            </strong>
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         SUMMARY
+         ======================================================== -->
+
+    <div class="manage-kpi-grid">
+
+        <div class="manage-kpi-card">
+
+            <div class="manage-kpi-title">
+                Tutors
+            </div>
+
+            <div class="manage-kpi-value">
+                {{ summary.tutors }}
+            </div>
+
+        </div>
+
+
+        <div class="manage-kpi-card">
+
+            <div class="manage-kpi-title">
+                Inactive
+            </div>
+
+            <div class="manage-kpi-value">
+                {{ summary.inactive }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         SEARCH & FILTER
+         ======================================================== -->
+
+    <div class="manage-section">
+
+        <div class="manage-section-header">
+            <h2>Search &amp; Filter</h2>
+        </div>
+
+        <div class="manage-section-body">
+
+            <form method="get" class="tutor-filter-form">
+
+                <div class="tutor-filter-group">
+
+                    <label for="search">
+                        Search
+                    </label>
+
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="Tutor code, name or mobile"
+                    >
+
+                </div>
+
+
+                <div class="tutor-filter-group">
+
+                    <label for="status">
+                        Status
+                    </label>
+
+                    <select id="status" name="status">
+
+                        <option value="ACTIVE"
+                            {% if status_filter == "ACTIVE" %}
+                                selected
+                            {% endif %}>
+                            Active
+                        </option>
+
+                        <option value="INACTIVE"
+                            {% if status_filter == "INACTIVE" %}
+                                selected
+                            {% endif %}>
+                            Inactive
+                        </option>
+
+                        <option value="ALL"
+                            {% if status_filter == "ALL" %}
+                                selected
+                            {% endif %}>
+                            All
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="tutor-filter-group">
+
+                    <label for="centre">
+                        AVLC
+                    </label>
+
+                    <select id="centre" name="centre">
+
+                        <option value="">
+                            All AVLCs
+                        </option>
+
+                        {% for centre in centres %}
+
+                            <option
+                                value="{{ centre.center_id }}"
+                                {% if centre_filter|string
+                                      == centre.center_id|string %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ centre.center_code }}
+                                {% if centre.center_name %}
+                                    - {{ centre.center_name }}
+                                {% endif %}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="tutor-filter-actions">
+
+                    <button
+                        type="submit"
+                        class="tutor-btn-primary"
+                    >
+                        Apply
+                    </button>
+
+                    <a
+                        href="{{ url_for('manage_tutors') }}"
+                        class="tutor-btn-secondary"
+                    >
+                        Clear
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         TUTOR LIST
+         ======================================================== -->
+
+    <div class="manage-section">
+
+        <div class="manage-section-header tutor-list-header">
+            <h2>Tutor List</h2>
+
+            <a href="{{ url_for('add_tutor') }}" class="add-tutor-btn">
+                + Add Tutor
+            </a>
+        </div>
+
+        <div class="manage-section-body">
+
+            <div class="tutor-table-wrapper">
+
+                <table class="tutor-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Tutor Code</th>
+                            <th>Tutor Name</th>
+                            <th>Mobile</th>
+                            <th>Current AVLC</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% if tutors %}
+
+                            {% for tutor in tutors %}
+
+                                <tr>
+
+                                    <td class="tutor-code">
+                                        {{ tutor.tutor_code or "—" }}
+                                    </td>
+
+                                    <td class="tutor-name">
+                                        {{ tutor.tutor_name }}
+                                    </td>
+
+                                    <td>
+                                        {{ tutor.mobile_no or "—" }}
+                                    </td>
+
+                                    <td class="tutor-avlc">
+
+                                        {% if tutor.center_code %}
+
+                                            {{ tutor.center_code }}
+
+                                            {% if tutor.center_name %}
+                                                - {{ tutor.center_name }}
+                                            {% endif %}
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </td>
+
+                                    <td>
+
+                                        {% if tutor.active_flag %}
+
+                                            <span class="tutor-status tutor-status-active">
+                                                Active
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="tutor-status tutor-status-inactive">
+                                                Inactive
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                    <td>
+
+                                        <button
+                                            type="button"
+                                            class="tutor-view-btn"
+                                            disabled
+                                        >
+                                            View
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        {% else %}
+
+                            <tr>
+                                <td
+                                    colspan="6"
+                                    class="tutor-empty"
+                                >
+                                    No tutors found.
+                                </td>
+                            </tr>
+
+                        {% endif %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

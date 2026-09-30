@@ -1,0 +1,360 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="manage-page">
+
+    <!-- ========================================================
+         PAGE HEADER
+         ======================================================== -->
+
+    <div class="manage-page-header">
+
+        <div>
+            <h1>Add New Tutor</h1>
+
+            <p>
+                Create a tutor record and assign the initial AVLC
+            </p>
+        </div>
+
+        <div class="manage-academic-year">
+            Academic Year
+            <strong>
+                {{ academic_year.academic_year
+                    |replace("2026-2027", "2026-27") }}
+            </strong>
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         VALIDATION ERRORS
+         ======================================================== -->
+
+    {% if errors %}
+
+    <div class="manage-section">
+
+        <div class="manage-section-body">
+
+            <div class="manage-error">
+
+                <ul>
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+
+    <form method="post">
+
+        <!-- ====================================================
+             TUTOR DETAILS
+             ==================================================== -->
+
+        <div class="manage-section">
+
+            <div class="manage-section-header">
+                <h2>Tutor Details</h2>
+            </div>
+
+            <div class="manage-section-body">
+
+                <div class="manage-form-grid">
+
+                    <!-- Tutor Code -->
+
+                    <div class="manage-form-group">
+
+                        <label for="tutor_code">
+                            Tutor Code <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="tutor_code"
+                            name="tutor_code"
+                            value="{{ form.get('tutor_code', '') }}"
+                            maxlength="20"
+                            required
+                        >
+
+                        <small>
+                            Entered by Operations Head. Must be unique.
+                        </small>
+
+                    </div>
+
+
+                    <!-- Tutor Name -->
+
+                    <div class="manage-form-group">
+
+                        <label for="tutor_name">
+                            Tutor Name <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="tutor_name"
+                            name="tutor_name"
+                            value="{{ form.get('tutor_name', '') }}"
+                            maxlength="100"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Gender -->
+
+                    <div class="manage-form-group">
+
+                        <label for="gender">
+                            Gender
+                        </label>
+
+                        <select id="gender" name="gender">
+
+                            <option value="">Select</option>
+
+                            <option value="Girl"
+                                {% if form.get('gender') == 'Girl' %}
+                                    selected
+                                {% endif %}>
+                                Girl
+                            </option>
+
+                            <option value="Boy"
+                                {% if form.get('gender') == 'Boy' %}
+                                    selected
+                                {% endif %}>
+                                Boy
+                            </option>
+
+                            <option value="Other"
+                                {% if form.get('gender') == 'Other' %}
+                                    selected
+                                {% endif %}>
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Mobile -->
+
+                    <div class="manage-form-group">
+
+                        <label for="mobile_no">
+                            Mobile Number
+                        </label>
+
+                        <input
+                            type="text"
+                            id="mobile_no"
+                            name="mobile_no"
+                            value="{{ form.get('mobile_no', '') }}"
+                            maxlength="15"
+                        >
+
+                    </div>
+
+
+                    <!-- Date of Birth -->
+
+                    <div class="manage-form-group">
+
+                        <label for="date_of_birth">
+                            Date of Birth
+                        </label>
+
+                        <input
+                            type="date"
+                            id="date_of_birth"
+                            name="date_of_birth"
+                            value="{{ form.get('date_of_birth', '') }}"
+                        >
+
+                    </div>
+
+
+                    <!-- Joining Date -->
+
+                    <div class="manage-form-group">
+
+                        <label for="joining_date">
+                            Joining Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="joining_date"
+                            name="joining_date"
+                            value="{{ form.get('joining_date', '') }}"
+                        >
+
+                    </div>
+
+
+                    <!-- Qualification -->
+
+                    <div class="manage-form-group">
+
+                        <label for="qualification_id">
+                            Qualification
+                        </label>
+
+                        <select
+                            id="qualification_id"
+                            name="qualification_id"
+                        >
+
+                            <option value="">
+                                Select Qualification
+                            </option>
+
+                            {% for qualification in qualifications %}
+
+                                <option
+                                    value="{{ qualification.qualification_id }}"
+                                    {% if form.get('qualification_id')|string
+                                          == qualification.qualification_id|string %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ qualification.qualification_name }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ====================================================
+             INITIAL AVLC ASSIGNMENT
+             ==================================================== -->
+
+        <div class="manage-section">
+
+            <div class="manage-section-header">
+                <h2>Initial AVLC Assignment</h2>
+            </div>
+
+            <div class="manage-section-body">
+
+                <div class="manage-form-grid">
+
+                    <!-- AVLC -->
+
+                    <div class="manage-form-group">
+
+                        <label for="center_id">
+                            AVLC <span class="required">*</span>
+                        </label>
+
+                        <select
+                            id="center_id"
+                            name="center_id"
+                            required
+                        >
+
+                            <option value="">
+                                Select AVLC
+                            </option>
+
+                            {% for centre in centres %}
+
+                                <option
+                                    value="{{ centre.center_id }}"
+                                    {% if form.get('center_id')|string
+                                          == centre.center_id|string %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ centre.center_code }}
+                                    {% if centre.center_name %}
+                                        - {{ centre.center_name }}
+                                    {% endif %}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Assignment From -->
+
+                    <div class="manage-form-group">
+
+                        <label for="assigned_from">
+                            Assignment From <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="date"
+                            id="assigned_from"
+                            name="assigned_from"
+                            value="{{ form.get('assigned_from', '') }}"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ====================================================
+             ACTIONS
+             ==================================================== -->
+
+        <div class="manage-form-actions">
+
+            <a
+                href="{{ url_for('manage_tutors') }}"
+                class="manage-btn-secondary"
+            >
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="manage-btn-primary"
+            >
+                Save Tutor
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

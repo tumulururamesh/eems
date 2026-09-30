@@ -1757,6 +1757,278 @@ def cluster_dashboard(cc_id):
 
 
     # ---------------------------------------------------------
+    # Monthly Attendance & Performance — Centre Comparison
+    #
+    # Three calendar months.
+    # The month window is driven by calendar logic,
+    # NOT by available attendance data.
+    # ---------------------------------------------------------
+
+    def add_months(source_date, months):
+
+        month = source_date.month - 1 + months
+
+        year = source_date.year + month // 12
+
+        month = month % 12 + 1
+
+        return source_date.replace(
+            year=year,
+            month=month,
+            day=1
+        )
+
+
+    requested_month = request.args.get("month")
+
+
+    if requested_month:
+
+        try:
+
+            monthly_anchor = datetime.strptime(
+                requested_month,
+                "%Y-%m"
+            ).date().replace(day=1)
+
+        except ValueError:
+
+            monthly_anchor = (
+                datetime.today()
+                .date()
+                .replace(day=1)
+            )
+
+    else:
+
+        monthly_anchor = (
+            datetime.today()
+            .date()
+            .replace(day=1)
+        )
+
+
+    # Three-month window
+
+    monthly_months = [
+
+        add_months(
+            monthly_anchor,
+            -2
+        ),
+
+        add_months(
+            monthly_anchor,
+            -1
+        ),
+
+        monthly_anchor
+
+    ]
+
+
+    # Navigation moves exactly three months
+
+    previous_month = add_months(
+        monthly_anchor,
+        -3
+    )
+
+    next_month = add_months(
+        monthly_anchor,
+        3
+    )
+
+
+    # ---------------------------------------------------------
+    # Initialise every centre for all three months
+    #
+    # This ensures that the calendar months are always displayed
+    # even when there is no attendance data.
+    # ---------------------------------------------------------
+
+    monthly_rows = {}
+
+
+    for centre in centres:
+
+        center_id = centre["center_id"]
+
+        monthly_rows[center_id] = {
+
+            "center_id": center_id,
+
+            "center_code":
+                centre["center_code"],
+
+            "center_name":
+                centre["center_name"],
+
+            "months": {}
+
+        }
+
+
+        for month in monthly_months:
+
+            monthly_rows[
+                center_id
+            ]["months"][month] = {
+
+                "attendance": None,
+
+                "performance": None
+
+            }
+
+
+    # ---------------------------------------------------------
+    # Monthly attendance
+    #
+    # Only WORKING days are included.
+    #
+    # Tutor Absent / Holiday therefore do not enter the
+    # attendance denominator.
+    # ---------------------------------------------------------
+
+    monthly_start = monthly_months[0]
+
+    monthly_end = add_months(
+        monthly_months[-1],
+        1
+    )
+
+
+    monthly_conn = get_connection()
+
+
+    try:
+
+        with monthly_conn.cursor(
+            cursor_factory=RealDictCursor
+        ) as cur:
+
+            cur.execute("""
+                SELECT
+
+                    ats.center_id,
+
+                    DATE_TRUNC(
+                        'month',
+                        ats.attendance_date
+                    )::date AS month_start,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'PRESENT'
+                    ) AS present,
+
+                    COUNT(*) FILTER (
+                        WHERE sa.attendance_status = 'ABSENT'
+                    ) AS absent
+
+                FROM public.student_attendance sa
+
+                JOIN public.attendance_submission ats
+                    ON ats.submission_id =
+                       sa.submission_id
+
+                JOIN public.cluster_center c
+                    ON c.center_id = ats.center_id
+                   AND c.academic_year_id = 3
+                   AND c.active_flag = TRUE
+
+                JOIN public.cluster_coordinator_assignment cca
+                    ON cca.cluster_id = c.cluster_id
+                   AND cca.cc_id = %s
+                   AND cca.academic_year_id = 3
+                   AND cca.active_flag = TRUE
+
+                WHERE ats.attendance_date >= %s
+                  AND ats.attendance_date < %s
+                  AND ats.day_status = 'WORKING'
+
+                GROUP BY
+
+                    ats.center_id,
+
+                    DATE_TRUNC(
+                        'month',
+                        ats.attendance_date
+                    )::date
+
+                ORDER BY
+
+                    ats.center_id,
+
+                    month_start
+
+            """, (
+                cc_id,
+                monthly_start,
+                monthly_end
+            ))
+
+            monthly_attendance_rows = cur.fetchall()
+
+    finally:
+
+        monthly_conn.close()
+
+
+    # ---------------------------------------------------------
+    # Populate monthly attendance
+    # ---------------------------------------------------------
+
+    for row in monthly_attendance_rows:
+
+        center_id = row["center_id"]
+
+        month_start = row["month_start"]
+
+        present = row["present"] or 0
+
+        absent = row["absent"] or 0
+
+        total = present + absent
+
+
+        if total > 0:
+
+            percentage = round(
+                (present / total) * 100,
+                1
+            )
+
+        else:
+
+            percentage = None
+
+
+        if center_id in monthly_rows:
+
+            if month_start in monthly_rows[
+                center_id
+            ]["months"]:
+
+                monthly_rows[
+                    center_id
+                ]["months"][
+                    month_start
+                ]["attendance"] = percentage
+
+
+    # ---------------------------------------------------------
+    # Performance
+    #
+    # No verified performance source is being used yet.
+    # Therefore performance remains None and displays as —.
+    # ---------------------------------------------------------
+
+    monthly_centre_attendance = list(
+        monthly_rows.values()
+    )
+
+    # ---------------------------------------------------------
     # Attendance date
     # ---------------------------------------------------------
 
@@ -1779,6 +2051,11 @@ def cluster_dashboard(cc_id):
         week_end=week_end,
         previous_week=previous_week,
         next_week=next_week,
+        monthly_centre_attendance=monthly_centre_attendance,
+        monthly_months=monthly_months,
+        monthly_anchor=monthly_anchor,
+        previous_month=previous_month,
+        next_month=next_month,
         active_page="cluster",
         show_mobile_attendance=(
             session.get("role") == "cluster_incharge"
@@ -2889,394 +3166,837 @@ def segment_dashboard(segment_id):
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # ---------------------------------------------------------
-    # Segment details
-    # ---------------------------------------------------------
-    cur.execute("""
-        SELECT
-            segment_id,
-            segment_name
-        FROM segment_master
-        WHERE segment_id = %s
-          AND active_flag = TRUE
-    """, (segment_id,))
+    # =========================================================
+    # Helper: add/subtract calendar months
+    # =========================================================
+    def add_months(source_date, months):
+        month = source_date.month - 1 + months
+        year = source_date.year + month // 12
+        month = month % 12 + 1
 
-    segment_row = cur.fetchone()
-
-    if not segment_row:
-        cur.close()
-        conn.close()
-        return "Segment not found", 404
-
-    # ---------------------------------------------------------
-    # Cluster details for the segment
-    # ---------------------------------------------------------
-    cur.execute("""
-        SELECT
-            c.cluster_id,
-            c.cluster_name,
-            COUNT(DISTINCT cc.center_id) AS centres,
-            COUNT(DISTINCT sm.student_id) AS students
-        FROM cluster_master c
-
-        LEFT JOIN cluster_center cc
-            ON cc.cluster_id = c.cluster_id
-           AND cc.academic_year_id = 3
-           AND cc.active_flag = TRUE
-
-        LEFT JOIN student_center_assignment sca
-            ON sca.center_id = cc.center_id
-           AND sca.academic_year_id = 3
-           AND sca.active_flag = TRUE
-
-        LEFT JOIN student_master sm
-            ON sm.student_id = sca.student_id
-           AND sm.active_flag = TRUE
-
-        WHERE c.segment_id = %s
-          AND c.active_flag = TRUE
-
-        GROUP BY
-            c.cluster_id,
-            c.cluster_name
-
-        ORDER BY c.cluster_id
-    """, (segment_id,))
-
-    cluster_rows = cur.fetchall()
-
-    # ---------------------------------------------------------
-    # Today's attendance by cluster
-    # ---------------------------------------------------------
-    cur.execute("""
-        SELECT
-            c.cluster_id,
-
-            COUNT(sa.attendance_id) AS attendance_total,
-
-            COUNT(sa.attendance_id) FILTER (
-                WHERE sa.attendance_status = 'PRESENT'
-            ) AS present,
-
-            COUNT(sa.attendance_id) FILTER (
-                WHERE sa.attendance_status = 'ABSENT'
-            ) AS absent
-
-        FROM cluster_master c
-
-        JOIN cluster_center cc
-            ON cc.cluster_id = c.cluster_id
-           AND cc.academic_year_id = 3
-           AND cc.active_flag = TRUE
-
-        LEFT JOIN attendance_submission ats
-            ON ats.center_id = cc.center_id
-           AND ats.attendance_date = CURRENT_DATE
-
-        LEFT JOIN student_attendance sa
-            ON sa.submission_id = ats.submission_id
-           AND sa.attendance_date = CURRENT_DATE
-
-        WHERE c.segment_id = %s
-          AND c.active_flag = TRUE
-
-        GROUP BY
-            c.cluster_id
-
-        ORDER BY
-            c.cluster_id
-    """, (segment_id,))
-
-    attendance_rows = cur.fetchall()
-
-    # Map attendance results by cluster
-    attendance_by_cluster = {
-        row["cluster_id"]: row
-        for row in attendance_rows
-    }
-
-    # Add today's attendance to each cluster
-    for cluster in cluster_rows:
-
-        attendance = attendance_by_cluster.get(
-            cluster["cluster_id"]
+        return source_date.replace(
+            year=year,
+            month=month,
+            day=1
         )
 
-        if attendance:
-            total = attendance["attendance_total"] or 0
-            present = attendance["present"] or 0
-            absent = attendance["absent"] or 0
+    try:
 
-            cluster["attendance_total"] = total
-            cluster["present"] = present
-            cluster["absent"] = absent
+        # =====================================================
+        # 1. SEGMENT DETAILS
+        # =====================================================
 
-            if total > 0:
-                cluster["attendance_value"] = round(
-                    (present / total) * 100,
-                    1
-                )
-                cluster["attendance"] = (
-                    f'{cluster["attendance_value"]}%'
-                )
-            else:
-                cluster["attendance_value"] = 0
-                cluster["attendance"] = "—"
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE segment_id = %s
+              AND active_flag = TRUE
+        """, (segment_id,))
 
-        else:
-            cluster["attendance_total"] = 0
-            cluster["present"] = 0
-            cluster["absent"] = 0
-            cluster["attendance_value"] = 0
-            cluster["attendance"] = "—"
+        segment_row = cur.fetchone()
+
+        if not segment_row:
+            return "Segment not found", 404
 
 
-    # ---------------------------------------------------------
-    # Calculate Segment today's attendance
-    # ---------------------------------------------------------
+        # =====================================================
+        # 2. CLUSTER DETAILS
+        #
+        # Segment
+        #    ↓
+        # Cluster
+        #    ↓
+        # Centres
+        #    ↓
+        # Student enrolments
+        # =====================================================
 
-    segment_attendance_total = sum(
-        cluster["attendance_total"]
-        for cluster in cluster_rows
-    )
+        cur.execute("""
+            SELECT
+                c.cluster_id,
+                c.cluster_name,
 
-    segment_present = sum(
-        cluster["present"]
-        for cluster in cluster_rows
-    )
+                COUNT(DISTINCT cc.center_id) AS centres,
 
-    segment_absent = sum(
-        cluster["absent"]
-        for cluster in cluster_rows
-    )
+                COUNT(DISTINCT sm.student_id) AS students
 
-    if segment_attendance_total > 0:
+            FROM cluster_master c
 
-        segment_attendance_percentage = round(
-            (
-                segment_present
-                / segment_attendance_total
-            ) * 100,
-            1
-        )
+            LEFT JOIN cluster_center cc
+                ON cc.cluster_id = c.cluster_id
+               AND cc.academic_year_id = 3
+               AND cc.active_flag = TRUE
 
-        segment_attendance = (
-            f"{segment_attendance_percentage}%"
-        )
+            LEFT JOIN student_center_assignment sca
+                ON sca.center_id = cc.center_id
+               AND sca.academic_year_id = 3
+               AND sca.active_flag = TRUE
 
-    else:
+            LEFT JOIN student_master sm
+                ON sm.student_id = sca.student_id
+               AND sm.active_flag = TRUE
 
-        segment_attendance = "—"
+            WHERE c.segment_id = %s
+              AND c.active_flag = TRUE
+
+            GROUP BY
+                c.cluster_id,
+                c.cluster_name
+
+            ORDER BY
+                c.cluster_id
+        """, (segment_id,))
+
+        cluster_rows = cur.fetchall()
 
 
-    # ---------------------------------------------------------
-    # Weekly Attendance — Cluster Comparison
-    # Monday to Saturday
-    # ---------------------------------------------------------
+        # =====================================================
+        # 3. TODAY'S ATTENDANCE BY CLUSTER
+        # =====================================================
 
-    requested_week = request.args.get("week")
+        cur.execute("""
+            SELECT
+                c.cluster_id,
 
-    if requested_week:
-        try:
-            week_start = datetime.strptime(
-                requested_week, "%Y-%m-%d"
-            ).date()
-        except ValueError:
-            week_start = (
-                datetime.today().date()
-                - timedelta(
-                    days=datetime.today().date().weekday()
-                )
-            )
-    else:
-        week_start = (
-            datetime.today().date()
-            - timedelta(
-                days=datetime.today().date().weekday()
-            )
-        )
+                COUNT(sa.attendance_id) AS attendance_total,
 
-    week_days = [
-        week_start + timedelta(days=i)
-        for i in range(6)
-    ]
+                COUNT(sa.attendance_id) FILTER (
+                    WHERE sa.attendance_status = 'PRESENT'
+                ) AS present,
 
-    week_end = week_days[-1]
+                COUNT(sa.attendance_id) FILTER (
+                    WHERE sa.attendance_status = 'ABSENT'
+                ) AS absent
 
-    previous_week = week_start - timedelta(days=7)
-    next_week = week_start + timedelta(days=7)
+            FROM cluster_master c
 
-    # ---------------------------------------------------------
-    # Fetch weekly attendance by cluster
-    # ---------------------------------------------------------
+            JOIN cluster_center cc
+                ON cc.cluster_id = c.cluster_id
+               AND cc.academic_year_id = 3
+               AND cc.active_flag = TRUE
 
-    cur.execute("""
-        SELECT
-            c.cluster_id,
-            sa.attendance_date,
+            LEFT JOIN attendance_submission ats
+                ON ats.center_id = cc.center_id
+               AND ats.attendance_date = CURRENT_DATE
 
-            COUNT(*) FILTER (
-                WHERE sa.attendance_status = 'PRESENT'
-            ) AS present,
+            LEFT JOIN student_attendance sa
+                ON sa.submission_id = ats.submission_id
+               AND sa.attendance_date = CURRENT_DATE
 
-            COUNT(*) FILTER (
-                WHERE sa.attendance_status = 'ABSENT'
-            ) AS absent
+            WHERE c.segment_id = %s
+              AND c.active_flag = TRUE
 
-        FROM cluster_master c
+            GROUP BY
+                c.cluster_id
 
-        JOIN cluster_center cc
-            ON cc.cluster_id = c.cluster_id
-           AND cc.academic_year_id = 3
-           AND cc.active_flag = TRUE
+            ORDER BY
+                c.cluster_id
+        """, (segment_id,))
 
-        JOIN attendance_submission ats
-            ON ats.center_id = cc.center_id
-           AND ats.attendance_date >= %s
-           AND ats.attendance_date <= %s
+        attendance_rows = cur.fetchall()
 
-        JOIN student_attendance sa
-            ON sa.submission_id = ats.submission_id
-           AND sa.attendance_date >= %s
-           AND sa.attendance_date <= %s
-
-        WHERE c.segment_id = %s
-          AND c.active_flag = TRUE
-
-        GROUP BY
-            c.cluster_id,
-            sa.attendance_date
-
-        ORDER BY
-            c.cluster_id,
-            sa.attendance_date
-
-    """, (
-        week_start,
-        week_end,
-        week_start,
-        week_end,
-        segment_id
-    ))
-
-    weekly_rows = cur.fetchall()
-
-    # ---------------------------------------------------------
-    # Prepare cluster-wise weekly structure
-    # ---------------------------------------------------------
-
-    weekly_cluster_rows = {}
-
-    for cluster in cluster_rows:
-
-        cluster_id = cluster["cluster_id"]
-
-        weekly_cluster_rows[cluster_id] = {
-            "cluster_id": cluster_id,
-            "cluster_name": cluster["cluster_name"],
-            "days": {},
-            "week_present": 0,
-            "week_absent": 0,
-            "week_total": 0
+        attendance_by_cluster = {
+            row["cluster_id"]: row
+            for row in attendance_rows
         }
 
-    # ---------------------------------------------------------
-    # Populate daily attendance
-    # ---------------------------------------------------------
 
-    for row in weekly_rows:
+        # =====================================================
+        # 4. OPTIONAL CC FOR EACH CLUSTER
+        #
+        # Used only to provide the existing Cluster Dashboard
+        # link.
+        #
+        # A cluster may legitimately have no CC.
+        # =====================================================
 
-        cluster_id = row["cluster_id"]
-        attendance_date = row["attendance_date"]
+        cur.execute("""
+            SELECT
+                cca.cluster_id,
+                cca.cc_id
 
-        present = row["present"] or 0
-        absent = row["absent"] or 0
-        total = present + absent
+            FROM cluster_coordinator_assignment cca
 
-        if total > 0:
-            daily_percentage = round(
-                (present / total) * 100,
-                1
+            WHERE cca.academic_year_id = 3
+              AND cca.active_flag = TRUE
+
+            ORDER BY
+                cca.assigned_from DESC NULLS LAST
+        """)
+
+        cc_rows = cur.fetchall()
+
+        cc_by_cluster = {}
+
+        for row in cc_rows:
+
+            if row["cluster_id"] not in cc_by_cluster:
+                cc_by_cluster[row["cluster_id"]] = row["cc_id"]
+
+
+        # =====================================================
+        # 5. PREPARE TODAY'S CLUSTER DATA
+        # =====================================================
+
+        for cluster in cluster_rows:
+
+            cluster_id = cluster["cluster_id"]
+
+            attendance = attendance_by_cluster.get(
+                cluster_id
             )
-        else:
-            daily_percentage = None
 
-        weekly_cluster_rows[cluster_id]["days"][
-            attendance_date
-        ] = daily_percentage
+            if attendance:
 
-        weekly_cluster_rows[cluster_id]["week_present"] += present
-        weekly_cluster_rows[cluster_id]["week_absent"] += absent
-        weekly_cluster_rows[cluster_id]["week_total"] += total
+                total = attendance["attendance_total"] or 0
+                present = attendance["present"] or 0
+                absent = attendance["absent"] or 0
 
-    # ---------------------------------------------------------
-    # Calculate weekly aggregate percentage
-    # ---------------------------------------------------------
+                cluster["attendance_total"] = total
+                cluster["present"] = present
+                cluster["absent"] = absent
 
-    for cluster in weekly_cluster_rows.values():
+                if total > 0:
 
-        if cluster["week_total"] > 0:
+                    percentage = round(
+                        (present / total) * 100,
+                        1
+                    )
 
-            cluster["week_percentage"] = round(
+                    cluster["attendance_value"] = percentage
+                    cluster["attendance"] = f"{percentage}%"
+
+                    # RAG status
+                    if percentage < 75:
+                        cluster["status"] = "RED"
+                        cluster["status_class"] = "text-danger"
+
+                    elif percentage < 90:
+                        cluster["status"] = "AMBER"
+                        cluster["status_class"] = "text-warning"
+
+                    else:
+                        cluster["status"] = "GREEN"
+                        cluster["status_class"] = "text-success"
+
+                else:
+
+                    cluster["attendance_value"] = None
+                    cluster["attendance"] = "—"
+                    cluster["status"] = "—"
+                    cluster["status_class"] = "text-muted"
+
+            else:
+
+                cluster["attendance_total"] = 0
+                cluster["present"] = 0
+                cluster["absent"] = 0
+                cluster["attendance_value"] = None
+                cluster["attendance"] = "—"
+                cluster["status"] = "—"
+                cluster["status_class"] = "text-muted"
+
+            cluster["cc_id"] = cc_by_cluster.get(
+                cluster_id
+            )
+
+
+        # =====================================================
+        # 6. SEGMENT TODAY'S ATTENDANCE
+        # =====================================================
+
+        segment_attendance_total = sum(
+            cluster["attendance_total"]
+            for cluster in cluster_rows
+        )
+
+        segment_present = sum(
+            cluster["present"]
+            for cluster in cluster_rows
+        )
+
+        segment_absent = sum(
+            cluster["absent"]
+            for cluster in cluster_rows
+        )
+
+        if segment_attendance_total > 0:
+
+            segment_attendance_percentage = round(
                 (
-                    cluster["week_present"]
-                    / cluster["week_total"]
+                    segment_present
+                    / segment_attendance_total
                 ) * 100,
                 1
             )
 
+            segment_attendance = (
+                f"{segment_attendance_percentage}%"
+            )
+
         else:
-            cluster["week_percentage"] = None
 
-    weekly_cluster_attendance = list(
-        weekly_cluster_rows.values()
-    )
+            segment_attendance = "—"
 
-    cur.close()
-    conn.close()
 
-    
-    # ---------------------------------------------------------
-    # Prepare Segment summary
-    # ---------------------------------------------------------
-    segment = {
-        "id": segment_row["segment_id"],
-        "name": segment_row["segment_name"],
-        "clusters": len(cluster_rows),
-        "centres": sum(row["centres"] for row in cluster_rows),
-        "students": sum(row["students"] for row in cluster_rows),
-        "attendance": segment_attendance
-    }
+        # =====================================================
+        # 7. WEEKLY ATTENDANCE
+        #
+        # Monday to Saturday
+        # =====================================================
 
-    # ---------------------------------------------------------
-    # Prepare cluster data for template
-    # ---------------------------------------------------------
-    clusters = []
+        requested_week = request.args.get("week")
 
-    for row in cluster_rows:
-        clusters.append({
-            "id": row["cluster_id"],
-            "name": row["cluster_name"],
-            "centres": row["centres"],
-            "students": row["students"],
-            "attendance": row["attendance"],
-            "attendance_value": row["attendance_value"],
-            "present": row["present"],
-            "absent": row["absent"]
-        })
+        if requested_week:
 
-    return render_template(
-        "segment/segment_dashboard.html",
-        segment=segment,
-        clusters=clusters,
-        weekly_cluster_attendance=weekly_cluster_attendance,
-        week_days=week_days,
-        week_start=week_start,
-        week_end=week_end,
-        previous_week=previous_week,
-        next_week=next_week,
-        active_page="segment"
-    )
+            try:
+
+                week_start = datetime.strptime(
+                    requested_week,
+                    "%Y-%m-%d"
+                ).date()
+
+            except ValueError:
+
+                today = datetime.today().date()
+
+                week_start = (
+                    today
+                    - timedelta(days=today.weekday())
+                )
+
+        else:
+
+            today = datetime.today().date()
+
+            week_start = (
+                today
+                - timedelta(days=today.weekday())
+            )
+
+
+        # Always normalise to Monday
+
+        week_start = (
+            week_start
+            - timedelta(days=week_start.weekday())
+        )
+
+        week_days = [
+            week_start + timedelta(days=i)
+            for i in range(6)
+        ]
+
+        week_end = week_days[-1]
+
+        previous_week = (
+            week_start - timedelta(days=7)
+        )
+
+        next_week = (
+            week_start + timedelta(days=7)
+        )
+
+
+        # =====================================================
+        # 8. FETCH WEEKLY ATTENDANCE
+        # =====================================================
+
+        cur.execute("""
+            SELECT
+                c.cluster_id,
+                sa.attendance_date,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'PRESENT'
+                ) AS present,
+
+                COUNT(*) FILTER (
+                    WHERE sa.attendance_status = 'ABSENT'
+                ) AS absent
+
+            FROM cluster_master c
+
+            JOIN cluster_center cc
+                ON cc.cluster_id = c.cluster_id
+               AND cc.academic_year_id = 3
+               AND cc.active_flag = TRUE
+
+            JOIN attendance_submission ats
+                ON ats.center_id = cc.center_id
+               AND ats.attendance_date >= %s
+               AND ats.attendance_date <= %s
+
+            JOIN student_attendance sa
+                ON sa.submission_id = ats.submission_id
+               AND sa.attendance_date >= %s
+               AND sa.attendance_date <= %s
+
+            WHERE c.segment_id = %s
+              AND c.active_flag = TRUE
+
+            GROUP BY
+                c.cluster_id,
+                sa.attendance_date
+
+            ORDER BY
+                c.cluster_id,
+                sa.attendance_date
+
+        """, (
+            week_start,
+            week_end,
+            week_start,
+            week_end,
+            segment_id
+        ))
+
+        weekly_rows = cur.fetchall()
+
+
+        # =====================================================
+        # 9. PREPARE WEEKLY CLUSTER STRUCTURE
+        # =====================================================
+
+        weekly_cluster_rows = {}
+
+        for cluster in cluster_rows:
+
+            cluster_id = cluster["cluster_id"]
+
+            weekly_cluster_rows[cluster_id] = {
+                "cluster_id": cluster_id,
+                "cluster_name": cluster["cluster_name"],
+                "days": {},
+                "week_present": 0,
+                "week_absent": 0,
+                "week_total": 0
+            }
+
+
+        # =====================================================
+        # 10. POPULATE WEEKLY DATA
+        # =====================================================
+
+        for row in weekly_rows:
+
+            cluster_id = row["cluster_id"]
+
+            attendance_date = row["attendance_date"]
+
+            present = row["present"] or 0
+            absent = row["absent"] or 0
+
+            total = present + absent
+
+            if total > 0:
+
+                daily_percentage = round(
+                    (present / total) * 100,
+                    1
+                )
+
+            else:
+
+                daily_percentage = None
+
+
+            weekly_cluster_rows[
+                cluster_id
+            ]["days"][attendance_date] = (
+                daily_percentage
+            )
+
+            weekly_cluster_rows[
+                cluster_id
+            ]["week_present"] += present
+
+            weekly_cluster_rows[
+                cluster_id
+            ]["week_absent"] += absent
+
+            weekly_cluster_rows[
+                cluster_id
+            ]["week_total"] += total
+
+
+        # =====================================================
+        # 11. WEEKLY AVERAGE
+        # =====================================================
+
+        for cluster in weekly_cluster_rows.values():
+
+            if cluster["week_total"] > 0:
+
+                cluster["week_percentage"] = round(
+                    (
+                        cluster["week_present"]
+                        / cluster["week_total"]
+                    ) * 100,
+                    1
+                )
+
+            else:
+
+                cluster["week_percentage"] = None
+
+
+        weekly_cluster_attendance = list(
+            weekly_cluster_rows.values()
+        )
+
+
+        # =====================================================
+        # 12. MONTHLY WINDOW
+        #
+        # Three calendar months.
+        #
+        # IMPORTANT:
+        # This is driven by calendar logic.
+        # It is NOT driven by available attendance data.
+        # =====================================================
+
+        requested_month = request.args.get("month")
+
+        if requested_month:
+
+            try:
+
+                monthly_anchor = datetime.strptime(
+                    requested_month,
+                    "%Y-%m"
+                ).date().replace(day=1)
+
+            except ValueError:
+
+                monthly_anchor = (
+                    datetime.today()
+                    .date()
+                    .replace(day=1)
+                )
+
+        else:
+
+            monthly_anchor = (
+                datetime.today()
+                .date()
+                .replace(day=1)
+            )
+
+
+        monthly_months = [
+
+            add_months(
+                monthly_anchor,
+                -2
+            ),
+
+            add_months(
+                monthly_anchor,
+                -1
+            ),
+
+            monthly_anchor
+
+        ]
+
+        previous_month = add_months(
+            monthly_anchor,
+            -3
+        )
+
+        next_month = add_months(
+            monthly_anchor,
+            3
+        )
+
+
+        # =====================================================
+        # 13. MONTHLY ATTENDANCE STRUCTURE
+        #
+        # Initialise all clusters and all three months first.
+        # Therefore months appear even when there is no data.
+        # =====================================================
+
+        monthly_cluster_rows = {}
+
+        for cluster in cluster_rows:
+
+            cluster_id = cluster["cluster_id"]
+
+            monthly_cluster_rows[cluster_id] = {
+
+                "cluster_id": cluster_id,
+
+                "cluster_name":
+                    cluster["cluster_name"],
+
+                "months": {}
+
+            }
+
+            for month in monthly_months:
+
+                monthly_cluster_rows[
+                    cluster_id
+                ]["months"][
+                    month
+                ] = {
+
+                    "attendance": None,
+
+                    "performance": None
+
+                }
+
+
+        # =====================================================
+        # 14. MONTHLY ATTENDANCE
+        #
+        # Only WORKING attendance submissions count.
+        #
+        # Performance remains None until a verified
+        # performance source is established.
+        # =====================================================
+
+        monthly_start = monthly_months[0]
+
+        monthly_end = add_months(
+            monthly_months[-1],
+            1
+        )
+
+        cur.execute("""
+            SELECT
+                c.cluster_id,
+
+                DATE_TRUNC(
+                    'month',
+                    ats.attendance_date
+                )::date AS month_start,
+
+                COUNT(sa.attendance_id) FILTER (
+                    WHERE sa.attendance_status = 'PRESENT'
+                ) AS present,
+
+                COUNT(sa.attendance_id) FILTER (
+                    WHERE sa.attendance_status = 'ABSENT'
+                ) AS absent
+
+            FROM cluster_master c
+
+            JOIN cluster_center cc
+                ON cc.cluster_id = c.cluster_id
+               AND cc.academic_year_id = 3
+               AND cc.active_flag = TRUE
+
+            JOIN attendance_submission ats
+                ON ats.center_id = cc.center_id
+               AND ats.attendance_date >= %s
+               AND ats.attendance_date < %s
+               AND ats.day_status = 'WORKING'
+
+            JOIN student_attendance sa
+                ON sa.submission_id = ats.submission_id
+
+            WHERE c.segment_id = %s
+              AND c.active_flag = TRUE
+
+            GROUP BY
+                c.cluster_id,
+                DATE_TRUNC(
+                    'month',
+                    ats.attendance_date
+                )::date
+
+            ORDER BY
+                c.cluster_id,
+                month_start
+
+        """, (
+            monthly_start,
+            monthly_end,
+            segment_id
+        ))
+
+        monthly_attendance_rows = cur.fetchall()
+
+
+        # =====================================================
+        # 15. FILL MONTHLY ATTENDANCE
+        # =====================================================
+
+        for row in monthly_attendance_rows:
+
+            cluster_id = row["cluster_id"]
+            month_start = row["month_start"]
+
+            present = row["present"] or 0
+            absent = row["absent"] or 0
+
+            total = present + absent
+
+            if total > 0:
+
+                percentage = round(
+                    (present / total) * 100,
+                    1
+                )
+
+                if cluster_id in monthly_cluster_rows:
+
+                    if month_start in monthly_cluster_rows[
+                        cluster_id
+                    ]["months"]:
+
+                        monthly_cluster_rows[
+                            cluster_id
+                        ]["months"][
+                            month_start
+                        ]["attendance"] = percentage
+
+
+        monthly_cluster_attendance = list(
+            monthly_cluster_rows.values()
+        )
+
+
+        # =====================================================
+        # 16. PREPARE SEGMENT SUMMARY
+        # =====================================================
+
+        segment = {
+
+            "id":
+                segment_row["segment_id"],
+
+            "name":
+                segment_row["segment_name"],
+
+            "clusters":
+                len(cluster_rows),
+
+            "centres":
+                sum(
+                    row["centres"]
+                    for row in cluster_rows
+                ),
+
+            "students":
+                sum(
+                    row["students"]
+                    for row in cluster_rows
+                ),
+
+            "attendance":
+                segment_attendance
+
+        }
+
+
+        # =====================================================
+        # 17. PREPARE CLUSTER DATA FOR TEMPLATE
+        # =====================================================
+
+        clusters = []
+
+        for row in cluster_rows:
+
+            clusters.append({
+
+                "id":
+                    row["cluster_id"],
+
+                "name":
+                    row["cluster_name"],
+
+                "centres":
+                    row["centres"],
+
+                "students":
+                    row["students"],
+
+                "attendance":
+                    row["attendance"],
+
+                "attendance_value":
+                    row["attendance_value"],
+
+                "present":
+                    row["present"],
+
+                "absent":
+                    row["absent"],
+
+                "status":
+                    row["status"],
+
+                "status_class":
+                    row["status_class"],
+
+                "cc_id":
+                    row["cc_id"]
+
+            })
+
+
+        # =====================================================
+        # 18. RENDER SEGMENT DASHBOARD
+        # =====================================================
+
+        return render_template(
+
+            "segment/segment_dashboard.html",
+
+            segment=segment,
+
+            clusters=clusters,
+
+            weekly_cluster_attendance=
+                weekly_cluster_attendance,
+
+            week_days=
+                week_days,
+
+            week_start=
+                week_start,
+
+            week_end=
+                week_end,
+
+            previous_week=
+                previous_week,
+
+            next_week=
+                next_week,
+
+            monthly_cluster_attendance=
+                monthly_cluster_attendance,
+
+            monthly_months=
+                monthly_months,
+
+            monthly_anchor=
+                monthly_anchor,
+
+            previous_month=
+                previous_month,
+
+            next_month=
+                next_month,
+
+            active_page="segment"
+
+        )
+
+    finally:
+
+        cur.close()
+        conn.close()
+
+
 @app.route("/operations-dashboard")
 @login_required
 @permission_required("VIEW_DASHBOARD")
@@ -4754,13 +5474,8 @@ def centre_attendance(centre_id):
                 weekly_students=weekly_students,
 
                 latest_attendance_date=latest_attendance_date,
-
-                
-
                 active_page="attendance"
             )
-
-
     except Exception as e:
 
         print("Centre attendance page error:", e)
@@ -4847,15 +5562,630 @@ def centre_performance(centre_id):
     )
 
 
+# ============================================================
+# MANAGE - STUDENTS
+# ============================================================
+
+@app.route("/manage/students")
+@login_required
+@permission_required("MANAGE_STUDENTS")
+def manage_students():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Filters
+        # ----------------------------------------------------
+        search = request.args.get("search", "").strip()
+        class_filter = request.args.get("class", "").strip()
+        status_filter = request.args.get("status", "ACTIVE").strip()
+        centre_filter = request.args.get("centre", "").strip()
+
+        # ----------------------------------------------------
+        # Summary
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                COUNT(*) AS enrolments,
+
+                COUNT(*) FILTER (
+                    WHERE sm.active_flag = FALSE
+                ) AS inactive
+
+            FROM student_master sm
+
+            JOIN student_academic_year say
+                ON say.student_id = sm.student_id
+               AND say.academic_year_id = %s
+        """, (academic_year_id,))
+
+        summary = cur.fetchone()
+
+        # ----------------------------------------------------
+        # AVLC list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                center_id,
+                center_code,
+                center_name
+            FROM tuition_center
+            WHERE status = 'ACTIVE'
+            ORDER BY center_code
+        """)
+
+        centres = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Student list
+        #
+        # Current assignment only:
+        # active_flag = TRUE
+        #
+        # Historical assignments are not overwritten.
+        # ----------------------------------------------------
+        query = """
+            SELECT
+                sm.student_id,
+                sm.student_code,
+                sm.student_name,
+                sm.father_name,
+                sm.mother_name,
+                sm.mobile_no,
+                sm.date_of_birth,
+                sm.joining_date,
+                sm.active_flag,
+
+                say.class_studying,
+                say.status AS academic_status,
+
+                cgm.group_code,
+                cgm.group_name,
+
+                tc.center_id,
+                tc.center_code,
+                tc.center_name
+
+            FROM student_master sm
+
+            JOIN student_academic_year say
+                ON say.student_id = sm.student_id
+               AND say.academic_year_id = %s
+
+            LEFT JOIN curriculum_group_master cgm
+                ON cgm.group_id = say.group_id
+
+            LEFT JOIN student_center_assignment sca
+                ON sca.student_id = sm.student_id
+               AND sca.academic_year_id = %s
+               AND sca.active_flag = TRUE
+
+            LEFT JOIN tuition_center tc
+                ON tc.center_id = sca.center_id
+
+            WHERE 1 = 1
+        """
+
+        params = [
+            academic_year_id,
+            academic_year_id
+        ]
+
+        # ----------------------------------------------------
+        # Search
+        # ----------------------------------------------------
+        if search:
+            query += """
+                AND (
+                    sm.student_code ILIKE %s
+                    OR sm.student_name ILIKE %s
+                    OR COALESCE(sm.mobile_no, '') ILIKE %s
+                )
+            """
+
+            search_value = f"%{search}%"
+
+            params.extend([
+                search_value,
+                search_value,
+                search_value
+            ])
+
+        # ----------------------------------------------------
+        # Class filter
+        # ----------------------------------------------------
+        if class_filter:
+            query += """
+                AND CAST(say.class_studying AS TEXT) = %s
+            """
+            params.append(class_filter)
+
+        # ----------------------------------------------------
+        # Status filter
+        # ----------------------------------------------------
+        if status_filter == "ACTIVE":
+            query += """
+                AND sm.active_flag = TRUE
+            """
+
+        elif status_filter == "INACTIVE":
+            query += """
+                AND sm.active_flag = FALSE
+            """
+
+        # ----------------------------------------------------
+        # AVLC filter
+        # ----------------------------------------------------
+        if centre_filter:
+            query += """
+                AND tc.center_id = %s
+            """
+            params.append(centre_filter)
+
+        query += """
+            ORDER BY
+                sm.student_name
+        """
+
+        cur.execute(query, tuple(params))
+
+        students = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Distinct class list for filter
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT DISTINCT
+                say.class_studying
+            FROM student_academic_year say
+            WHERE say.academic_year_id = %s
+              AND say.class_studying IS NOT NULL
+            ORDER BY say.class_studying
+        """, (academic_year_id,))
+
+        classes = [
+            row["class_studying"]
+            for row in cur.fetchall()
+        ]
+
+        return render_template(
+            "manage/students.html",
+            students=students,
+            centres=centres,
+            classes=classes,
+            summary=summary,
+            academic_year=academic_year,
+            search=search,
+            class_filter=class_filter,
+            status_filter=status_filter,
+            centre_filter=centre_filter,
+            active_page="manage"
+        )
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ============================================================
+# MANAGE - ADD TUTOR
+# ============================================================
+
+@app.route("/manage/tutors/add", methods=["GET", "POST"])
+@login_required
+@permission_required("MANAGE_TUTORS")
+def add_tutor():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Qualification list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                qualification_id,
+                qualification_name
+            FROM qualification_master
+            WHERE active_flag = TRUE
+            ORDER BY qualification_name
+        """)
+
+        qualifications = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Active AVLC list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                center_id,
+                center_code,
+                center_name
+            FROM tuition_center
+            WHERE status = 'ACTIVE'
+            ORDER BY center_code
+        """)
+
+        centres = cur.fetchall()
+
+        # ----------------------------------------------------
+        # GET
+        # ----------------------------------------------------
+        if request.method == "GET":
+
+            return render_template(
+                "manage/add_tutor.html",
+                academic_year=academic_year,
+                qualifications=qualifications,
+                centres=centres,
+                form={},
+                errors=[],
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # POST
+        # ----------------------------------------------------
+        tutor_code = request.form.get("tutor_code", "").strip()
+        tutor_name = request.form.get("tutor_name", "").strip()
+        gender = request.form.get("gender", "").strip() or None
+        mobile_no = request.form.get("mobile_no", "").strip() or None
+        date_of_birth = request.form.get("date_of_birth", "").strip() or None
+        joining_date = request.form.get("joining_date", "").strip() or None
+        qualification_id = (
+            request.form.get("qualification_id", "").strip() or None
+        )
+        center_id = request.form.get("center_id", "").strip()
+        assigned_from = request.form.get("assigned_from", "").strip()
+
+        errors = []
+
+        # ----------------------------------------------------
+        # Required fields
+        # ----------------------------------------------------
+        if not tutor_code:
+            errors.append("Tutor Code is required.")
+
+        if not tutor_name:
+            errors.append("Tutor Name is required.")
+
+        if not center_id:
+            errors.append("AVLC is required.")
+
+        if not assigned_from:
+            errors.append("Assignment From date is required.")
+
+        # ----------------------------------------------------
+        # Tutor Code uniqueness
+        # ----------------------------------------------------
+        if tutor_code:
+
+            cur.execute("""
+                SELECT tutor_id
+                FROM tutor_master
+                WHERE tutor_code = %s
+                LIMIT 1
+            """, (tutor_code,))
+
+            if cur.fetchone():
+                errors.append(
+                    "Tutor Code already exists. "
+                    "Please enter a unique Tutor Code."
+                )
+
+        # ----------------------------------------------------
+        # Validation errors
+        # ----------------------------------------------------
+        if errors:
+
+            return render_template(
+                "manage/add_tutor.html",
+                academic_year=academic_year,
+                qualifications=qualifications,
+                centres=centres,
+                form=request.form,
+                errors=errors,
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # Create Tutor + Initial AVLC Assignment
+        # ----------------------------------------------------
+        try:
+
+            cur.execute("""
+                INSERT INTO tutor_master (
+                    tutor_code,
+                    tutor_name,
+                    gender,
+                    mobile_no,
+                    date_of_birth,
+                    joining_date,
+                    qualification_id,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, TRUE
+                )
+                RETURNING tutor_id
+            """, (
+                tutor_code,
+                tutor_name,
+                gender,
+                mobile_no,
+                date_of_birth,
+                joining_date,
+                qualification_id
+            ))
+
+            tutor_id = cur.fetchone()["tutor_id"]
+
+            cur.execute("""
+                INSERT INTO tutor_centre_assignment (
+                    tutor_id,
+                    center_id,
+                    academic_year_id,
+                    assigned_from,
+                    assigned_to,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, %s, NULL, TRUE
+                )
+            """, (
+                tutor_id,
+                center_id,
+                academic_year_id,
+                assigned_from
+            ))
+
+            conn.commit()
+
+            return redirect(
+                url_for(
+                    "manage_tutors",
+                    message="Tutor added successfully."
+                )
+            )
+
+        except Exception:
+            conn.rollback()
+            raise
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ============================================================
+# MANAGE - TUTORS
+# ============================================================
+
+@app.route("/manage/tutors")
+@login_required
+@permission_required("MANAGE_TUTORS")
+def manage_tutors():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Filters
+        # ----------------------------------------------------
+        search = request.args.get("search", "").strip()
+        status_filter = request.args.get("status", "ACTIVE").strip()
+        centre_filter = request.args.get("centre", "").strip()
+
+        message = request.args.get("message", "").strip()
+
+        # ----------------------------------------------------
+        # Summary
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                COUNT(*) AS tutors,
+
+                COUNT(*) FILTER (
+                    WHERE tm.active_flag = FALSE
+                ) AS inactive
+
+            FROM tutor_master tm
+        """)
+
+        summary = cur.fetchone()
+
+        # ----------------------------------------------------
+        # AVLC list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                center_id,
+                center_code,
+                center_name
+            FROM tuition_center
+            WHERE status = 'ACTIVE'
+            ORDER BY center_code
+        """)
+
+        centres = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Tutor list
+        #
+        # Current AVLC assignment only.
+        # Historical assignments remain untouched.
+        # ----------------------------------------------------
+        query = """
+            SELECT
+                tm.tutor_id,
+                tm.tutor_code,
+                tm.tutor_name,
+                tm.mobile_no,
+                tm.gender,
+                tm.date_of_birth,
+                tm.joining_date,
+                tm.active_flag,
+
+                tc.center_id,
+                tc.center_code,
+                tc.center_name
+
+            FROM tutor_master tm
+
+            LEFT JOIN tutor_centre_assignment tca
+                ON tca.tutor_id = tm.tutor_id
+               AND tca.academic_year_id = %s
+               AND tca.active_flag = TRUE
+
+            LEFT JOIN tuition_center tc
+                ON tc.center_id = tca.center_id
+
+            WHERE 1 = 1
+        """
+
+        params = [
+            academic_year_id
+        ]
+
+        # ----------------------------------------------------
+        # Search
+        # ----------------------------------------------------
+        if search:
+            query += """
+                AND (
+                    COALESCE(tm.tutor_code, '') ILIKE %s
+                    OR tm.tutor_name ILIKE %s
+                    OR COALESCE(tm.mobile_no, '') ILIKE %s
+                )
+            """
+
+            search_value = f"%{search}%"
+
+            params.extend([
+                search_value,
+                search_value,
+                search_value
+            ])
+
+        # ----------------------------------------------------
+        # Status filter
+        # ----------------------------------------------------
+        if status_filter == "ACTIVE":
+            query += """
+                AND tm.active_flag = TRUE
+            """
+
+        elif status_filter == "INACTIVE":
+            query += """
+                AND tm.active_flag = FALSE
+            """
+
+        # ----------------------------------------------------
+        # AVLC filter
+        # ----------------------------------------------------
+        if centre_filter:
+            query += """
+                AND tc.center_id = %s
+            """
+            params.append(centre_filter)
+
+        query += """
+            ORDER BY
+                tm.tutor_name
+        """
+
+        cur.execute(query, tuple(params))
+
+        tutors = cur.fetchall()
+
+        return render_template(
+            "manage/tutors.html",
+            tutors=tutors,
+            centres=centres,
+            summary=summary,
+            academic_year=academic_year,
+            search=search,
+            status_filter=status_filter,
+            centre_filter=centre_filter,
+            message=message,
+            active_page="manage"
+        )
+
+    finally:
+        cur.close()
+        conn.close()
+
+
 @app.route("/manage")
 @login_required
 @permission_required("MANAGE_CENTRES")
 def manage():
-    return render_template(
-        "manage/index.html",
-        active_page="manage"
-    )
-
+    return render_template("manage/dashboard.html", active_page="manage")
 
 if __name__ == "__main__":
     app.run(

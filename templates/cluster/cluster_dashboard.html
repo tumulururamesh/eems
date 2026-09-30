@@ -22,12 +22,6 @@ Cluster Coordinator Dashboard
         </h1>
 
         <p class="text-muted mb-1">
-            {{ cluster.name }}
-            &nbsp;•&nbsp;
-            {{ cluster.centres }} Learning Centres
-        </p>
-
-        <p class="text-muted mb-1">
             Attendance Date: {{ attendance_date.strftime('%d %B %Y') }}
         </p>
 
@@ -213,256 +207,6 @@ Cluster Coordinator Dashboard
 
     </div>
 
-
-    <!-- ===================================================== -->
-    <!-- Weekly Centre Attendance -->
-    <!-- ===================================================== -->
-
-    <div class="dashboard-card mb-4">
-
-        <div class="dashboard-header">
-
-            <i class="bi bi-calendar-week me-2"></i>
-
-            Weekly Attendance — Centre Comparison
-
-        </div>
-
-        <div class="card-body">
-
-            <!-- Week Navigation -->
-
-            <div class="d-flex justify-content-between
-                        align-items-center mb-3">
-
-                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?week={{ previous_week.strftime('%Y-%m-%d') }}"
-                   class="btn btn-sm btn-outline-primary">
-
-                    <i class="bi bi-chevron-left"></i>
-                    Previous Week
-
-                </a>
-
-                <div class="text-center">
-
-                    <div class="fw-semibold">
-
-                        {{ week_start.strftime('%d %b %Y') }}
-                        –
-                        {{ week_end.strftime('%d %b %Y') }}
-
-                    </div>
-
-                    <small class="text-muted">
-                        Monday – Saturday
-                    </small>
-
-                </div>
-
-                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?week={{ next_week.strftime('%Y-%m-%d') }}"
-                   class="btn btn-sm btn-outline-primary">
-
-                    Next Week
-                    <i class="bi bi-chevron-right"></i>
-
-                </a>
-
-            </div>
-
-
-
-                        <!-- Weekly Attendance Table -->
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle"
-                       style="table-layout: fixed; width: 100%;">
-
-                    <colgroup>
-
-                        <col style="width: 34%;">
-
-                        {% for day in week_days %}
-                            <col style="width: 9%;">
-                        {% endfor %}
-
-                        <col style="width: 12%;">
-
-                    </colgroup>
-
-
-                    <thead class="table-light">
-
-                        <tr>
-
-                            <th>
-                                Learning Centre
-                            </th>
-
-                            {% for day in week_days %}
-
-                            <th class="text-center"
-                                style="white-space: nowrap;">
-
-                                {{ day.strftime('%a') }}
-
-                            </th>
-
-                            {% endfor %}
-
-                            <th class="text-center"
-                                style="white-space: nowrap;">
-
-                                Week Avg
-
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        {% for centre in weekly_centre_attendance %}
-
-                        <tr>
-
-                            <!-- Centre -->
-
-                            <td class="fw-semibold">
-
-                                <a href="/centre/{{ centre.center_id }}"
-                                   class="text-decoration-none">
-
-                                    {{ centre.center_code }}
-
-                                </a>
-
-                            </td>
-
-
-                            <!-- Daily Attendance -->
-
-                            {% for day in week_days %}
-
-                            <td class="text-center"
-                                style="white-space: nowrap;">
-
-                                {% set value = centre.days[day] %}
-
-                                {% if value is not none %}
-
-                                    <span class="fw-semibold">
-                                        {{ value }}%
-                                    </span>
-
-                                {% else %}
-
-                                    <span class="text-muted">
-                                        —
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                            {% endfor %}
-
-
-                            <!-- Week Average -->
-
-                            <td class="text-center fw-bold"
-                                style="white-space: nowrap;">
-
-                                {% if centre.week_percentage is not none %}
-
-                                    {{ centre.week_percentage }}%
-
-                                {% else %}
-
-                                    <span class="text-muted">
-                                        —
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                        </tr>
-
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- ===================================================== -->
-    <!-- Daily Attendance Mobile -->
-    <!-- ===================================================== -->
-
-    {% if show_mobile_attendance %}
-
-    <div class="row mb-4">
-
-        <div class="col-12">
-
-            <a href="/mobile/attendance"
-               class="text-decoration-none">
-
-                <div class="dashboard-card">
-
-                    <div class="card-body">
-
-                        <div class="d-flex
-                                    justify-content-between
-                                    align-items-center">
-
-                            <div>
-
-                                <h4 class="mb-2">
-
-                                    <i class="bi bi-phone-fill me-2"></i>
-
-                                    Daily Attendance
-
-                                </h4>
-
-                                <p class="text-muted mb-0">
-
-                                    Capture today's attendance
-                                    for your centres.
-
-                                </p>
-
-                            </div>
-
-                            <div class="fs-3 text-primary">
-
-                                →
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </a>
-
-        </div>
-
-    </div>
-
-    {% endif %}
 
 
     <!-- ===================================================== -->
@@ -677,6 +421,463 @@ Cluster Coordinator Dashboard
         </div>
 
     </div>
+
+
+
+    <!-- ===================================================== -->
+    <!-- Weekly Centre Attendance -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header">
+
+            <i class="bi bi-calendar-week me-2"></i>
+
+            Weekly Attendance — Centre Comparison
+
+        </div>
+
+        <div class="card-body">
+
+            <!-- Week Navigation -->
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+
+                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?week={{ previous_week.strftime('%Y-%m-%d') }}"
+                   class="btn btn-sm btn-outline-primary">
+
+                    <i class="bi bi-chevron-left"></i>
+                    Previous Week
+
+                </a>
+
+                <div class="text-center">
+
+                    <div class="fw-semibold">
+
+                        {{ week_start.strftime('%d %b %Y') }}
+                        –
+                        {{ week_end.strftime('%d %b %Y') }}
+
+                    </div>
+
+                    <small class="text-muted">
+                        Monday – Saturday
+                    </small>
+
+                </div>
+
+                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?week={{ next_week.strftime('%Y-%m-%d') }}"
+                   class="btn btn-sm btn-outline-primary">
+
+                    Next Week
+                    <i class="bi bi-chevron-right"></i>
+
+                </a>
+
+            </div>
+
+
+
+                        <!-- Weekly Attendance Table -->
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle"
+                       style="table-layout: fixed; width: 100%;">
+
+                    <colgroup>
+
+                        <col style="width: 34%;">
+
+                        {% for day in week_days %}
+                            <col style="width: 9%;">
+                        {% endfor %}
+
+                        <col style="width: 12%;">
+
+                    </colgroup>
+
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Learning Centre
+                            </th>
+
+                            {% for day in week_days %}
+
+                            <th class="text-center"
+                                style="white-space: nowrap;">
+
+                                {{ day.strftime('%a') }}
+
+                            </th>
+
+                            {% endfor %}
+
+                            <th class="text-center"
+                                style="white-space: nowrap;">
+
+                                Week Avg
+
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for centre in weekly_centre_attendance %}
+
+                        <tr>
+
+                            <!-- Centre -->
+
+                            <td class="fw-semibold">
+
+                                <a href="/centre/{{ centre.center_id }}"
+                                   class="text-decoration-none">
+
+                                    {{ centre.center_code }}
+
+                                </a>
+
+                            </td>
+
+
+                            <!-- Daily Attendance -->
+
+                            {% for day in week_days %}
+
+                            <td class="text-center"
+                                style="white-space: nowrap;">
+
+                                {% set value = centre.days[day] %}
+
+                                {% if value is not none %}
+
+                                    <span class="fw-semibold">
+                                        {{ value }}%
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            {% endfor %}
+
+
+                            <!-- Week Average -->
+
+                            <td class="text-center fw-bold"
+                                style="white-space: nowrap;">
+
+                                {% if centre.week_percentage is not none %}
+
+                                    {{ centre.week_percentage }}%
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+        <!-- ===================================================== -->
+    <!-- Monthly Attendance & Performance -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header
+                    d-flex justify-content-between
+                    align-items-center">
+
+            <div>
+
+                <i class="bi bi-calendar3 me-2"></i>
+
+                Monthly Attendance &amp; Performance
+                — Centre Comparison
+
+            </div>
+
+
+            <div class="btn-group btn-group-sm">
+
+                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?month={{ previous_month.strftime('%Y-%m') }}"
+                   class="btn btn-outline-primary">
+
+                    &laquo; Previous 3 Months
+
+                </a>
+
+
+                <a href="/cluster-dashboard/{{ session.get('cc_id') }}?month={{ next_month.strftime('%Y-%m') }}"
+                   class="btn btn-outline-primary">
+
+                    Next 3 Months &raquo;
+
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+
+                <div class="text-muted">
+
+                    Three-month view
+
+                </div>
+
+                <div class="text-muted small">
+
+                    Attendance &amp; Performance
+
+                </div>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th rowspan="2">
+                                #
+                            </th>
+
+                            <th rowspan="2">
+                                Learning Centre
+                            </th>
+
+
+                            {% for month in monthly_months %}
+
+                                <th colspan="2"
+                                    class="text-center">
+
+                                    {{ month.strftime('%b %Y') }}
+
+                                </th>
+
+                            {% endfor %}
+
+                        </tr>
+
+
+                        <tr>
+
+                            {% for month in monthly_months %}
+
+                                <th class="text-center">
+                                    Attendance
+                                </th>
+
+                                <th class="text-center">
+                                    Performance
+                                </th>
+
+                            {% endfor %}
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for centre in monthly_centre_attendance %}
+
+                        <tr>
+
+                            <td class="fw-bold">
+                                {{ loop.index }}
+                            </td>
+
+
+                            <td class="fw-semibold">
+
+                                <a href="/centre/{{ centre.center_id }}"
+                                   class="text-decoration-none">
+
+                                    {{ centre.center_code }}
+
+                                </a>
+
+                            </td>
+
+
+                            {% for month in monthly_months %}
+
+                                {% set month_data =
+                                    centre.months[month] %}
+
+
+                                <!-- Attendance -->
+
+                                <td class="text-center">
+
+                                    {% if month_data.attendance
+                                          is not none %}
+
+                                        <span class="fw-semibold">
+
+                                            {{ month_data.attendance }}%
+
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <!-- Performance -->
+
+                                <td class="text-center">
+
+                                    {% if month_data.performance
+                                          is not none %}
+
+                                        <span class="fw-semibold">
+
+                                            {{ month_data.performance }}%
+
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            {% endfor %}
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Daily Attendance Mobile -->
+    <!-- ===================================================== -->
+
+    {% if show_mobile_attendance %}
+
+    <div class="row mb-4">
+
+        <div class="col-12">
+
+            <a href="/mobile/attendance"
+               class="text-decoration-none">
+
+                <div class="dashboard-card">
+
+                    <div class="card-body">
+
+                        <div class="d-flex
+                                    justify-content-between
+                                    align-items-center">
+
+                            <div>
+
+                                <h4 class="mb-2">
+
+                                    <i class="bi bi-phone-fill me-2"></i>
+
+                                    Daily Attendance
+
+                                </h4>
+
+                                <p class="text-muted mb-0">
+
+                                    Capture today's attendance
+                                    for your centres.
+
+                                </p>
+
+                            </div>
+
+                            <div class="fs-3 text-primary">
+
+                                →
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
 
 
     <!-- ===================================================== -->

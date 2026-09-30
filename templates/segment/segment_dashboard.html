@@ -1,45 +1,54 @@
-
 {% extends "base.html" %}
-
-{% block title %}
-My Segment
-{% endblock %}
-
-{% block page_title %}
-{% endblock %}
 
 {% block content %}
 
 <div class="container-fluid">
 
-    <!-- ========================================= -->
-    <!-- Page Heading -->
-    <!-- ========================================= -->
+    <!-- ===================================================== -->
+    <!-- Segment Header -->
+    <!-- ===================================================== -->
 
-    <div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="dashboard-card mb-4">
 
-        <div>
+        <div class="card-body">
 
-            <h1 class="display-6 fw-bold text-primary">
-                My Segment
-            </h1>
+            <div class="d-flex justify-content-between
+                        align-items-center">
 
-            <p class="text-muted mb-1">
-                {{ segment.name }}
-            </p>
+                <div>
 
-            <small class="text-muted">
-                Academic Year: <strong>2026–27</strong>
-            </small>
+                    <h1 class="mb-1 text-primary">
+                        My Segment
+                    </h1>
+
+                    <p class="text-muted mb-0">
+                        {{ segment.name }}
+                    </p>
+
+                </div>
+
+                <div class="text-end">
+
+                    <div class="text-muted small">
+                        Academic Year
+                    </div>
+
+                    <div class="fw-semibold">
+                        2026-27
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
     </div>
 
 
-    <!-- ========================================= -->
-    <!-- Segment KPI Cards -->
-    <!-- ========================================= -->
+    <!-- ===================================================== -->
+    <!-- KPI CARDS -->
+    <!-- ===================================================== -->
 
     <div class="row g-4 mb-4">
 
@@ -77,7 +86,7 @@ My Segment
 
                 <div class="card-body">
 
-                    <i class="bi bi-house-fill
+                    <i class="bi bi-building-fill
                               display-5 text-success"></i>
 
                     <h2 class="mt-3">
@@ -85,7 +94,7 @@ My Segment
                     </h2>
 
                     <p class="text-muted mb-0">
-                        Learning Centres
+                        Centres
                     </p>
 
                 </div>
@@ -95,7 +104,7 @@ My Segment
         </div>
 
 
-        <!-- Students -->
+        <!-- Enrolments -->
 
         <div class="col-md-3">
 
@@ -111,7 +120,7 @@ My Segment
                     </h2>
 
                     <p class="text-muted mb-0">
-                        Students
+                        Enrolments
                     </p>
 
                 </div>
@@ -137,7 +146,7 @@ My Segment
                     </h2>
 
                     <p class="text-muted mb-0">
-                       Today's Attendance
+                        Today's Attendance
                     </p>
 
                 </div>
@@ -149,26 +158,27 @@ My Segment
     </div>
 
 
+    <!-- ===================================================== -->
+    <!-- 1. TODAY'S ATTENDANCE — CLUSTER COMPARISON -->
+    <!-- ===================================================== -->
 
-    <!-- ========================================= -->
-    <!-- Cluster Performance Comparison -->
-    <!-- ========================================= -->
-
-    <div class="dashboard-card mt-4 mb-4">
+    <div class="dashboard-card mb-4">
 
         <div class="dashboard-header">
 
             <i class="bi bi-bar-chart-fill me-2"></i>
 
-            Cluster Performance Comparison
+            Today's Attendance — Cluster Comparison
 
         </div>
+
 
         <div class="card-body">
 
             <p class="text-muted mb-4">
 
-                Compare today's attendance across the clusters in the Segment
+                Compare today's attendance across the clusters
+                in the Segment.
 
             </p>
 
@@ -194,11 +204,27 @@ My Segment
                             </th>
 
                             <th class="text-center">
-                                Students
+                                Enrolments
                             </th>
 
                             <th class="text-center">
-                                Today's Attendance
+                                Present
+                            </th>
+
+                            <th class="text-center">
+                                Absent
+                            </th>
+
+                            <th class="text-center">
+                                Attendance
+                            </th>
+
+                            <th class="text-center">
+                                Status
+                            </th>
+
+                            <th class="text-center">
+                                Action
                             </th>
 
                         </tr>
@@ -216,31 +242,103 @@ My Segment
                                 {{ loop.index }}
                             </td>
 
-                            <td>
+
+                            <td class="fw-semibold">
                                 {{ cluster.name }}
                             </td>
+
 
                             <td class="text-center">
                                 {{ cluster.centres }}
                             </td>
 
+
                             <td class="text-center">
                                 {{ cluster.students }}
                             </td>
 
+
+                            <td class="text-center text-success fw-bold">
+                                {{ cluster.present }}
+                            </td>
+
+
+                            <td class="text-center text-danger fw-bold">
+                                {{ cluster.absent }}
+                            </td>
+
+
                             <td class="text-center fw-bold">
+
                                 {{ cluster.attendance }}
+
+                            </td>
+
+
+                            <td class="text-center">
+
+                                {% if cluster.status == "RED" %}
+
+                                    <span class="text-danger fw-semibold">
+                                        RED
+                                    </span>
+
+                                {% elif cluster.status == "AMBER" %}
+
+                                    <span class="text-warning fw-semibold">
+                                        AMBER
+                                    </span>
+
+                                {% elif cluster.status == "GREEN" %}
+
+                                    <span class="text-success fw-semibold">
+                                        GREEN
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="text-center">
+
+                                {% if cluster.cc_id %}
+
+                                    <a href="{{ url_for(
+                                        'cluster_dashboard',
+                                        cc_id=cluster.cc_id
+                                    ) }}"
+                                       class="btn btn-sm
+                                              btn-outline-primary">
+
+                                        View Cluster
+
+                                    </a>
+
+                                {% else %}
+
+                                    <span class="text-muted small">
+                                        No CC assigned
+                                    </span>
+
+                                {% endif %}
+
                             </td>
 
                         </tr>
 
                         {% endfor %}
+
                     </tbody>
 
 
-                    <!-- ================================= -->
                     <!-- Segment Average -->
-                    <!-- ================================= -->
 
                     <tfoot class="table-light fw-bold">
 
@@ -258,13 +356,28 @@ My Segment
                                 {{ segment.students }}
                             </td>
 
+                            <td class="text-center text-success">
+                                —
+                            </td>
+
+                            <td class="text-center text-danger">
+                                —
+                            </td>
+
                             <td class="text-center">
                                 {{ segment.attendance }}
                             </td>
 
+                            <td class="text-center">
+                                —
+                            </td>
+
+                            <td></td>
+
                         </tr>
 
                     </tfoot>
+
                 </table>
 
             </div>
@@ -274,136 +387,182 @@ My Segment
     </div>
 
 
-    <!-- ========================================= -->
-<!-- Weekly Attendance — Cluster Comparison -->
-<!-- ========================================= -->
+    <!-- ===================================================== -->
+    <!-- 2. WEEKLY ATTENDANCE — CLUSTER COMPARISON -->
+    <!-- ===================================================== -->
 
-<div class="dashboard-card mt-4 mb-4">
+    <div class="dashboard-card mb-4">
 
-    <div class="dashboard-header d-flex justify-content-between align-items-center">
+        <div class="dashboard-header
+                    d-flex justify-content-between
+                    align-items-center">
 
-        <div>
-            <i class="bi bi-calendar-week me-2"></i>
-            Weekly Attendance — Cluster Comparison
-        </div>
+            <div>
 
-        <div class="btn-group btn-group-sm">
+                <i class="bi bi-calendar-week me-2"></i>
 
-            <a href="{{ url_for(
-                'segment_dashboard',
-                segment_id=segment.id,
-                week=previous_week.isoformat()
-            ) }}"
-               class="btn btn-outline-primary">
-                &laquo; Previous Week
-            </a>
-
-            <a href="{{ url_for(
-                'segment_dashboard',
-                segment_id=segment.id,
-                week=next_week.isoformat()
-            ) }}"
-               class="btn btn-outline-primary">
-                Next Week &raquo;
-            </a>
-
-        </div>
-
-    </div>
-
-
-    <div class="card-body">
-
-        <!-- Week information -->
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-
-            <div class="text-muted">
-
-                Week:
-                <strong>
-                    {{ week_start.strftime('%d %b %Y') }}
-                    -
-                    {{ week_end.strftime('%d %b %Y') }}
-                </strong>
+                Weekly Attendance — Cluster Comparison
 
             </div>
 
-            <div class="text-muted small">
-                Monday to Saturday
+
+            <div class="btn-group btn-group-sm">
+
+                <a href="{{ url_for(
+                    'segment_dashboard',
+                    segment_id=segment.id,
+                    week=previous_week.isoformat()
+                ) }}"
+                   class="btn btn-outline-primary">
+
+                    &laquo; Previous Week
+
+                </a>
+
+
+                <a href="{{ url_for(
+                    'segment_dashboard',
+                    segment_id=segment.id,
+                    week=next_week.isoformat()
+                ) }}"
+                   class="btn btn-outline-primary">
+
+                    Next Week &raquo;
+
+                </a>
+
             </div>
 
         </div>
 
 
-        <!-- Weekly Attendance Table -->
+        <div class="card-body">
 
-        <div class="table-responsive">
+            <!-- Week information -->
 
-            <table class="table table-hover align-middle">
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
 
-                <thead class="table-light">
+                <div class="text-muted">
 
-                    <tr>
+                    Week:
 
-                        <th>
-                            #
-                        </th>
+                    <strong>
 
-                        <th>
-                            Cluster
-                        </th>
+                        {{ week_start.strftime('%d %b %Y') }}
 
-                        {% for day in week_days %}
+                        -
 
-                            <th class="text-center">
+                        {{ week_end.strftime('%d %b %Y') }}
 
-                                {{ day.strftime('%a') }}
+                    </strong>
 
-                                <br>
+                </div>
 
-                                <small class="text-muted">
-                                    {{ day.strftime('%d') }}
-                                </small>
 
+                <div class="text-muted small">
+
+                    Monday to Saturday
+
+                </div>
+
+            </div>
+
+
+            <!-- Weekly table -->
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                #
                             </th>
 
-                        {% endfor %}
-
-                        <th class="text-center">
-                            Week Avg
-                        </th>
-
-                    </tr>
-
-                </thead>
+                            <th>
+                                Cluster
+                            </th>
 
 
-                <tbody>
+                            {% for day in week_days %}
 
-                    {% for cluster in weekly_cluster_attendance %}
+                                <th class="text-center">
 
-                    <tr>
+                                    {{ day.strftime('%a') }}
 
-                        <td class="fw-bold">
-                            {{ loop.index }}
-                        </td>
+                                    <br>
+
+                                    <small class="text-muted">
+
+                                        {{ day.strftime('%d') }}
+
+                                    </small>
+
+                                </th>
+
+                            {% endfor %}
 
 
-                        <td class="fw-semibold">
-                            {{ cluster.cluster_name }}
-                        </td>
+                            <th class="text-center">
+                                Week Avg
+                            </th>
+
+                        </tr>
+
+                    </thead>
 
 
-                        {% for day in week_days %}
+                    <tbody>
 
-                            <td class="text-center">
+                        {% for cluster in weekly_cluster_attendance %}
 
-                                {% if cluster.days[day] %}
+                        <tr>
 
-                                    <strong>
-                                        {{ cluster.days[day] }}%
-                                    </strong>
+                            <td class="fw-bold">
+                                {{ loop.index }}
+                            </td>
+
+
+                            <td class="fw-semibold">
+                                {{ cluster.cluster_name }}
+                            </td>
+
+
+                            {% for day in week_days %}
+
+                                <td class="text-center">
+
+                                    {% if cluster.days[day] is not none %}
+
+                                        <strong>
+
+                                            {{ cluster.days[day] }}%
+
+                                        </strong>
+
+                                    {% else %}
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            {% endfor %}
+
+
+                            <td class="text-center fw-bold">
+
+                                {% if cluster.week_percentage
+                                      is not none %}
+
+                                    {{ cluster.week_percentage }}%
 
                                 {% else %}
 
@@ -415,40 +574,220 @@ My Segment
 
                             </td>
 
+                        </tr>
+
                         {% endfor %}
 
+                    </tbody>
 
-                        <td class="text-center fw-bold">
+                </table>
 
-                            {% if cluster.week_percentage is not none %}
-
-                                {{ cluster.week_percentage }}%
-
-                            {% else %}
-
-                                <span class="text-muted">
-                                    —
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
+            </div>
 
         </div>
 
     </div>
 
-</div>
 
-    
+    <!-- ===================================================== -->
+    <!-- 3. MONTHLY ATTENDANCE & PERFORMANCE -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-card mb-4">
+
+        <div class="dashboard-header
+                    d-flex justify-content-between
+                    align-items-center">
+
+            <div>
+
+                <i class="bi bi-calendar3 me-2"></i>
+
+                Monthly Attendance &amp; Performance
+                — Cluster Comparison
+
+            </div>
+
+
+            <div class="btn-group btn-group-sm">
+
+                <a href="{{ url_for(
+                    'segment_dashboard',
+                    segment_id=segment.id,
+                    month=previous_month.strftime('%Y-%m')
+                ) }}"
+                   class="btn btn-outline-primary">
+
+                    &laquo; Previous 3 Months
+
+                </a>
+
+
+                <a href="{{ url_for(
+                    'segment_dashboard',
+                    segment_id=segment.id,
+                    month=next_month.strftime('%Y-%m')
+                ) }}"
+                   class="btn btn-outline-primary">
+
+                    Next 3 Months &raquo;
+
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+
+                <div class="text-muted">
+
+                    Three-month view:
+
+                </div>
+
+                <div class="text-muted small">
+
+                    Attendance &amp; Performance
+
+                </div>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th rowspan="2">
+                                #
+                            </th>
+
+                            <th rowspan="2">
+                                Cluster
+                            </th>
+
+
+                            {% for month in monthly_months %}
+
+                                <th colspan="2"
+                                    class="text-center">
+
+                                    {{ month.strftime('%b %Y') }}
+
+                                </th>
+
+                            {% endfor %}
+
+                        </tr>
+
+
+                        <tr>
+
+                            {% for month in monthly_months %}
+
+                                <th class="text-center">
+                                    Attendance
+                                </th>
+
+                                <th class="text-center">
+                                    Performance
+                                </th>
+
+                            {% endfor %}
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for cluster in monthly_cluster_attendance %}
+
+                        <tr>
+
+                            <td class="fw-bold">
+                                {{ loop.index }}
+                            </td>
+
+
+                            <td class="fw-semibold">
+                                {{ cluster.cluster_name }}
+                            </td>
+
+
+                            {% for month in monthly_months %}
+
+                                <td class="text-center">
+
+                                    {% set month_data =
+                                        cluster.months[month] %}
+
+                                    {% if month_data.attendance
+                                          is not none %}
+
+                                        <strong>
+
+                                            {{ month_data.attendance }}%
+
+                                        </strong>
+
+                                    {% else %}
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td class="text-center">
+
+                                    {% if month_data.performance
+                                          is not none %}
+
+                                        <strong>
+
+                                            {{ month_data.performance }}%
+
+                                        </strong>
+
+                                    {% else %}
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            {% endfor %}
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
