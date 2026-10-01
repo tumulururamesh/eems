@@ -1,0 +1,438 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="manage-page manage-tutors-page">
+
+    <!-- ========================================================
+         BACK BUTTON
+         ======================================================== -->
+
+    <div class="manage-tutors-back">
+        <a href="{{ url_for('manage') }}"
+           class="manage-btn-secondary">
+            ← Back
+        </a>
+    </div>
+
+
+    <!-- ========================================================
+         PAGE HEADER
+         ======================================================== -->
+
+    <div class="manage-page-header">
+
+        <div>
+            <h1>Manage Cluster Coordinators</h1>
+
+            <p>
+                Cluster Coordinator records and current cluster assignments
+            </p>
+        </div>
+
+
+        <div class="manage-academic-year">
+
+            <span>Academic Year</span>
+
+            <strong>
+                {{ academic_year.academic_year
+                    |replace("2026-2027", "2026-27") }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         KPI CARDS
+         ======================================================== -->
+
+    <div class="manage-kpi-grid">
+
+        <div class="manage-kpi-card">
+
+            <div class="manage-kpi-value">
+                {{ summary.coordinators }}
+            </div>
+
+            <div class="manage-kpi-title">
+                Cluster Coordinators
+            </div>
+
+        </div>
+
+
+        <div class="manage-kpi-card">
+
+            <div class="manage-kpi-value">
+                {{ summary.inactive }}
+            </div>
+
+            <div class="manage-kpi-title">
+                Inactive
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         SUCCESS MESSAGE
+         ======================================================== -->
+
+    {% if message %}
+
+    <div class="manage-success">
+        {{ message }}
+    </div>
+
+    {% endif %}
+
+
+    <!-- ========================================================
+         SEARCH & FILTER
+         ======================================================== -->
+
+    <section class="manage-section">
+
+        <div class="manage-section-header">
+
+            <h2>
+                Search &amp; Filter
+            </h2>
+
+        </div>
+
+
+        <div class="manage-section-body">
+
+            <form method="get"
+                  class="tutor-filter-form">
+
+
+                <!-- Search -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="search">
+                        Search
+                    </label>
+
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="CC name, mobile or cluster"
+                    >
+
+                </div>
+
+
+                <!-- Status -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="status">
+                        Status
+                    </label>
+
+                    <select id="status"
+                            name="status">
+
+                        <option value="ACTIVE"
+                            {% if status_filter == "ACTIVE" %}
+                                selected
+                            {% endif %}>
+                            Active
+                        </option>
+
+                        <option value="INACTIVE"
+                            {% if status_filter == "INACTIVE" %}
+                                selected
+                            {% endif %}>
+                            Inactive
+                        </option>
+
+                        <option value="ALL"
+                            {% if status_filter == "ALL" %}
+                                selected
+                            {% endif %}>
+                            All
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Segment -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="segment">
+                        Segment
+                    </label>
+
+                    <select id="segment"
+                            name="segment">
+
+                        <option value="">
+                            All Segments
+                        </option>
+
+                        {% for segment in segments %}
+
+                        <option
+                            value="{{ segment.segment_id }}"
+                            {% if segment_filter|string == segment.segment_id|string %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ segment.segment_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Cluster -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="cluster">
+                        Cluster
+                    </label>
+
+                    <select id="cluster"
+                            name="cluster">
+
+                        <option value="">
+                            All Clusters
+                        </option>
+
+                        {% for cluster in clusters %}
+
+                        <option
+                            value="{{ cluster.cluster_id }}"
+                            {% if cluster_filter|string == cluster.cluster_id|string %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ cluster.cluster_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Actions -->
+
+                <div class="tutor-filter-actions">
+
+                    <button
+                        type="submit"
+                        class="tutor-btn-primary">
+                        Apply
+                    </button>
+
+                    <a
+                        href="{{ url_for('manage_cluster_coordinators') }}"
+                        class="tutor-btn-secondary">
+                        Clear
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         CLUSTER COORDINATOR LIST
+         ======================================================== -->
+
+    <section class="manage-section">
+
+        <div class="manage-section-header tutor-list-header">
+
+            <h2>
+                Cluster Coordinator List
+            </h2>
+
+            <a href="{{ url_for('add_cluster_coordinator') }}"
+            class="add-tutor-btn">
+                + Add CC
+            </a>
+
+        </div>
+
+        <div class="manage-section-body tutor-list-body">
+
+            {% if coordinators %}
+
+            <div class="manage-table-wrapper">
+
+                <table class="manage-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                CC Name
+                            </th>
+
+                            <th>
+                                Mobile
+                            </th>
+
+                            <th>
+                                Segment
+                            </th>
+
+                            <th>
+                                Current Cluster
+                            </th>
+
+                            <th>
+                                AVLCs
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for cc in coordinators %}
+
+                        <tr>
+
+                            <!-- CC Name -->
+
+                            <td>
+                                {{ cc.cc_name }}
+                            </td>
+
+
+                            <!-- Mobile -->
+
+                            <td>
+                                {{ cc.mobile_no or "—" }}
+                            </td>
+
+
+                            <!-- Segment -->
+
+                            <td>
+
+                                {% if cc.segment_name %}
+                                    {{ cc.segment_name }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Current Cluster -->
+
+                            <td>
+
+                                {% if cc.cluster_name %}
+                                    {{ cc.cluster_name }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- AVLC Count -->
+
+                            <td>
+                                {{ cc.avlc_count or 0 }}
+                            </td>
+
+
+                            <!-- Status -->
+
+                            <td>
+
+                                {% if cc.active_flag %}
+
+                                    <span class="status-active">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status-inactive">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                <a
+                                    href="{{ url_for(
+                                        'cluster_coordinator_details',
+                                        cc_id=cc.cc_id
+                                    ) }}"
+                                    class="tutor-view-btn">
+                                    View
+                                </a>
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <div class="manage-empty-state">
+
+                No Cluster Coordinators found for the selected criteria.
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

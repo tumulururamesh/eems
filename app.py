@@ -103,18 +103,19 @@ def permission_required(permission_code):
 # ============================================================
 # CC ATTENDANCE CAPTURE
 # ============================================================
-
 @app.route("/mobile/attendance")
 @login_required
 def mobile_attendance():
 
-    # --------------------------------------------------------
-    # CC Attendance Capture is ONLY for Cluster Coordinators
-    # --------------------------------------------------------
-    if session.get("role") != "cluster_incharge":
-        return redirect("/dashboard")
-
+    role = session.get("role")
     user_id = session.get("user_id")
+
+    
+    # Attendance capture is available to:
+    #   1. Cluster Coordinators
+    #   2. Segment Incharges
+    if role not in ["cluster_incharge", "segment_incharge"]:
+        return redirect("/dashboard")
 
     if not user_id:
         return redirect("/dashboard")
@@ -125,7 +126,7 @@ def mobile_attendance():
     try:
 
         # ----------------------------------------------------
-        # Get current academic year
+        # Current academic year
         # ----------------------------------------------------
         cur.execute("""
             SELECT academic_year_id
@@ -140,131 +141,197 @@ def mobile_attendance():
 
         academic_year_id = academic_year["academic_year_id"]
 
+
+        # ====================================================
+        # CLUSTER COORDINATOR
+        # ====================================================
+        if role == "cluster_incharge":
+
+            # ------------------------------------------------
+            # Identify logged-in CC
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    cc.cc_id,
+                    cc.cc_name
+                FROM public.user_person_assignment upa
+                JOIN public.cluster_coordinator cc
+                    ON cc.cc_id = upa.cc_id
+                WHERE upa.user_id = %s
+                  AND upa.active_flag = TRUE
+                  AND cc.active_flag = TRUE
+                LIMIT 1
+            """, (user_id,))
+
+            cc = cur.fetchone()
+            
+
+            if not cc:
+                return redirect("/dashboard")
+
+            cc_id = cc["cc_id"]
+            display_name = cc["cc_name"]
+
+            # ------------------------------------------------
+            # AVLCs belonging to CC's active cluster
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name,
+
+                    COUNT(DISTINCT sm.student_id) AS student_count,
+
+                    MAX(ats.submission_id) AS submission_id
+
+                FROM public.cluster_coordinator_assignment cca
+
+                JOIN public.cluster_center ccm
+                    ON ccm.cluster_id = cca.cluster_id
+                   AND ccm.academic_year_id = cca.academic_year_id
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ccm.center_id
+                   
+
+                LEFT JOIN public.student_center_assignment sca
+                    ON sca.center_id = tc.center_id
+                   AND sca.academic_year_id = %s
+                   AND sca.active_flag = TRUE
+
+                LEFT JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+                   AND sm.active_flag = TRUE
+
+                LEFT JOIN public.attendance_submission ats
+                    ON ats.center_id = tc.center_id
+                   AND ats.attendance_date = CURRENT_DATE
+
+                WHERE cca.cc_id = %s
+                  AND cca.academic_year_id = %s
+                  AND cca.active_flag = TRUE
+
+                GROUP BY
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+
+                ORDER BY
+                    tc.center_code
+            """, (
+                academic_year_id,
+                cc_id,
+                academic_year_id
+            ))
+
+            centres = cur.fetchall()
+
+
+        # ====================================================
+        # SEGMENT INCHARGE
+        # ====================================================
+        else:
+
+            segment_id = session.get("segment")
+
+            if not segment_id:
+                return redirect("/dashboard")
+
+            # ------------------------------------------------
+            # Get SI display name
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT full_name
+                FROM public.aems_user
+                WHERE user_id = %s
+                  AND active_flag = TRUE
+            """, (user_id,))
+
+            si = cur.fetchone()
+
+            if not si:
+                return redirect("/dashboard")
+
+            display_name = si["full_name"]
+
+            # ------------------------------------------------
+            # All AVLCs in the SI's segment.
+            #
+            # IMPORTANT:
+            # This does NOT depend on whether the cluster
+            # currently has a CC.
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name,
+
+                    COUNT(DISTINCT sm.student_id) AS student_count,
+
+                    MAX(ats.submission_id) AS submission_id
+
+                FROM public.cluster_master cm
+
+                JOIN public.cluster_center ccm
+                    ON ccm.cluster_id = cm.cluster_id
+                   AND ccm.academic_year_id = %s
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ccm.center_id
+                   
+
+                LEFT JOIN public.student_center_assignment sca
+                    ON sca.center_id = tc.center_id
+                   AND sca.academic_year_id = %s
+                   AND sca.active_flag = TRUE
+
+                LEFT JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+                   AND sm.active_flag = TRUE
+
+                LEFT JOIN public.attendance_submission ats
+                    ON ats.center_id = tc.center_id
+                   AND ats.attendance_date = CURRENT_DATE
+
+                WHERE cm.segment_id = %s
+                  AND cm.active_flag = TRUE
+
+                GROUP BY
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+
+                ORDER BY
+                    tc.center_code
+            """, (
+                academic_year_id,
+                academic_year_id,
+                segment_id
+            ))
+
+            centres = cur.fetchall()
+
+
         # ----------------------------------------------------
-        # Identify the logged-in CC
+        # Reuse existing mobile attendance template
         #
-        # user
-        #   ↓
-        # user_person_assignment
-        #   ↓
-        # cluster_coordinator
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                cc.cc_id,
-                cc.cc_name
-            FROM public.user_person_assignment upa
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = upa.cc_id
-            WHERE upa.user_id = %s
-              AND upa.active_flag = TRUE
-              AND cc.active_flag = TRUE
-            LIMIT 1
-        """, (user_id,))
-
-        cc = cur.fetchone()
-
-        if not cc:
-            return redirect("/dashboard")
-
-        cc_id = cc["cc_id"]
-        cc_name = cc["cc_name"]
-
-        # ----------------------------------------------------
-        # Get centres assigned to this CC
-        #
-        # CC
-        #   ↓
-        # cluster_coordinator_assignment
-        #   ↓
-        # cluster
-        #   ↓
-        # cluster_center
-        #   ↓
-        # tuition_center
-        #
-        # Student count:
-        # tuition_center
-        #   ↓
-        # student_center_assignment
-        #   ↓
-        # student_master
-        #   ↓
-        # student_academic_year
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                tc.center_id,
-                tc.center_code,
-                tc.center_name,
-
-                COUNT(DISTINCT sm.student_id) AS student_count,
-
-                ats.submission_id,
-                ats.submitted_at
-
-            FROM public.cluster_coordinator_assignment cca
-
-            JOIN public.cluster_center ccm
-                ON ccm.cluster_id = cca.cluster_id
-               AND ccm.academic_year_id = cca.academic_year_id
-               AND ccm.active_flag = TRUE
-
-            JOIN public.tuition_center tc
-                ON tc.center_id = ccm.center_id
-
-            LEFT JOIN public.student_center_assignment sca
-                ON sca.center_id = tc.center_id
-               AND sca.academic_year_id = %s
-               AND sca.active_flag = TRUE
-
-            LEFT JOIN public.student_master sm
-                ON sm.student_id = sca.student_id
-               AND sm.active_flag = TRUE
-
-            LEFT JOIN public.student_academic_year say
-                ON say.student_id = sm.student_id
-               AND say.academic_year_id = %s
-               AND say.status = 'ACTIVE'
-
-            LEFT JOIN public.attendance_submission ats
-                ON ats.center_id = tc.center_id
-               AND ats.attendance_date = CURRENT_DATE
-
-            WHERE cca.cc_id = %s
-              AND cca.academic_year_id = %s
-              AND cca.active_flag = TRUE
-
-            GROUP BY
-                tc.center_id,
-                tc.center_code,
-                tc.center_name,
-                ats.submission_id,
-                ats.submitted_at
-
-            ORDER BY
-                tc.center_code
-        """, (
-            academic_year_id,
-            academic_year_id,
-            cc_id,
-            academic_year_id
-        ))
-
-        centres = cur.fetchall()
-
-        # ----------------------------------------------------
-        # Display CC Attendance Capture centre list
+        # Keep cc_name because the existing template already
+        # expects this variable. For an SI it simply contains
+        # the SI's name.
         # ----------------------------------------------------
         return render_template(
             "mobile/attendance.html",
-            cc_name=cc_name,
+            cc_name=display_name,
             centres=centres
         )
 
     except Exception as e:
 
-        print("CC Attendance Capture page error:", e)
+        print("Mobile attendance error:", e)
 
         return redirect("/dashboard")
 
@@ -273,25 +340,27 @@ def mobile_attendance():
         cur.close()
         conn.close()
 
-
 # ============================================================
 # CC ATTENDANCE CAPTURE - CENTRE
+# ============================================================
+
+# ============================================================
+# ATTENDANCE CAPTURE - CENTRE
+# CC + SEGMENT INCHARGE
 # ============================================================
 
 @app.route("/mobile/attendance/<int:center_id>")
 @login_required
 def mobile_centre_attendance(center_id):
 
-    print("========== NEW CENTRE ATTENDANCE ROUTE ==========")
-    print("CENTER ID RECEIVED:", center_id)
-
-    # --------------------------------------------------------
-    # Attendance capture is ONLY for Cluster Coordinators
-    # --------------------------------------------------------
-    if session.get("role") != "cluster_incharge":
-        return redirect("/dashboard")
-
+    role = session.get("role")
     user_id = session.get("user_id")
+
+    # Attendance capture is available to:
+    #   1. Cluster Coordinators
+    #   2. Segment Incharges
+    if role not in ["cluster_incharge", "segment_incharge"]:
+        return redirect("/dashboard")
 
     if not user_id:
         return redirect("/dashboard")
@@ -302,7 +371,7 @@ def mobile_centre_attendance(center_id):
     try:
 
         # ----------------------------------------------------
-        # Get current academic year
+        # Current academic year
         # ----------------------------------------------------
         cur.execute("""
             SELECT academic_year_id
@@ -317,85 +386,147 @@ def mobile_centre_attendance(center_id):
 
         academic_year_id = academic_year["academic_year_id"]
 
+
+        # ====================================================
+        # CLUSTER COORDINATOR
+        # ====================================================
+        if role == "cluster_incharge":
+
+            # ------------------------------------------------
+            # Identify logged-in CC
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    cc.cc_id,
+                    cc.cc_name
+                FROM public.user_person_assignment upa
+                JOIN public.cluster_coordinator cc
+                    ON cc.cc_id = upa.cc_id
+                WHERE upa.user_id = %s
+                  AND upa.active_flag = TRUE
+                  AND cc.active_flag = TRUE
+                LIMIT 1
+            """, (user_id,))
+
+            cc = cur.fetchone()
+
+            if not cc:
+                return redirect("/dashboard")
+
+            cc_id = cc["cc_id"]
+            display_name = cc["cc_name"]
+
+            # ------------------------------------------------
+            # Verify that the requested centre belongs to
+            # one of the CC's active cluster assignments.
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name,
+                    cc.cc_id,
+                    cc.cc_name
+
+                FROM public.cluster_coordinator_assignment cca
+
+                JOIN public.cluster_coordinator cc
+                    ON cc.cc_id = cca.cc_id
+
+                JOIN public.cluster_center ccm
+                    ON ccm.cluster_id = cca.cluster_id
+                   AND ccm.academic_year_id = cca.academic_year_id
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ccm.center_id
+
+                WHERE cca.cc_id = %s
+                  AND cca.academic_year_id = %s
+                  AND cca.active_flag = TRUE
+                  AND cc.active_flag = TRUE
+                  AND tc.center_id = %s
+            """, (
+                cc_id,
+                academic_year_id,
+                center_id
+            ))
+
+            centre = cur.fetchone()
+
+
+        # ====================================================
+        # SEGMENT INCHARGE
+        # ====================================================
+        else:
+
+            segment_id = session.get("segment")
+
+            if not segment_id:
+                return redirect("/dashboard")
+
+            # ------------------------------------------------
+            # Get SI display name
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT full_name
+                FROM public.aems_user
+                WHERE user_id = %s
+                  AND active_flag = TRUE
+            """, (user_id,))
+
+            si = cur.fetchone()
+
+            if not si:
+                return redirect("/dashboard")
+
+            display_name = si["full_name"]
+
+            # ------------------------------------------------
+            # Verify that the requested centre belongs to
+            # the SI's authorised segment.
+            #
+            # This does NOT depend on whether the cluster
+            # currently has a CC.
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+
+                FROM public.cluster_master cm
+
+                JOIN public.cluster_center ccm
+                    ON ccm.cluster_id = cm.cluster_id
+                   AND ccm.academic_year_id = %s
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ccm.center_id
+
+                WHERE cm.segment_id = %s
+                  AND cm.active_flag = TRUE
+                  AND tc.center_id = %s
+            """, (
+                academic_year_id,
+                segment_id,
+                center_id
+            ))
+
+            centre = cur.fetchone()
+
+
         # ----------------------------------------------------
-        # Identify the logged-in CC
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                cc.cc_id,
-                cc.cc_name
-            FROM public.user_person_assignment upa
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = upa.cc_id
-            WHERE upa.user_id = %s
-              AND upa.active_flag = TRUE
-              AND cc.active_flag = TRUE
-            LIMIT 1
-        """, (user_id,))
-
-        cc = cur.fetchone()
-
-        if not cc:
-            return redirect("/dashboard")
-
-        cc_id = cc["cc_id"]
-        cc_name = cc["cc_name"]
-
-        # ----------------------------------------------------
-        # Verify that this centre belongs to the logged-in CC
-        #
-        # CC
-        #   ↓
-        # cluster_coordinator_assignment
-        #   ↓
-        # cluster
-        #   ↓
-        # cluster_center
-        #   ↓
-        # tuition_center
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                tc.center_id,
-                tc.center_code,
-                tc.center_name,
-                cc.cc_id,
-                cc.cc_name
-
-            FROM public.cluster_coordinator_assignment cca
-
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = cca.cc_id
-
-            JOIN public.cluster_center ccm
-                ON ccm.cluster_id = cca.cluster_id
-               AND ccm.academic_year_id = cca.academic_year_id
-               AND ccm.active_flag = TRUE
-
-            JOIN public.tuition_center tc
-                ON tc.center_id = ccm.center_id
-
-            WHERE cca.cc_id = %s
-              AND cca.academic_year_id = %s
-              AND cca.active_flag = TRUE
-              AND cc.active_flag = TRUE
-              AND tc.center_id = %s
-        """, (
-            cc_id,
-            academic_year_id,
-            center_id
-        ))
-
-        centre = cur.fetchone()
-
-        # ----------------------------------------------------
-        # CC is not authorised for this centre
+        # User is not authorised for this centre
         # ----------------------------------------------------
         if not centre:
             return redirect("/mobile/attendance")
 
-                # ----------------------------------------------------
-        # Get all active students for this centre
+
+        # ----------------------------------------------------
+        # Get all active students for this centre.
+        #
         # Attendance is based on centre membership.
         # It does NOT depend on student_academic_year.
         # ----------------------------------------------------
@@ -424,17 +555,16 @@ def mobile_centre_attendance(center_id):
 
         students = cur.fetchall()
 
-        print("DEBUG centre:", center_id)
-        print("DEBUG academic year:", academic_year_id)
-        print("DEBUG students returned:", len(students))
-        print("DEBUG student rows:", students)
 
         # ----------------------------------------------------
-        # Display centre attendance screen
+        # Display existing centre attendance screen.
+        #
+        # Keep cc_name because the existing template expects
+        # this variable. For an SI it contains the SI name.
         # ----------------------------------------------------
         return render_template(
             "mobile/centre_attendance.html",
-            cc_name=cc_name,
+            cc_name=display_name,
             centre=centre,
             students=students
         )
@@ -450,9 +580,12 @@ def mobile_centre_attendance(center_id):
         cur.close()
         conn.close()
 
-
 # ============================================================
 # SUBMIT CC ATTENDANCE
+# ============================================================
+# ============================================================
+# SUBMIT ATTENDANCE
+# CC + SEGMENT INCHARGE
 # ============================================================
 
 @app.route(
@@ -462,16 +595,17 @@ def mobile_centre_attendance(center_id):
 @login_required
 def mobile_attendance_submit(center_id):
 
-    # --------------------------------------------------------
-    # Attendance capture is ONLY for Cluster Coordinators
-    # --------------------------------------------------------
-    if session.get("role") != "cluster_incharge":
+    role = session.get("role")
+    user_id = session.get("user_id")
+
+    # Attendance submission is available to:
+    #   1. Cluster Coordinators
+    #   2. Segment Incharges
+    if role not in ["cluster_incharge", "segment_incharge"]:
         return {
             "success": False,
             "message": "Unauthorized"
         }, 403
-
-    user_id = session.get("user_id")
 
     if not user_id:
         return {
@@ -498,7 +632,7 @@ def mobile_attendance_submit(center_id):
     try:
 
         # ----------------------------------------------------
-        # Get current academic year
+        # Current academic year
         # ----------------------------------------------------
         cur.execute("""
             SELECT academic_year_id
@@ -516,82 +650,132 @@ def mobile_attendance_submit(center_id):
 
         academic_year_id = academic_year["academic_year_id"]
 
-        # ----------------------------------------------------
-        # Identify the logged-in CC
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                cc.cc_id,
-                cc.cc_name
-            FROM public.user_person_assignment upa
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = upa.cc_id
-            WHERE upa.user_id = %s
-              AND upa.active_flag = TRUE
-              AND cc.active_flag = TRUE
-            LIMIT 1
-        """, (user_id,))
+        # This will contain the actual CC for a CC submission.
+        # It remains NULL for an SI submission.
+        cc_id = None
 
-        cc = cur.fetchone()
 
-        if not cc:
-            return {
-                "success": False,
-                "message": "Coordinator not found."
-            }, 403
+        # ====================================================
+        # CLUSTER COORDINATOR
+        # ====================================================
+        if role == "cluster_incharge":
 
-        cc_id = cc["cc_id"]
+            # ------------------------------------------------
+            # Identify logged-in CC
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    cc.cc_id,
+                    cc.cc_name
+                FROM public.user_person_assignment upa
+                JOIN public.cluster_coordinator cc
+                    ON cc.cc_id = upa.cc_id
+                WHERE upa.user_id = %s
+                  AND upa.active_flag = TRUE
+                  AND cc.active_flag = TRUE
+                LIMIT 1
+            """, (user_id,))
 
-        # ----------------------------------------------------
-        # Verify that the centre belongs to this CC
-        #
-        # CC
-        #   ↓
-        # cluster_coordinator_assignment
-        #   ↓
-        # cluster
-        #   ↓
-        # cluster_center
-        #   ↓
-        # tuition_center
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                tc.center_id,
-                tc.center_code,
-                tc.center_name
+            cc = cur.fetchone()
 
-            FROM public.cluster_coordinator_assignment cca
+            if not cc:
+                return {
+                    "success": False,
+                    "message": "Coordinator not found."
+                }, 403
 
-            JOIN public.cluster_center ccm
-                ON ccm.cluster_id = cca.cluster_id
-               AND ccm.academic_year_id = cca.academic_year_id
-               AND ccm.active_flag = TRUE
+            cc_id = cc["cc_id"]
 
-            JOIN public.tuition_center tc
-                ON tc.center_id = ccm.center_id
+            # ------------------------------------------------
+            # Verify centre belongs to this CC
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
 
-            WHERE cca.cc_id = %s
-                AND cca.academic_year_id = %s
-                AND cca.active_flag = TRUE
-                AND tc.center_id = %s
-                        """, (
-            cc_id,
-            academic_year_id,
-            center_id
+                FROM public.cluster_coordinator_assignment cca
+
+                JOIN public.cluster_center ccm
+                    ON ccm.cluster_id = cca.cluster_id
+                   AND ccm.academic_year_id = cca.academic_year_id
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ccm.center_id
+
+                WHERE cca.cc_id = %s
+                  AND cca.academic_year_id = %s
+                  AND cca.active_flag = TRUE
+                  AND tc.center_id = %s
+            """, (
+                cc_id,
+                academic_year_id,
+                center_id
             ))
 
-        centre = cur.fetchone()
+            centre = cur.fetchone()
 
+
+        # ====================================================
+        # SEGMENT INCHARGE
+        # ====================================================
+        else:
+
+            segment_id = session.get("segment")
+
+            if not segment_id:
+                return {
+                    "success": False,
+                    "message": "Segment access not found."
+                }, 403
+
+            # ------------------------------------------------
+            # Verify centre belongs to SI's segment.
+            #
+            # This does NOT depend on a CC assignment.
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+
+                FROM public.cluster_master cm
+
+                JOIN public.cluster_center ccm
+                    ON ccm.cluster_id = cm.cluster_id
+                   AND ccm.academic_year_id = %s
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ccm.center_id
+
+                WHERE cm.segment_id = %s
+                  AND cm.active_flag = TRUE
+                  AND tc.center_id = %s
+            """, (
+                academic_year_id,
+                segment_id,
+                center_id
+            ))
+
+            centre = cur.fetchone()
+
+
+        # ----------------------------------------------------
+        # User is not authorised for this centre
+        # ----------------------------------------------------
         if not centre:
             return {
                 "success": False,
                 "message": "This centre is not assigned to you."
             }, 403
 
+
         # ----------------------------------------------------
-        # Check whether attendance has already been submitted
-        # for this centre today
+        # Duplicate protection
         # ----------------------------------------------------
         cur.execute("""
             SELECT submission_id
@@ -611,9 +795,9 @@ def mobile_attendance_submit(center_id):
                 )
             }, 409
 
+
         # ----------------------------------------------------
         # Get all active students for this centre
-        # and academic year
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -645,6 +829,7 @@ def mobile_attendance_submit(center_id):
             for student in students
         }
 
+
         # ----------------------------------------------------
         # Validate absentee IDs
         # ----------------------------------------------------
@@ -662,6 +847,7 @@ def mobile_attendance_submit(center_id):
                 "message": "Invalid student selection."
             }, 400
 
+
         # ----------------------------------------------------
         # Every absentee must belong to this centre
         # ----------------------------------------------------
@@ -675,8 +861,9 @@ def mobile_attendance_submit(center_id):
                 )
             }, 400
 
+
         # ----------------------------------------------------
-        # Make sure the centre actually has students
+        # Centre must have active students
         # ----------------------------------------------------
         if not student_ids:
 
@@ -688,10 +875,18 @@ def mobile_attendance_submit(center_id):
                 )
             }, 400
 
+
         # ----------------------------------------------------
         # Create attendance submission
         #
-        # Normal attendance day = WORKING
+        # CC:
+        #   cc_id = actual CC
+        #
+        # SI:
+        #   cc_id = NULL
+        #
+        # Both:
+        #   submitted_by_user_id = logged-in user
         # ----------------------------------------------------
         cur.execute("""
             INSERT INTO public.attendance_submission
@@ -699,6 +894,7 @@ def mobile_attendance_submit(center_id):
                     center_id,
                     attendance_date,
                     cc_id,
+                    submitted_by_user_id,
                     day_status
                 )
             VALUES
@@ -706,21 +902,24 @@ def mobile_attendance_submit(center_id):
                     %s,
                     CURRENT_DATE,
                     %s,
+                    %s,
                     'WORKING'
                 )
             RETURNING submission_id
         """, (
             center_id,
-            cc_id
+            cc_id,
+            user_id
         ))
 
         submission_id = cur.fetchone()["submission_id"]
 
+
         # ----------------------------------------------------
-        # Insert attendance for every student
+        # Insert attendance for every active student
         #
-        # All students are PRESENT by default.
-        # Only selected students are ABSENT.
+        # Everyone is PRESENT by default.
+        # Selected students are ABSENT.
         # ----------------------------------------------------
         for student_id in student_ids:
 
@@ -751,8 +950,9 @@ def mobile_attendance_submit(center_id):
                 status
             ))
 
+
         # ----------------------------------------------------
-        # Commit everything
+        # Commit submission + student attendance together
         # ----------------------------------------------------
         conn.commit()
 
@@ -763,6 +963,7 @@ def mobile_attendance_submit(center_id):
             "absent_count": len(absent_ids),
             "total_students": len(student_ids)
         }
+
 
     except Exception as e:
 
@@ -785,17 +986,23 @@ def mobile_attendance_submit(center_id):
 # CC ATTENDANCE SUBMISSION CONFIRMATION
 # ============================================================
 
+# ============================================================
+# ATTENDANCE SUBMISSION CONFIRMATION
+# CC + SEGMENT INCHARGE
+# ============================================================
+
 @app.route("/mobile/attendance/submitted/<int:submission_id>")
 @login_required
 def mobile_attendance_submitted(submission_id):
 
-    # --------------------------------------------------------
-    # Attendance capture is ONLY for Cluster Coordinators
-    # --------------------------------------------------------
-    if session.get("role") != "cluster_incharge":
-        return redirect("/dashboard")
-
+    role = session.get("role")
     user_id = session.get("user_id")
+
+    # Confirmation is available to:
+    #   1. Cluster Coordinators
+    #   2. Segment Incharges
+    if role not in ["cluster_incharge", "segment_incharge"]:
+        return redirect("/dashboard")
 
     if not user_id:
         return redirect("/dashboard")
@@ -806,31 +1013,7 @@ def mobile_attendance_submitted(submission_id):
     try:
 
         # ----------------------------------------------------
-        # Identify the logged-in CC
-        # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                cc.cc_id,
-                cc.cc_name
-            FROM public.user_person_assignment upa
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = upa.cc_id
-            WHERE upa.user_id = %s
-              AND upa.active_flag = TRUE
-              AND cc.active_flag = TRUE
-            LIMIT 1
-        """, (user_id,))
-
-        cc = cur.fetchone()
-
-        if not cc:
-            return redirect("/dashboard")
-
-        cc_id = cc["cc_id"]
-        cc_name = cc["cc_name"]
-
-        # ----------------------------------------------------
-        # Get current academic year
+        # Current academic year
         # ----------------------------------------------------
         cur.execute("""
             SELECT academic_year_id
@@ -845,69 +1028,146 @@ def mobile_attendance_submitted(submission_id):
 
         academic_year_id = academic_year["academic_year_id"]
 
+
+        # ====================================================
+        # CLUSTER COORDINATOR
+        # ====================================================
+        if role == "cluster_incharge":
+
+            # ------------------------------------------------
+            # Identify logged-in CC
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    cc.cc_id,
+                    cc.cc_name
+                FROM public.user_person_assignment upa
+                JOIN public.cluster_coordinator cc
+                    ON cc.cc_id = upa.cc_id
+                WHERE upa.user_id = %s
+                  AND upa.active_flag = TRUE
+                  AND cc.active_flag = TRUE
+                LIMIT 1
+            """, (user_id,))
+
+            cc = cur.fetchone()
+
+            if not cc:
+                return redirect("/dashboard")
+
+            cc_id = cc["cc_id"]
+
+            # ------------------------------------------------
+            # Verify that the submission belongs to a centre
+            # within the logged-in CC's active cluster scope.
+            #
+            # Notice that we do NOT require ats.cc_id = cc_id.
+            # This allows the CC to view attendance for their
+            # centre even if the SI submitted it.
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    ats.submission_id,
+                    ats.attendance_date,
+                    ats.submitted_at,
+                    ats.day_status,
+
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+
+                FROM public.attendance_submission ats
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ats.center_id
+
+                JOIN public.cluster_center ccm
+                    ON ccm.center_id = ats.center_id
+                   AND ccm.academic_year_id = %s
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.cluster_coordinator_assignment cca
+                    ON cca.cluster_id = ccm.cluster_id
+                   AND cca.academic_year_id = ccm.academic_year_id
+                   AND cca.active_flag = TRUE
+                   AND cca.cc_id = %s
+
+                JOIN public.cluster_coordinator cc
+                    ON cc.cc_id = cca.cc_id
+                   AND cc.active_flag = TRUE
+
+                WHERE ats.submission_id = %s
+            """, (
+                academic_year_id,
+                cc_id,
+                submission_id
+            ))
+
+            submission = cur.fetchone()
+
+
+        # ====================================================
+        # SEGMENT INCHARGE
+        # ====================================================
+        else:
+
+            segment_id = session.get("segment")
+
+            if not segment_id:
+                return redirect("/dashboard")
+
+            # ------------------------------------------------
+            # Verify that the submission belongs to a centre
+            # within the SI's authorised segment.
+            #
+            # It does not matter whether the attendance was
+            # submitted by the CC or by the SI.
+            # ------------------------------------------------
+            cur.execute("""
+                SELECT
+                    ats.submission_id,
+                    ats.attendance_date,
+                    ats.submitted_at,
+                    ats.day_status,
+
+                    tc.center_id,
+                    tc.center_code,
+                    tc.center_name
+
+                FROM public.attendance_submission ats
+
+                JOIN public.tuition_center tc
+                    ON tc.center_id = ats.center_id
+
+                JOIN public.cluster_center ccm
+                    ON ccm.center_id = ats.center_id
+                   AND ccm.academic_year_id = %s
+                   AND ccm.active_flag = TRUE
+
+                JOIN public.cluster_master cm
+                    ON cm.cluster_id = ccm.cluster_id
+                   AND cm.active_flag = TRUE
+
+                WHERE ats.submission_id = %s
+                  AND cm.segment_id = %s
+            """, (
+                academic_year_id,
+                submission_id,
+                segment_id
+            ))
+
+            submission = cur.fetchone()
+
+
         # ----------------------------------------------------
-        # Get submission and verify that it belongs to
-        # the logged-in CC through the cluster assignment
-        #
-        # attendance_submission
-        #        ↓
-        #     centre
-        #        ↓
-        # cluster_center
-        #        ↓
-        # cluster
-        #        ↓
-        # cluster_coordinator_assignment
-        #        ↓
-        #        CC
+        # Submission is outside the user's authorised scope
         # ----------------------------------------------------
-        cur.execute("""
-            SELECT
-                ats.submission_id,
-                ats.attendance_date,
-                ats.submitted_at,
-                ats.day_status,
-
-                tc.center_id,
-                tc.center_code,
-                tc.center_name
-
-            FROM public.attendance_submission ats
-
-            JOIN public.tuition_center tc
-                ON tc.center_id = ats.center_id
-
-            JOIN public.cluster_center ccm
-                ON ccm.center_id = ats.center_id
-               AND ccm.academic_year_id = %s
-               AND ccm.active_flag = TRUE
-
-            JOIN public.cluster_coordinator_assignment cca
-                ON cca.cluster_id = ccm.cluster_id
-               AND cca.academic_year_id = ccm.academic_year_id
-               AND cca.active_flag = TRUE
-               AND cca.cc_id = %s
-
-            JOIN public.cluster_coordinator cc
-                ON cc.cc_id = cca.cc_id
-               AND cc.active_flag = TRUE
-
-            WHERE ats.submission_id = %s
-              AND ats.cc_id = %s
-        """, (
-            academic_year_id,
-            cc_id,
-            submission_id,
-            cc_id
-        ))
-
-        submission = cur.fetchone()
-
         if not submission:
             return redirect("/mobile/attendance")
 
+
         # ----------------------------------------------------
-        # Attendance summary for this submission
+        # Attendance summary
         # ----------------------------------------------------
         cur.execute("""
             SELECT
@@ -932,8 +1192,9 @@ def mobile_attendance_submitted(submission_id):
 
         summary = cur.fetchone()
 
+
         # ----------------------------------------------------
-        # Display confirmation screen
+        # Display existing confirmation screen
         # ----------------------------------------------------
         return render_template(
             "mobile/attendance_submitted.html",
@@ -951,7 +1212,6 @@ def mobile_attendance_submitted(submission_id):
 
         cur.close()
         conn.close()
-
 
 # =====================================================
 @app.route("/login", methods=["GET", "POST"])
@@ -2581,6 +2841,7 @@ def tutor_space():
     if role == "segment_incharge":
 
         segment_id = session.get("segment")
+        
 
         clusters = [
             {
@@ -6173,6 +6434,620 @@ def manage_tutors():
             status_filter=status_filter,
             centre_filter=centre_filter,
             message=message,
+            active_page="manage"
+        )
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ============================================================
+# MANAGE - ADD CLUSTER COORDINATOR
+# ============================================================
+
+@app.route("/manage/cluster-coordinators/add", methods=["GET", "POST"])
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def add_cluster_coordinator():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Active segments
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE active_flag = TRUE
+            ORDER BY segment_name
+        """)
+
+        segments = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Active clusters
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cm.cluster_id,
+                cm.cluster_name,
+                cm.segment_id,
+                sm.segment_name
+            FROM cluster_master cm
+            JOIN segment_master sm
+              ON sm.segment_id = cm.segment_id
+            WHERE cm.active_flag = TRUE
+              AND sm.active_flag = TRUE
+            ORDER BY sm.segment_name, cm.cluster_name
+        """)
+
+        clusters = cur.fetchall()
+
+        # ----------------------------------------------------
+        # GET
+        # ----------------------------------------------------
+        if request.method == "GET":
+
+            return render_template(
+                "manage/add_cluster_coordinator.html",
+                academic_year=academic_year,
+                segments=segments,
+                clusters=clusters,
+                form={},
+                errors=[],
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # POST
+        # ----------------------------------------------------
+        cc_code = request.form.get("cc_code", "").strip()
+        cc_name = request.form.get("cc_name", "").strip()
+        mobile_no = request.form.get("mobile_no", "").strip() or None
+        joining_date = request.form.get("joining_date", "").strip() or None
+
+        segment_id = request.form.get("segment_id", "").strip()
+        cluster_id = request.form.get("cluster_id", "").strip()
+        assigned_from = request.form.get("assigned_from", "").strip()
+
+        errors = []
+
+        # ----------------------------------------------------
+        # Required fields
+        # ----------------------------------------------------
+        if not cc_code:
+            errors.append("CC Code is required.")
+
+        if not cc_name:
+            errors.append("CC Name is required.")
+
+        if not segment_id:
+            errors.append("Segment is required.")
+
+        if not cluster_id:
+            errors.append("Cluster is required.")
+
+        if not assigned_from:
+            errors.append("Assignment From date is required.")
+
+        # ----------------------------------------------------
+        # CC Code uniqueness
+        #
+        # Case-insensitive application validation:
+        # CC001 and cc001 are treated as the same code.
+        # ----------------------------------------------------
+        if cc_code:
+
+            cur.execute("""
+                SELECT cc_id
+                FROM cluster_coordinator
+                WHERE UPPER(cc_code) = UPPER(%s)
+                LIMIT 1
+            """, (cc_code,))
+
+            if cur.fetchone():
+
+                errors.append(
+                    "CC Code already exists. "
+                    "Please enter a unique CC Code."
+                )
+
+        # ----------------------------------------------------
+        # Validate cluster belongs to selected segment
+        # ----------------------------------------------------
+        if segment_id and cluster_id:
+
+            cur.execute("""
+                SELECT cluster_id
+                FROM cluster_master
+                WHERE cluster_id = %s
+                  AND segment_id = %s
+                  AND active_flag = TRUE
+                LIMIT 1
+            """, (
+                cluster_id,
+                segment_id
+            ))
+
+            if not cur.fetchone():
+
+                errors.append(
+                    "Selected Cluster does not belong "
+                    "to the selected Segment."
+                )
+
+        # ----------------------------------------------------
+        # Validation errors
+        # ----------------------------------------------------
+        if errors:
+
+            return render_template(
+                "manage/add_cluster_coordinator.html",
+                academic_year=academic_year,
+                segments=segments,
+                clusters=clusters,
+                form=request.form,
+                errors=errors,
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # Create CC + Initial Cluster Assignment
+        #
+        # Multiple active CC assignments to the same cluster
+        # are permitted to support transition / handover.
+        #
+        # Existing CC assignments are NOT changed here.
+        # ----------------------------------------------------
+        try:
+
+            cur.execute("""
+                INSERT INTO cluster_coordinator (
+                    cc_code,
+                    cc_name,
+                    mobile_no,
+                    joining_date,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, %s, TRUE
+                )
+                RETURNING cc_id
+            """, (
+                cc_code,
+                cc_name,
+                mobile_no,
+                joining_date
+            ))
+
+            cc_id = cur.fetchone()["cc_id"]
+
+            cur.execute("""
+                INSERT INTO cluster_coordinator_assignment (
+                    cc_id,
+                    cluster_id,
+                    academic_year_id,
+                    assigned_from,
+                    assigned_to,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, %s, NULL, TRUE
+                )
+            """, (
+                cc_id,
+                cluster_id,
+                academic_year_id,
+                assigned_from
+            ))
+
+            conn.commit()
+
+            return redirect(
+                url_for(
+                    "manage_cluster_coordinators",
+                    message="Cluster Coordinator added successfully."
+                )
+            )
+
+        except Exception:
+            conn.rollback()
+            raise
+
+    finally:
+        cur.close()
+        conn.close()
+
+# ============================================================
+# MANAGE - CLUSTER COORDINATORS
+# ============================================================
+
+@app.route("/manage/cluster-coordinators")
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def manage_cluster_coordinators():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Filters
+        # ----------------------------------------------------
+        search = request.args.get("search", "").strip()
+        status_filter = request.args.get("status", "ACTIVE").strip()
+        segment_filter = request.args.get("segment", "").strip()
+        cluster_filter = request.args.get("cluster", "").strip()
+
+        message = request.args.get("message", "").strip()
+
+        # ----------------------------------------------------
+        # Summary
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                COUNT(*) AS coordinators,
+
+                COUNT(*) FILTER (
+                    WHERE active_flag = FALSE
+                ) AS inactive
+
+            FROM cluster_coordinator
+        """)
+
+        summary = cur.fetchone()
+
+        # ----------------------------------------------------
+        # Segment list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE active_flag = TRUE
+            ORDER BY segment_name
+        """)
+
+        segments = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Cluster list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cm.cluster_id,
+                cm.cluster_name,
+                cm.segment_id,
+                sm.segment_name
+            FROM cluster_master cm
+            JOIN segment_master sm
+              ON sm.segment_id = cm.segment_id
+            WHERE cm.active_flag = TRUE
+            ORDER BY sm.segment_name, cm.cluster_name
+        """)
+
+        clusters = cur.fetchall()
+
+        # ----------------------------------------------------
+        # CC list
+        #
+        # Current cluster assignment for current academic year.
+        # AVLC count comes from the cluster, not directly from CC.
+        # ----------------------------------------------------
+        query = """
+            SELECT
+                cc.cc_id,
+                cc.cc_name,
+                cc.mobile_no,
+                cc.joining_date,
+                cc.active_flag,
+
+                cm.cluster_id,
+                cm.cluster_name,
+
+                sm.segment_id,
+                sm.segment_name,
+
+                COUNT(DISTINCT clc.center_id) FILTER (
+                    WHERE clc.active_flag = TRUE
+                      AND clc.academic_year_id = %s
+                ) AS avlc_count
+
+            FROM cluster_coordinator cc
+
+            LEFT JOIN cluster_coordinator_assignment cca
+                ON cca.cc_id = cc.cc_id
+               AND cca.academic_year_id = %s
+               AND cca.active_flag = TRUE
+
+            LEFT JOIN cluster_master cm
+                ON cm.cluster_id = cca.cluster_id
+
+            LEFT JOIN segment_master sm
+                ON sm.segment_id = cm.segment_id
+
+            LEFT JOIN cluster_center clc
+                ON clc.cluster_id = cm.cluster_id
+               AND clc.academic_year_id = %s
+               AND clc.active_flag = TRUE
+
+            WHERE 1 = 1
+        """
+
+        params = [
+            academic_year_id,
+            academic_year_id,
+            academic_year_id
+        ]
+
+        # ----------------------------------------------------
+        # Search
+        # ----------------------------------------------------
+        if search:
+            query += """
+                AND (
+                    cc.cc_name ILIKE %s
+                    OR COALESCE(cc.mobile_no, '') ILIKE %s
+                    OR COALESCE(cm.cluster_name, '') ILIKE %s
+                )
+            """
+
+            search_value = f"%{search}%"
+
+            params.extend([
+                search_value,
+                search_value,
+                search_value
+            ])
+
+        # ----------------------------------------------------
+        # Status
+        # ----------------------------------------------------
+        if status_filter == "ACTIVE":
+            query += """
+                AND cc.active_flag = TRUE
+            """
+
+        elif status_filter == "INACTIVE":
+            query += """
+                AND cc.active_flag = FALSE
+            """
+
+        # ----------------------------------------------------
+        # Segment
+        # ----------------------------------------------------
+        if segment_filter:
+            query += """
+                AND sm.segment_id = %s
+            """
+            params.append(segment_filter)
+
+        # ----------------------------------------------------
+        # Cluster
+        # ----------------------------------------------------
+        if cluster_filter:
+            query += """
+                AND cm.cluster_id = %s
+            """
+            params.append(cluster_filter)
+
+        query += """
+            GROUP BY
+                cc.cc_id,
+                cc.cc_name,
+                cc.mobile_no,
+                cc.joining_date,
+                cc.active_flag,
+                cm.cluster_id,
+                cm.cluster_name,
+                sm.segment_id,
+                sm.segment_name
+
+            ORDER BY
+                cc.cc_name
+        """
+
+        cur.execute(query, tuple(params))
+
+        coordinators = cur.fetchall()
+
+        return render_template(
+            "manage/cluster_coordinators.html",
+            coordinators=coordinators,
+            segments=segments,
+            clusters=clusters,
+            summary=summary,
+            academic_year=academic_year,
+            search=search,
+            status_filter=status_filter,
+            segment_filter=segment_filter,
+            cluster_filter=cluster_filter,
+            message=message,
+            active_page="manage"
+        )
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ============================================================
+# MANAGE - CLUSTER COORDINATOR DETAILS
+# ============================================================
+
+@app.route("/manage/cluster-coordinators/<int:cc_id>")
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def cluster_coordinator_details(cc_id):
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # CC master details
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cc_id,
+                cc_name,
+                mobile_no,
+                joining_date,
+                active_flag
+            FROM cluster_coordinator
+            WHERE cc_id = %s
+        """, (cc_id,))
+
+        coordinator = cur.fetchone()
+
+        if not coordinator:
+            return "Cluster Coordinator not found.", 404
+
+        # ----------------------------------------------------
+        # Current cluster assignment
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                cca.cc_assignment_id,
+                cca.cluster_id,
+                cca.assigned_from,
+                cca.assigned_to,
+                cca.active_flag,
+
+                cm.cluster_name,
+
+                sm.segment_id,
+                sm.segment_name
+
+            FROM cluster_coordinator_assignment cca
+
+            JOIN cluster_master cm
+              ON cm.cluster_id = cca.cluster_id
+
+            JOIN segment_master sm
+              ON sm.segment_id = cm.segment_id
+
+            WHERE cca.cc_id = %s
+              AND cca.academic_year_id = %s
+              AND cca.active_flag = TRUE
+
+            ORDER BY cca.assigned_from DESC NULLS LAST
+            LIMIT 1
+        """, (
+            cc_id,
+            academic_year_id
+        ))
+
+        current_assignment = cur.fetchone()
+
+        # ----------------------------------------------------
+        # AVLCs belonging to current cluster
+        # ----------------------------------------------------
+        avlcs = []
+
+        if current_assignment:
+
+            cur.execute("""
+                SELECT
+                    clc.cluster_center_id,
+                    clc.center_id,
+                    clc.assigned_from,
+                    clc.assigned_to,
+                    clc.active_flag,
+
+                    tc.center_code,
+                    tc.center_name
+
+                FROM cluster_center clc
+
+                JOIN tuition_center tc
+                  ON tc.center_id = clc.center_id
+
+                WHERE clc.cluster_id = %s
+                  AND clc.academic_year_id = %s
+                  AND clc.active_flag = TRUE
+
+                ORDER BY tc.center_code
+            """, (
+                current_assignment["cluster_id"],
+                academic_year_id
+            ))
+
+            avlcs = cur.fetchall()
+
+        return render_template(
+            "manage/cluster_coordinator_details.html",
+            coordinator=coordinator,
+            current_assignment=current_assignment,
+            avlcs=avlcs,
+            academic_year=academic_year,
             active_page="manage"
         )
 

@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="manage-page add-tutor-page">
+
+    <!-- ========================================================
+         BACK
+         ======================================================== -->
+
+    <div class="add-tutor-back">
+
+        <a href="{{ url_for('manage_cluster_coordinators') }}"
+           class="manage-btn-secondary">
+            ← Back
+        </a>
+
+    </div>
+
+
+    <!-- ========================================================
+         HEADER
+         ======================================================== -->
+
+    <div class="add-tutor-header">
+
+        <div class="add-tutor-title">
+
+            <h1>Add New Cluster Coordinator</h1>
+
+            <p>
+                Create a Cluster Coordinator and assign the initial cluster
+            </p>
+
+        </div>
+
+
+        <div class="add-tutor-academic-year">
+
+            <span>Academic Year</span>
+
+            <strong>
+                {{ academic_year.academic_year
+                   |replace("2026-2027", "2026-27") }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         VALIDATION ERRORS
+         ======================================================== -->
+
+    {% if errors %}
+
+    <div class="add-tutor-error">
+
+        <ul>
+
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    {% endif %}
+
+
+    <form method="post">
+
+
+        <!-- ====================================================
+             CLUSTER COORDINATOR DETAILS
+             ==================================================== -->
+
+        <section class="add-tutor-section">
+
+            <div class="add-tutor-section-header">
+
+                <h2>
+                    Cluster Coordinator Details
+                </h2>
+
+            </div>
+
+
+            <div class="add-tutor-section-body">
+
+                <div class="add-tutor-form-grid">
+
+
+                    <!-- CC Code -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="cc_code">
+                            CC Code
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="cc_code"
+                            name="cc_code"
+                            value="{{ form.get('cc_code', '') }}"
+                            maxlength="20"
+                            required>
+
+                        <small>
+                            Enter the unique code assigned by AVF.
+                        </small>
+
+                    </div>
+
+
+                    <!-- CC Name -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="cc_name">
+                            CC Name
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="cc_name"
+                            name="cc_name"
+                            value="{{ form.get('cc_name', '') }}"
+                            maxlength="100"
+                            required>
+
+                    </div>
+
+
+                    <!-- Mobile -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="mobile_no">
+                            Mobile Number
+                        </label>
+
+                        <input
+                            type="text"
+                            id="mobile_no"
+                            name="mobile_no"
+                            value="{{ form.get('mobile_no', '') }}"
+                            maxlength="15">
+
+                    </div>
+
+
+                    <!-- Joining Date -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="joining_date">
+                            Joining Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="joining_date"
+                            name="joining_date"
+                            value="{{ form.get('joining_date', '') }}">
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================================
+             INITIAL CLUSTER ASSIGNMENT
+             ==================================================== -->
+
+        <section class="add-tutor-section">
+
+            <div class="add-tutor-section-header">
+
+                <h2>
+                    Initial Cluster Assignment
+                </h2>
+
+            </div>
+
+
+            <div class="add-tutor-section-body">
+
+                <div class="add-tutor-form-grid">
+
+
+                    <!-- Segment -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="segment_id">
+                            Segment
+                            <span class="required">*</span>
+                        </label>
+
+                        <select
+                            id="segment_id"
+                            name="segment_id"
+                            required>
+
+                            <option value="">
+                                Select Segment
+                            </option>
+
+                            {% for segment in segments %}
+
+                            <option
+                                value="{{ segment.segment_id }}"
+                                {% if form.get('segment_id')|string
+                                      == segment.segment_id|string %}
+                                    selected
+                                {% endif %}>
+
+                                {{ segment.segment_name }}
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Cluster -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="cluster_id">
+                            Cluster
+                            <span class="required">*</span>
+                        </label>
+
+                        <select
+                            id="cluster_id"
+                            name="cluster_id"
+                            required>
+
+                            <option value="">
+                                Select Cluster
+                            </option>
+
+                            {% for cluster in clusters %}
+
+                            <option
+                                value="{{ cluster.cluster_id }}"
+                                data-segment-id="{{ cluster.segment_id }}"
+                                {% if form.get('cluster_id')|string
+                                      == cluster.cluster_id|string %}
+                                    selected
+                                {% endif %}>
+
+                                {{ cluster.cluster_name }}
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Assignment From -->
+
+                    <div class="add-tutor-form-group">
+
+                        <label for="assigned_from">
+                            Assignment From
+                            <span class="required">*</span>
+                        </label>
+
+                        <input
+                            type="date"
+                            id="assigned_from"
+                            name="assigned_from"
+                            value="{{ form.get('assigned_from', '') }}"
+                            required>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================================
+             ACTIONS
+             ==================================================== -->
+
+        <div class="add-tutor-actions">
+
+            <a href="{{ url_for('manage_cluster_coordinators') }}"
+               class="manage-btn-secondary">
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="manage-btn-primary">
+                Save CC
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- ============================================================
+     SEGMENT -> CLUSTER FILTER
+     ============================================================ -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const segmentSelect =
+        document.getElementById("segment_id");
+
+    const clusterSelect =
+        document.getElementById("cluster_id");
+
+    const clusterOptions = Array.from(
+        clusterSelect.querySelectorAll(
+            "option[data-segment-id]"
+        )
+    );
+
+
+    function filterClusters() {
+
+        const selectedSegment =
+            segmentSelect.value;
+
+        clusterOptions.forEach(function (option) {
+
+            if (!selectedSegment) {
+
+                option.hidden = false;
+
+            } else {
+
+                option.hidden =
+                    option.dataset.segmentId !== selectedSegment;
+
+            }
+
+        });
+
+
+        const selectedOption =
+            clusterSelect.options[
+                clusterSelect.selectedIndex
+            ];
+
+
+        if (
+            selectedOption &&
+            selectedOption.dataset.segmentId &&
+            selectedSegment &&
+            selectedOption.dataset.segmentId !== selectedSegment
+        ) {
+
+            clusterSelect.value = "";
+
+        }
+
+    }
+
+
+    segmentSelect.addEventListener(
+        "change",
+        filterClusters
+    );
+
+
+    filterClusters();
+
+});
+
+</script>
+
+{% endblock %}
