@@ -1,30 +1,49 @@
-
 {% extends "base.html" %}
 
 {% block content %}
 
-<div class="manage-page">
+<div class="manage-page add-tutor-page">
+
+    <!-- ========================================================
+         BACK BUTTON
+         ======================================================== -->
+
+    <div class="add-tutor-back">
+
+        <a href="{{ url_for('manage_tutors') }}"
+           class="manage-btn-secondary">
+            ← Back
+        </a>
+
+    </div>
+
 
     <!-- ========================================================
          PAGE HEADER
          ======================================================== -->
 
-    <div class="manage-page-header">
+    <div class="add-tutor-header">
 
-        <div>
+        <div class="add-tutor-title">
+
             <h1>Add New Tutor</h1>
 
             <p>
                 Create a tutor record and assign the initial AVLC
             </p>
+
         </div>
 
-        <div class="manage-academic-year">
-            Academic Year
+
+        <div class="add-tutor-academic-year">
+
+            <span>Academic Year</span>
+
             <strong>
                 {{ academic_year.academic_year
                     |replace("2026-2027", "2026-27") }}
             </strong>
+
         </div>
 
     </div>
@@ -36,49 +55,51 @@
 
     {% if errors %}
 
-    <div class="manage-section">
+    <div class="add-tutor-error">
 
-        <div class="manage-section-body">
-
-            <div class="manage-error">
-
-                <ul>
-                    {% for error in errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-
-            </div>
-
-        </div>
+        <ul>
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
 
     </div>
 
     {% endif %}
 
 
+    <!-- ========================================================
+         FORM
+         ======================================================== -->
+
     <form method="post">
+
 
         <!-- ====================================================
              TUTOR DETAILS
              ==================================================== -->
 
-        <div class="manage-section">
+        <section class="add-tutor-section">
 
-            <div class="manage-section-header">
+            <div class="add-tutor-section-header">
+
                 <h2>Tutor Details</h2>
+
             </div>
 
-            <div class="manage-section-body">
 
-                <div class="manage-form-grid">
+            <div class="add-tutor-section-body">
+
+                <div class="add-tutor-form-grid">
+
 
                     <!-- Tutor Code -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="tutor_code">
-                            Tutor Code <span class="required">*</span>
+                            Tutor Code
+                            <span class="required">*</span>
                         </label>
 
                         <input
@@ -99,10 +120,11 @@
 
                     <!-- Tutor Name -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="tutor_name">
-                            Tutor Name <span class="required">*</span>
+                            Tutor Name
+                            <span class="required">*</span>
                         </label>
 
                         <input
@@ -119,15 +141,18 @@
 
                     <!-- Gender -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="gender">
                             Gender
                         </label>
 
-                        <select id="gender" name="gender">
+                        <select id="gender"
+                                name="gender">
 
-                            <option value="">Select</option>
+                            <option value="">
+                                Select
+                            </option>
 
                             <option value="Girl"
                                 {% if form.get('gender') == 'Girl' %}
@@ -155,9 +180,9 @@
                     </div>
 
 
-                    <!-- Mobile -->
+                    <!-- Mobile Number -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="mobile_no">
                             Mobile Number
@@ -176,7 +201,7 @@
 
                     <!-- Date of Birth -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="date_of_birth">
                             Date of Birth
@@ -194,7 +219,7 @@
 
                     <!-- Joining Date -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="joining_date">
                             Joining Date
@@ -212,7 +237,7 @@
 
                     <!-- Qualification -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="qualification_id">
                             Qualification
@@ -229,15 +254,15 @@
 
                             {% for qualification in qualifications %}
 
-                                <option
-                                    value="{{ qualification.qualification_id }}"
-                                    {% if form.get('qualification_id')|string
-                                          == qualification.qualification_id|string %}
-                                        selected
-                                    {% endif %}
-                                >
-                                    {{ qualification.qualification_name }}
-                                </option>
+                            <option
+                                value="{{ qualification.qualification_id }}"
+                                {% if form.get('qualification_id')|string
+                                      == qualification.qualification_id|string %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ qualification.qualification_name }}
+                            </option>
 
                             {% endfor %}
 
@@ -249,29 +274,34 @@
 
             </div>
 
-        </div>
+        </section>
 
 
         <!-- ====================================================
              INITIAL AVLC ASSIGNMENT
              ==================================================== -->
 
-        <div class="manage-section">
+        <section class="add-tutor-section">
 
-            <div class="manage-section-header">
+            <div class="add-tutor-section-header">
+
                 <h2>Initial AVLC Assignment</h2>
+
             </div>
 
-            <div class="manage-section-body">
 
-                <div class="manage-form-grid">
+            <div class="add-tutor-section-body">
+
+                <div class="add-tutor-form-grid">
+
 
                     <!-- AVLC -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="center_id">
-                            AVLC <span class="required">*</span>
+                            AVLC
+                            <span class="required">*</span>
                         </label>
 
                         <select
@@ -286,18 +316,21 @@
 
                             {% for centre in centres %}
 
-                                <option
-                                    value="{{ centre.center_id }}"
-                                    {% if form.get('center_id')|string
-                                          == centre.center_id|string %}
-                                        selected
-                                    {% endif %}
-                                >
-                                    {{ centre.center_code }}
-                                    {% if centre.center_name %}
-                                        - {{ centre.center_name }}
-                                    {% endif %}
-                                </option>
+                            <option
+                                value="{{ centre.center_id }}"
+                                {% if form.get('center_id')|string
+                                      == centre.center_id|string %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ centre.center_code }}
+
+                                {% if centre.center_name %}
+                                    - {{ centre.center_name }}
+                                {% endif %}
+
+                            </option>
 
                             {% endfor %}
 
@@ -308,10 +341,11 @@
 
                     <!-- Assignment From -->
 
-                    <div class="manage-form-group">
+                    <div class="add-tutor-form-group">
 
                         <label for="assigned_from">
-                            Assignment From <span class="required">*</span>
+                            Assignment From
+                            <span class="required">*</span>
                         </label>
 
                         <input
@@ -328,14 +362,14 @@
 
             </div>
 
-        </div>
+        </section>
 
 
         <!-- ====================================================
              ACTIONS
              ==================================================== -->
 
-        <div class="manage-form-actions">
+        <div class="add-tutor-actions">
 
             <a
                 href="{{ url_for('manage_tutors') }}"

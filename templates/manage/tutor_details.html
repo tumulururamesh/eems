@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="manage-page tutor-maintenance-page">
+
+    <!-- ========================================================
+         BACK BUTTON
+         ======================================================== -->
+
+    <div class="tutor-maintenance-back">
+        <a href="{{ url_for('manage_tutors') }}"
+           class="manage-btn-secondary">
+            ← Back
+        </a>
+    </div>
+
+
+    <!-- ========================================================
+         PAGE HEADER
+         ======================================================== -->
+
+    <div class="tutor-maintenance-header">
+
+        <div class="tutor-maintenance-title">
+            <h1>Tutor Maintenance</h1>
+
+            <p>
+                {{ tutor.tutor_name }}
+
+                {% if tutor.tutor_code %}
+                    <span class="tutor-code">
+                        | Tutor Code: {{ tutor.tutor_code }}
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="tutor-maintenance-context">
+
+            <div class="tutor-context-item">
+                <span>Academic Year</span>
+                <strong>
+                    {{ academic_year.academic_year
+                       |replace("2026-2027", "2026-27") }}
+                </strong>
+            </div>
+
+            <div class="tutor-context-item">
+                <span>Current AVLC</span>
+
+                <strong>
+                    {% if current_assignment %}
+                        {{ current_assignment.center_code }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         MAINTENANCE ACTIONS
+         ======================================================== -->
+
+    <div class="tutor-maintenance-grid">
+
+
+        <!-- ====================================================
+             AVLC ASSIGNMENT
+             ==================================================== -->
+
+        <section class="tutor-maintenance-card">
+
+            <div class="tutor-maintenance-card-header">
+                <h2>AVLC Assignment</h2>
+            </div>
+
+            <div class="tutor-maintenance-card-body">
+
+                {% if current_assignment %}
+
+                    <div class="tutor-status-label">
+                        Current AVLC
+                    </div>
+
+                    <div class="tutor-maintenance-value">
+                        {{ current_assignment.center_code }}
+
+                        {% if current_assignment.center_name %}
+                            <span>
+                                — {{ current_assignment.center_name }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <button
+                        type="button"
+                        class="manage-btn-primary"
+                        onclick="toggleSection('shift-avlc')">
+                        Change / Shift AVLC
+                    </button>
+
+                    <!-- Shift AVLC -->
+
+                    <div id="shift-avlc"
+                         class="tutor-action-panel"
+                         style="display:none;">
+
+                        <div class="tutor-action-title">
+                            Change / Shift AVLC
+                        </div>
+
+                        <div class="manage-form-grid">
+
+                            <div class="manage-form-group">
+
+                                <label>
+                                    Current AVLC
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value="{{ current_assignment.center_code }}"
+                                    readonly>
+
+                            </div>
+
+                            <div class="manage-form-group">
+
+                                <label>
+                                    New AVLC
+                                </label>
+
+                                <select disabled>
+                                    <option>
+                                        AVLC selection will be added
+                                    </option>
+                                </select>
+
+                            </div>
+
+                            <div class="manage-form-group">
+
+                                <label>
+                                    Effective From
+                                </label>
+
+                                <input
+                                    type="date"
+                                    disabled>
+
+                            </div>
+
+                        </div>
+
+                        <div class="manage-form-actions">
+
+                            <button
+                                type="button"
+                                class="manage-btn-secondary"
+                                onclick="toggleSection('shift-avlc')">
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                class="manage-btn-primary"
+                                disabled>
+                                Confirm Shift
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="tutor-maintenance-empty">
+                        No current AVLC assignment.
+                    </div>
+
+                    <button
+                        type="button"
+                        class="manage-btn-primary"
+                        onclick="toggleSection('shift-avlc')">
+                        Assign AVLC
+                    </button>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+        <!-- ====================================================
+             TUTOR ROLE
+             ==================================================== -->
+
+        <section class="tutor-maintenance-card">
+
+            <div class="tutor-maintenance-card-header">
+                <h2>Tutor Role</h2>
+            </div>
+
+            <div class="tutor-maintenance-card-body">
+
+                {% if tutor.active_flag %}
+
+                    <div class="tutor-status-label">
+                        Current Status
+                    </div>
+
+                    <div class="tutor-maintenance-value tutor-active-status">
+                        Active
+                    </div>
+
+                    <button
+                        type="button"
+                        class="manage-btn-secondary"
+                        onclick="toggleSection('end-role')">
+                        End Tutor Role
+                    </button>
+
+
+                    <!-- End Role -->
+
+                    <div id="end-role"
+                         class="tutor-action-panel tutor-end-panel"
+                         style="display:none;">
+
+                        <div class="tutor-action-title">
+                            End Tutor Role
+                        </div>
+
+                        <p class="tutor-action-note">
+                            This will end the tutor's current role in the
+                            Foundation. Historical assignments and attendance
+                            records will be preserved.
+                        </p>
+
+                        <div class="manage-form-grid">
+
+                            <div class="manage-form-group">
+
+                                <label>
+                                    Effective From
+                                </label>
+
+                                <input
+                                    type="date"
+                                    disabled>
+
+                            </div>
+
+                            <div class="manage-form-group">
+
+                                <label>
+                                    Reason
+                                </label>
+
+                                <select disabled>
+
+                                    <option>
+                                        Select Reason
+                                    </option>
+
+                                    <option>
+                                        Resigned
+                                    </option>
+
+                                    <option>
+                                        Left Foundation
+                                    </option>
+
+                                    <option>
+                                        Other
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        <div class="manage-form-actions">
+
+                            <button
+                                type="button"
+                                class="manage-btn-secondary"
+                                onclick="toggleSection('end-role')">
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                class="manage-btn-secondary"
+                                disabled>
+                                Confirm End Role
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="tutor-maintenance-empty">
+                        This tutor is inactive.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function toggleSection(sectionId) {
+
+    const section = document.getElementById(sectionId);
+
+    if (!section) {
+        return;
+    }
+
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
+
+</script>
+
+{% endblock %}

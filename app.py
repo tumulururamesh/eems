@@ -6181,6 +6181,118 @@ def manage_tutors():
         conn.close()
 
 
+# ============================================================
+# MANAGE - TUTOR DETAILS
+# ============================================================
+
+@app.route("/manage/tutors/<int:tutor_id>", methods=["GET"])
+@login_required
+@permission_required("MANAGE_TUTORS")
+def tutor_details(tutor_id):
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # ----------------------------------------------------
+        # Current academic year
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE CURRENT_DATE BETWEEN start_date AND end_date
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        academic_year_id = academic_year["academic_year_id"]
+
+        # ----------------------------------------------------
+        # Tutor details
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                tm.tutor_id,
+                tm.tutor_code,
+                tm.tutor_name,
+                tm.gender,
+                tm.mobile_no,
+                tm.date_of_birth,
+                tm.joining_date,
+                tm.qualification_id,
+                tm.active_flag
+            FROM tutor_master tm
+            WHERE tm.tutor_id = %s
+        """, (tutor_id,))
+
+        tutor = cur.fetchone()
+
+        if not tutor:
+            return "Tutor not found.", 404
+
+        # ----------------------------------------------------
+        # Qualification list
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                qualification_id,
+                qualification_name
+            FROM qualification_master
+            WHERE active_flag = TRUE
+            ORDER BY qualification_name
+        """)
+
+        qualifications = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Current AVLC assignment
+        # ----------------------------------------------------
+        cur.execute("""
+            SELECT
+                tca.tutor_assignment_id,
+                tca.center_id,
+                tca.assigned_from,
+                tca.assigned_to,
+                tca.active_flag,
+                tc.center_code,
+                tc.center_name
+            FROM tutor_centre_assignment tca
+            JOIN tuition_center tc
+              ON tc.center_id = tca.center_id
+            WHERE tca.tutor_id = %s
+              AND tca.academic_year_id = %s
+              AND tca.active_flag = TRUE
+            ORDER BY tca.assigned_from DESC
+            LIMIT 1
+        """, (
+            tutor_id,
+            academic_year_id
+        ))
+
+        current_assignment = cur.fetchone()
+
+        return render_template(
+            "manage/tutor_details.html",
+            tutor=tutor,
+            qualifications=qualifications,
+            current_assignment=current_assignment,
+            academic_year=academic_year,
+            active_page="manage"
+        )
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+
 @app.route("/manage")
 @login_required
 @permission_required("MANAGE_CENTRES")
