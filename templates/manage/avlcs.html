@@ -1,0 +1,101 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+
+        <div>
+            <h2 class="mb-1">AVLC Management</h2>
+
+            <div class="text-muted">
+                Create new AVLCs and manage AVLC closure or student transfer
+            </div>
+        </div>
+            <a href="/manage"
+                class="btn btn-outline-secondary">
+                    ← Back
+            </a>
+
+    </div>
+
+
+{% if message %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ message }}
+
+    <button type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close">
+    </button>
+</div>
+{% endif %}
+
+    <!-- MANAGEMENT ACTIONS -->
+    <div class="row g-4">
+
+        <!-- CREATE AVLC -->
+        <div class="col-md-6">
+
+            <div class="card h-100 shadow-sm">
+
+                <div class="card-body d-flex flex-column p-4">
+
+                    <h4 class="mb-2">
+                        Create New AVLC
+                    </h4>
+
+                    <p class="text-muted mb-4">
+                        Create a new Akshaya Vidya Learning Centre using
+                        the AVLC code provided by management.
+                    </p>
+
+                    <a href="{{ url_for('add_avlc') }}"
+                        class="btn btn-outline-primary mt-auto">
+                            Create AVLC
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CLOSE / TRANSFER AVLC -->
+        <div class="col-md-6">
+
+            <div class="card h-100 shadow-sm">
+
+                <div class="card-body d-flex flex-column p-4">
+
+                    <h4 class="mb-2">
+                        Close / Transfer AVLC
+                    </h4>
+
+                    <p class="text-muted mb-4">
+                        Close an AVLC and transfer its active students
+                        to another AVLC while retaining historical records.
+                    </p>
+
+                    <button type="button"
+                            class="btn btn-outline-primary mt-auto"
+                            disabled>
+                        Close / Transfer AVLC
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,367 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="manage-page manage-tutors-page">
+
+    <!-- ========================================================
+         BACK BUTTON
+         ======================================================== -->
+
+    <div class="manage-tutors-back">
+        <a href="{{ url_for('manage') }}"
+           class="manage-btn-secondary">
+            ← Back
+        </a>
+    </div>
+
+
+    <!-- ========================================================
+         PAGE HEADER
+         ======================================================== -->
+
+    <div class="manage-page-header">
+
+        <div>
+            <h1>Manage Segment Incharges</h1>
+
+            <p>
+                Segment Incharge records and current segment assignments
+            </p>
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         KPI CARDS
+         ======================================================== -->
+
+    <div class="manage-kpi-grid">
+
+        <div class="manage-kpi-card">
+
+            <div class="manage-kpi-value">
+                {{ summary.segment_incharges }}
+            </div>
+
+            <div class="manage-kpi-title">
+                Segment Incharges
+            </div>
+
+        </div>
+
+
+        <div class="manage-kpi-card">
+
+            <div class="manage-kpi-value">
+                {{ summary.inactive }}
+            </div>
+
+            <div class="manage-kpi-title">
+                Inactive
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         SUCCESS MESSAGE
+         ======================================================== -->
+
+    {% if message %}
+
+    <div class="manage-success">
+        {{ message }}
+    </div>
+
+    {% endif %}
+
+
+    <!-- ========================================================
+         SEARCH & FILTER
+         ======================================================== -->
+
+    <section class="manage-section">
+
+        <div class="manage-section-header">
+            <h2>Search &amp; Filter</h2>
+        </div>
+
+
+        <div class="manage-section-body">
+
+            <form method="get"
+                  class="tutor-filter-form">
+
+
+                <!-- Search -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="search">
+                        Search
+                    </label>
+
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="SI name, mobile or segment">
+
+                </div>
+
+
+                <!-- Status -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="status">
+                        Status
+                    </label>
+
+                    <select id="status"
+                            name="status">
+
+                        <option value="ACTIVE"
+                            {% if status_filter == "ACTIVE" %}
+                                selected
+                            {% endif %}>
+                            Active
+                        </option>
+
+                        <option value="INACTIVE"
+                            {% if status_filter == "INACTIVE" %}
+                                selected
+                            {% endif %}>
+                            Inactive
+                        </option>
+
+                        <option value="ALL"
+                            {% if status_filter == "ALL" %}
+                                selected
+                            {% endif %}>
+                            All
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Segment -->
+
+                <div class="tutor-filter-group">
+
+                    <label for="segment">
+                        Segment
+                    </label>
+
+                    <select id="segment"
+                            name="segment">
+
+                        <option value="">
+                            All Segments
+                        </option>
+
+                        {% for segment in segments %}
+
+                        <option
+                            value="{{ segment.segment_id }}"
+                            {% if segment_filter|string == segment.segment_id|string %}
+                                selected
+                            {% endif %}>
+                            {{ segment.segment_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <!-- Actions -->
+
+                <div class="tutor-filter-actions">
+
+                    <button
+                        type="submit"
+                        class="tutor-btn-primary">
+                        Apply
+                    </button>
+
+                    <a
+                        href="{{ url_for('manage_segment_incharges') }}"
+                        class="tutor-btn-secondary">
+                        Clear
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SEGMENT INCHARGE LIST
+         ======================================================== -->
+
+    <section class="manage-section">
+
+        <div class="manage-section-header tutor-list-header">
+
+            <h2>
+                Segment Incharge List
+            </h2>
+
+            <!-- Add SI will be enabled in the next step -->
+
+            <button
+                type="button"
+                class="add-tutor-btn"
+                disabled>
+                + Add SI
+            </button>
+
+        </div>
+
+
+        <div class="manage-section-body tutor-list-body">
+
+            {% if segment_incharges %}
+
+            <div class="manage-table-wrapper">
+
+                <table class="manage-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>SI Name</th>
+                            <th>Mobile</th>
+                            <th>Segment</th>
+                            <th>Clusters</th>
+                            <th>Assigned From</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for si in segment_incharges %}
+
+                        <tr>
+
+                            <!-- SI Name -->
+
+                            <td>
+                                {{ si.full_name }}
+                            </td>
+
+
+                            <!-- Mobile -->
+
+                            <td>
+                                {{ si.mobile_no or "—" }}
+                            </td>
+
+
+                            <!-- Segment -->
+
+                            <td>
+
+                                {% if si.segment_name %}
+                                    {{ si.segment_name }}
+                                {% else %}
+                                    —
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Cluster Count -->
+
+                            <td>
+                                {{ si.cluster_count or 0 }}
+                            </td>
+
+
+                            <!-- Assigned From -->
+
+                            <td>
+                                {{ si.segment_assigned_from or "—" }}
+                            </td>
+
+
+                            <!-- Status -->
+
+                            <td>
+
+                                {% if si.user_active and si.role_active %}
+
+                                    <span class="status-active">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status-inactive">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Action -->
+
+                            <td>
+
+                                <!-- SI Maintenance page comes next -->
+
+                                <button
+                                    type="button"
+                                    class="tutor-view-btn"
+                                    disabled>
+                                    View
+                                </button>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <div class="manage-empty-state">
+                No Segment Incharges found for the selected criteria.
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

@@ -18,89 +18,126 @@
     </div>
 
     <!-- People -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">People</h5>
-        </div>
+<div class="card mb-4">
 
-        <div class="card-body">
-            <div class="row g-3">
-
-                <div class="col-md-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5>Students</h5>
-                            <p class="text-muted">
-                                Manage student enrolments, status and AVLC assignments.
-                            </p>
-                            <a href="{{ url_for('manage_students') }}">
-                                Manage Students
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5>Tutors</h5>
-                            <p class="text-muted">
-                                Add, edit and deactivate tutors.
-                            </p>
-                            <a href="{{ url_for('manage_tutors') }}">
-                                Tutors
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5>Cluster Coordinators</h5>
-                            <p class="text-muted">
-                                Manage CCs and their assignments.
-                            </p>
-                            <a href="{{ url_for('manage_cluster_coordinators') }}">
-                                Cluster Coordinators
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5>Segment Incharges</h5>
-                            <p class="text-muted">
-                                Manage SIs and their assignments.
-                            </p>
-                            <span class="text-muted small">
-                                Coming next
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
+    <div class="card-header">
+        <h5 class="mb-0">People</h5>
     </div>
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            <!-- STUDENTS -->
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+
+                        <h5>Students</h5>
+
+                        <p class="text-muted">
+                            Manage student enrolments, status and AVLC assignments.
+                        </p>
+
+                        <a href="{{ url_for('manage_students') }}"
+                           class="btn btn-outline-primary mt-auto">
+                            Manage Students
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- TUTORS -->
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+
+                        <h5>Tutors</h5>
+
+                        <p class="text-muted">
+                            Add, edit and deactivate tutors.
+                        </p>
+
+                        <a href="{{ url_for('manage_tutors') }}"
+                           class="btn btn-outline-primary mt-auto">
+                            Manage Tutors
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- CLUSTER COORDINATORS -->
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+
+                        <h5>Cluster Coordinators</h5>
+
+                        <p class="text-muted">
+                            Manage CCs and their cluster assignments.
+                        </p>
+
+                        <a href="{{ url_for('manage_cluster_coordinators') }}"
+                           class="btn btn-outline-primary mt-auto">
+                            Manage CCs
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- SEGMENT INCHARGES -->
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+
+                        <h5>Segment Incharges</h5>
+
+                        <p class="text-muted">
+                            Manage SIs and their segment assignments.
+                        </p>
+
+                        <a href="{{ url_for('manage_segment_incharges') }}"
+                           class="btn btn-outline-primary mt-auto">
+                            Manage SIs
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
     <!-- AVLCs -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">AVLCs</h5>
-        </div>
+<div class="card mb-4">
 
-        <div class="card-body">
-            <p class="text-muted mb-2">
-                Manage AVLC details and status.
-            </p>
-            <span class="text-muted small">
-                Coming next
-            </span>
-        </div>
+    <div class="card-header">
+        <h5 class="mb-0">AVLCs</h5>
     </div>
+
+    <div class="card-body">
+
+        <p class="text-muted mb-3">
+            Create new AVLCs and manage AVLC closure or student transfer.
+        </p>
+
+        <a href="{{ url_for('manage_avlcs') }}"
+           class="btn btn-outline-primary">
+            Manage AVLCs
+        </a>
+
+    </div>
+
+</div>
 
     <!-- Assignments -->
     <div class="card mb-4">

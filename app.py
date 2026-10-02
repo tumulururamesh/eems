@@ -18,8 +18,7 @@ from psycopg2.extras import RealDictCursor
 
 from excel_export import export_report_to_excel
 
-from werkzeug.security import check_password_hash
-
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 app = Flask(__name__)
@@ -7054,6 +7053,760 @@ def cluster_coordinator_details(cc_id):
     finally:
         cur.close()
         conn.close()
+
+
+# ============================================================
+# MANAGE - SEGMENT INCHARGES
+# ============================================================
+
+@app.route("/manage/segment-incharges")
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def manage_segment_incharges():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        # ----------------------------------------------------
+        # Filters
+        # ----------------------------------------------------
+
+        search = request.args.get("search", "").strip()
+        status_filter = request.args.get("status", "ACTIVE").strip()
+        segment_filter = request.args.get("segment", "").strip()
+
+        message = request.args.get("message", "").strip()
+
+        # ----------------------------------------------------
+        # Summary
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                COUNT(DISTINCT u.user_id) AS segment_incharges,
+
+                COUNT(DISTINCT u.user_id) FILTER (
+                    WHERE ur.active_flag = FALSE
+                       OR u.active_flag = FALSE
+                ) AS inactive
+
+            FROM aems_user u
+
+            JOIN user_role ur
+              ON ur.user_id = u.user_id
+
+            JOIN role_master rm
+              ON rm.role_id = ur.role_id
+
+            WHERE rm.role_code = 'SEGMENT_INCHARGE'
+        """)
+
+        summary = cur.fetchone()
+
+        # ----------------------------------------------------
+        # Active Segment list for filter
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE active_flag = TRUE
+            ORDER BY segment_name
+        """)
+
+        segments = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Segment Incharge list
+        #
+        # Current SEGMENT access determines the SI's
+        # current segment responsibility.
+        # ----------------------------------------------------
+
+        query = """
+            SELECT
+                u.user_id,
+                u.username,
+                u.full_name,
+                u.mobile_no,
+                u.active_flag AS user_active,
+
+                ur.assigned_from AS role_assigned_from,
+                ur.active_flag AS role_active,
+
+                ua.user_access_id,
+                ua.assigned_from AS segment_assigned_from,
+                ua.segment_id,
+
+                sm.segment_name,
+
+                COUNT(DISTINCT cm.cluster_id) FILTER (
+                    WHERE cm.active_flag = TRUE
+                ) AS cluster_count
+
+            FROM aems_user u
+
+            JOIN user_role ur
+              ON ur.user_id = u.user_id
+
+            JOIN role_master rm
+              ON rm.role_id = ur.role_id
+
+            LEFT JOIN user_access ua
+              ON ua.user_id = u.user_id
+             AND ua.access_scope = 'SEGMENT'
+             AND ua.active_flag = TRUE
+
+            LEFT JOIN segment_master sm
+              ON sm.segment_id = ua.segment_id
+
+            LEFT JOIN cluster_master cm
+              ON cm.segment_id = sm.segment_id
+             AND cm.active_flag = TRUE
+
+            WHERE rm.role_code = 'SEGMENT_INCHARGE'
+        """
+
+        params = []
+
+        # ----------------------------------------------------
+        # Search
+        # ----------------------------------------------------
+
+        if search:
+
+            query += """
+                AND (
+                    u.full_name ILIKE %s
+                    OR u.username ILIKE %s
+                    OR COALESCE(u.mobile_no, '') ILIKE %s
+                    OR COALESCE(sm.segment_name, '') ILIKE %s
+                )
+            """
+
+            search_value = f"%{search}%"
+
+            params.extend([
+                search_value,
+                search_value,
+                search_value,
+                search_value
+            ])
+
+        # ----------------------------------------------------
+        # Status
+        # ----------------------------------------------------
+
+        if status_filter == "ACTIVE":
+
+            query += """
+                AND u.active_flag = TRUE
+                AND ur.active_flag = TRUE
+            """
+
+        elif status_filter == "INACTIVE":
+
+            query += """
+                AND (
+                    u.active_flag = FALSE
+                    OR ur.active_flag = FALSE
+                )
+            """
+
+        # ----------------------------------------------------
+        # Segment
+        # ----------------------------------------------------
+
+        if segment_filter:
+
+            query += """
+                AND sm.segment_id = %s
+            """
+
+            params.append(segment_filter)
+
+        query += """
+            GROUP BY
+                u.user_id,
+                u.username,
+                u.full_name,
+                u.mobile_no,
+                u.active_flag,
+
+                ur.assigned_from,
+                ur.active_flag,
+
+                ua.user_access_id,
+                ua.assigned_from,
+                ua.segment_id,
+
+                sm.segment_name
+
+            ORDER BY
+                u.full_name
+        """
+
+        cur.execute(query, tuple(params))
+
+        segment_incharges = cur.fetchall()
+
+        return render_template(
+            "manage/segment_incharges.html",
+            segment_incharges=segment_incharges,
+            segments=segments,
+            summary=summary,
+            search=search,
+            status_filter=status_filter,
+            segment_filter=segment_filter,
+            message=message,
+            active_page="manage"
+        )
+
+    finally:
+        cur.close()
+        conn.close()
+
+# ============================================================
+# MANAGE - ADD SEGMENT INCHARGE
+# ============================================================
+
+@app.route("/manage/segment-incharges/add", methods=["GET", "POST"])
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def add_segment_incharge():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        # ----------------------------------------------------
+        # Active segments
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE active_flag = TRUE
+            ORDER BY segment_name
+        """)
+
+        segments = cur.fetchall()
+
+        # ----------------------------------------------------
+        # GET
+        # ----------------------------------------------------
+
+        if request.method == "GET":
+
+            return render_template(
+                "manage/add_segment_incharge.html",
+                segments=segments,
+                form={},
+                errors=[],
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # POST
+        # ----------------------------------------------------
+
+        employee_code = request.form.get("employee_code", "").strip()
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip()
+        mobile_no = request.form.get("mobile_no", "").strip() or None
+
+        segment_id = request.form.get("segment_id", "").strip()
+        assigned_from = request.form.get("assigned_from", "").strip()
+
+        errors = []
+
+        # ----------------------------------------------------
+        # Required fields
+        # ----------------------------------------------------
+
+        if not employee_code:
+            errors.append("SI Name is required.")
+
+        if not username:
+            errors.append("Username is required.")
+
+        if not segment_id:
+            errors.append("Segment is required.")
+
+        if not assigned_from:
+            errors.append("Assignment From date is required.")
+
+        # ----------------------------------------------------
+        # Username uniqueness
+        # ----------------------------------------------------
+
+        if username:
+
+            cur.execute("""
+                SELECT user_id
+                FROM aems_user
+                WHERE LOWER(username) = LOWER(%s)
+                LIMIT 1
+            """, (username,))
+
+            if cur.fetchone():
+
+                errors.append(
+                    "Username already exists. "
+                    "Please enter a unique username."
+                )
+
+        # ----------------------------------------------------
+        # Validate selected segment
+        # ----------------------------------------------------
+
+        if segment_id:
+
+            cur.execute("""
+                SELECT segment_id
+                FROM segment_master
+                WHERE segment_id = %s
+                  AND active_flag = TRUE
+                LIMIT 1
+            """, (segment_id,))
+
+            if not cur.fetchone():
+
+                errors.append(
+                    "Selected Segment is not active or does not exist."
+                )
+
+        # ----------------------------------------------------
+        # Validation errors
+        # ----------------------------------------------------
+
+        if errors:
+
+            return render_template(
+                "manage/add_segment_incharge.html",
+                segments=segments,
+                form=request.form,
+                errors=errors,
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # Get Segment Incharge role
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT role_id
+            FROM role_master
+            WHERE role_code = 'SEGMENT_INCHARGE'
+              AND active_flag = TRUE
+            LIMIT 1
+        """)
+
+        role = cur.fetchone()
+
+        if not role:
+            return "Segment Incharge role is not configured.", 500
+
+        role_id = role["role_id"]
+
+        # ----------------------------------------------------
+        # Create User + Role + Segment Access
+        #
+        # Multiple active SIs may temporarily be assigned
+        # to the same segment during transition / handover.
+        # Existing SI assignments are NOT changed here.
+        # ----------------------------------------------------
+
+        try:
+
+            # Temporary initial password.
+            # We will improve password handling separately.
+
+            initial_password = "demo@123"
+
+            password_hash = generate_password_hash(
+                initial_password
+            )
+
+            # Create AEMS user
+
+            cur.execute("""
+                INSERT INTO aems_user (
+                    employee_code,
+                    username,
+                    password_hash,
+                    full_name,
+                    mobile_no,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, TRUE
+                )
+                RETURNING user_id
+            """, (
+                employee_code,
+                username,
+                password_hash,
+                full_name,
+                mobile_no
+            ))
+
+            user_id = cur.fetchone()["user_id"]
+
+            # Assign Segment Incharge role
+
+            cur.execute("""
+                INSERT INTO user_role (
+                    user_id,
+                    role_id,
+                    assigned_from,
+                    assigned_to,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, NULL, TRUE
+                )
+            """, (
+                user_id,
+                role_id,
+                assigned_from
+            ))
+
+            # Assign Segment access
+
+            cur.execute("""
+                INSERT INTO user_access (
+                    user_id,
+                    access_scope,
+                    segment_id,
+                    assigned_from,
+                    assigned_to,
+                    active_flag
+                )
+                VALUES (
+                    %s, 'SEGMENT', %s, %s, NULL, TRUE
+                )
+            """, (
+                user_id,
+                segment_id,
+                assigned_from
+            ))
+
+            conn.commit()
+
+            return redirect(
+                url_for(
+                    "manage_segment_incharges",
+                    message="Segment Incharge added successfully."
+                )
+            )
+
+        except Exception:
+            conn.rollback()
+            raise
+
+    finally:
+        cur.close()
+        conn.close()
+
+# ============================================================
+# MANAGE - AVLCS
+# ============================================================
+
+@app.route("/manage/avlcs")
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def manage_avlcs():
+
+    message = request.args.get("message", "").strip()
+
+    return render_template(
+        "manage/avlcs.html",
+        message=message,
+        active_page="manage"
+    )
+
+# ============================================================
+# MANAGE - CREATE AVLC
+# ============================================================
+
+@app.route("/manage/avlcs/add", methods=["GET", "POST"])
+@login_required
+@permission_required("MANAGE_ASSIGNMENTS")
+def add_avlc():
+
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+
+        # ----------------------------------------------------
+        # Current Academic Year
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                academic_year_id,
+                academic_year
+            FROM academic_year_master
+            WHERE active_flag = TRUE
+            ORDER BY start_date DESC
+            LIMIT 1
+        """)
+
+        academic_year = cur.fetchone()
+
+        if not academic_year:
+            return "No active academic year configured.", 500
+
+        # ----------------------------------------------------
+        # Active Areas
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                area_id,
+                area_name
+            FROM area_master
+            WHERE active_flag = TRUE
+            ORDER BY area_name
+        """)
+
+        areas = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Active Segments
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                segment_id,
+                segment_name
+            FROM segment_master
+            WHERE active_flag = TRUE
+            ORDER BY segment_name
+        """)
+
+        segments = cur.fetchall()
+
+        # ----------------------------------------------------
+        # Active Clusters
+        # ----------------------------------------------------
+
+        cur.execute("""
+            SELECT
+                cm.cluster_id,
+                cm.cluster_name,
+                cm.segment_id
+            FROM cluster_master cm
+            WHERE cm.active_flag = TRUE
+            ORDER BY cm.cluster_name
+        """)
+
+        clusters = cur.fetchall()
+
+        # ----------------------------------------------------
+        # GET
+        # ----------------------------------------------------
+
+        if request.method == "GET":
+
+            return render_template(
+                "manage/add_avlc.html",
+                academic_year=academic_year,
+                areas=areas,
+                segments=segments,
+                clusters=clusters,
+                form={},
+                errors=[],
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # POST
+        # ----------------------------------------------------
+
+        center_code = request.form.get("center_code", "").strip().upper()
+        center_name = request.form.get("center_name", "").strip()
+        area_id = request.form.get("area_id", "").strip()
+        start_date = request.form.get("start_date", "").strip()
+        segment_id = request.form.get("segment_id", "").strip()
+        cluster_id = request.form.get("cluster_id", "").strip()
+        remarks = request.form.get("remarks", "").strip() or None
+
+        errors = []
+
+        # ----------------------------------------------------
+        # Required fields
+        # ----------------------------------------------------
+
+        if not center_code:
+            errors.append("AVLC Code is required.")
+
+        if not center_name:
+            errors.append("AVLC Name is required.")
+
+        if not area_id:
+            errors.append("Area is required.")
+
+        if not start_date:
+            errors.append("Start Date is required.")
+
+        if not segment_id:
+            errors.append("Segment is required.")
+
+        if not cluster_id:
+            errors.append("Cluster is required.")
+
+        # ----------------------------------------------------
+        # AVLC Code must be unique
+        # ----------------------------------------------------
+
+        if center_code:
+
+            cur.execute("""
+                SELECT center_id
+                FROM tuition_center
+                WHERE UPPER(center_code) = UPPER(%s)
+                LIMIT 1
+            """, (center_code,))
+
+            if cur.fetchone():
+                errors.append(
+                    "AVLC Code already exists."
+                )
+
+        # ----------------------------------------------------
+        # Validate Area
+        # ----------------------------------------------------
+
+        if area_id:
+
+            cur.execute("""
+                SELECT area_id
+                FROM area_master
+                WHERE area_id = %s
+                  AND active_flag = TRUE
+                LIMIT 1
+            """, (area_id,))
+
+            if not cur.fetchone():
+                errors.append(
+                    "Selected Area is not active or does not exist."
+                )
+
+        # ----------------------------------------------------
+        # Validate Segment / Cluster relationship
+        # ----------------------------------------------------
+
+        if segment_id and cluster_id:
+
+            cur.execute("""
+                SELECT cluster_id
+                FROM cluster_master
+                WHERE cluster_id = %s
+                  AND segment_id = %s
+                  AND active_flag = TRUE
+                LIMIT 1
+            """, (
+                cluster_id,
+                segment_id
+            ))
+
+            if not cur.fetchone():
+                errors.append(
+                    "Selected Cluster does not belong to the selected Segment."
+                )
+
+        # ----------------------------------------------------
+        # Validation errors
+        # ----------------------------------------------------
+
+        if errors:
+
+            return render_template(
+                "manage/add_avlc.html",
+                academic_year=academic_year,
+                areas=areas,
+                segments=segments,
+                clusters=clusters,
+                form=request.form,
+                errors=errors,
+                active_page="manage"
+            )
+
+        # ----------------------------------------------------
+        # Create AVLC + Cluster Assignment
+        # ----------------------------------------------------
+
+        try:
+
+            cur.execute("""
+                INSERT INTO tuition_center (
+                    center_code,
+                    center_name,
+                    area_id,
+                    start_date,
+                    status,
+                    remarks
+                )
+                VALUES (
+                    %s, %s, %s, %s, 'ACTIVE', %s
+                )
+                RETURNING center_id
+            """, (
+                center_code,
+                center_name,
+                area_id,
+                start_date,
+                remarks
+            ))
+
+            center_id = cur.fetchone()["center_id"]
+
+            cur.execute("""
+                INSERT INTO cluster_center (
+                    cluster_id,
+                    center_id,
+                    academic_year_id,
+                    assigned_from,
+                    assigned_to,
+                    active_flag
+                )
+                VALUES (
+                    %s, %s, %s, %s, NULL, TRUE
+                )
+            """, (
+                cluster_id,
+                center_id,
+                academic_year["academic_year_id"],
+                start_date
+            ))
+
+            conn.commit()
+
+            return redirect(
+                url_for(
+                    "manage_avlcs",
+                    message=f"AVLC {center_code} created successfully."
+                )
+            )
+
+        except Exception:
+            conn.rollback()
+            raise
+
+    finally:
+        cur.close()
+        conn.close()
+
 
 
 # ============================================================

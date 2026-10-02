@@ -1,0 +1,242 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+
+        <div>
+            <h2 class="mb-1">Add Segment Incharge</h2>
+
+            <div class="text-muted">
+                Induct a new Segment Incharge and assign a segment
+            </div>
+        </div>
+
+        <a href="{{ url_for('manage_segment_incharges') }}"
+           class="btn btn-outline-secondary">
+            ← Back
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         VALIDATION ERRORS
+    ====================================================== -->
+
+    {% if errors %}
+
+        <div class="alert alert-danger">
+
+            <strong>Please correct the following:</strong>
+
+            <ul class="mb-0 mt-2">
+                {% for error in errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =====================================================
+         ADD SI FORM
+    ====================================================== -->
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Segment Incharge Details</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                <div class="row g-3">
+
+                    <!-- SI CODE -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            SI Code
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text"
+                            name="employee_code"
+                            class="form-control"
+                            value="{{ form.get('employee_code', '') }}"
+                            required>
+
+                        <div class="form-text">
+                            Enter the employee code assigned by AVF.
+                        </div>
+
+                    </div>
+
+
+                    <!-- SI NAME -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            SI Name
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text"
+                            name="full_name"
+                            class="form-control"
+                            value="{{ form.get('full_name', '') }}"
+                            required>
+
+                    </div>
+
+
+                    <!-- MOBILE NUMBER -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Mobile Number
+                        </label>
+
+                        <input type="text"
+                            name="mobile_no"
+                            class="form-control"
+                            value="{{ form.get('mobile_no', '') }}">
+
+                    </div>
+
+
+                    <!-- USERNAME -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Username
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text"
+                            name="username"
+                            class="form-control"
+                            value="{{ form.get('username', '') }}"
+                            required>
+
+                        <div class="form-text">
+                            Username used by the SI to log in to AEMS.
+                        </div>
+
+                    </div>
+
+
+                    <!-- SEGMENT -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Segment
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <select name="segment_id"
+                                class="form-select"
+                                required>
+
+                            <option value="">
+                                Select Segment
+                            </option>
+
+                            {% for segment in segments %}
+
+                                <option value="{{ segment.segment_id }}"
+                                    {% if form.get('segment_id', '')|string
+                                        == segment.segment_id|string %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ segment.segment_name }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- ASSIGNED FROM -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Assigned From
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="date"
+                            name="assigned_from"
+                            class="form-control"
+                            value="{{ form.get('assigned_from', '') }}"
+                            required>
+
+                    </div>
+
+
+                <!-- =================================================
+                     INFORMATION
+                ================================================== -->
+
+                <div class="alert alert-light border mt-4 mb-0">
+
+                    <strong>Initial Login Password:</strong>
+                    demo@123
+
+                    <div class="small text-muted mt-1">
+                        Segment access will be assigned automatically
+                        based on the selected segment.
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     ACTIONS
+                ================================================== -->
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+
+                    <a href="{{ url_for('manage_segment_incharges') }}"
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Add Segment Incharge
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

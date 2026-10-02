@@ -1,0 +1,352 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+
+        <div>
+            <h2 class="mb-1">Create New AVLC</h2>
+
+            <div class="text-muted">
+                Create a new Akshaya Vidya Learning Centre
+            </div>
+        </div>
+
+        <a href="{{ url_for('manage_avlcs') }}"
+           class="btn btn-outline-secondary">
+            ← Back
+        </a>
+
+    </div>
+
+
+    <!-- ACADEMIC YEAR -->
+    <div class="alert alert-light border mb-4">
+
+        <strong>Academic Year:</strong>
+        {{ academic_year.academic_year }}
+
+        <div class="small text-muted mt-1">
+            The AVLC will be assigned to its cluster for the current academic year.
+        </div>
+
+    </div>
+
+
+    <!-- VALIDATION ERRORS -->
+    {% if errors %}
+
+        <div class="alert alert-danger">
+
+            <strong>Please correct the following:</strong>
+
+            <ul class="mb-0 mt-2">
+                {% for error in errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    {% endif %}
+
+
+    <form method="POST">
+
+        <!-- =====================================================
+             AVLC DETAILS
+        ====================================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+                <h5 class="mb-0">AVLC Details</h5>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row g-3">
+
+                    <!-- AVLC CODE -->
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            AVLC Code
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text"
+                               name="center_code"
+                               class="form-control"
+                               value="{{ form.get('center_code', '') }}"
+                               required>
+
+                        <div class="form-text">
+                            Enter the AVLC code provided by management.
+                        </div>
+
+                    </div>
+
+
+                    <!-- AVLC NAME -->
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            AVLC Name
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text"
+                               name="center_name"
+                               class="form-control"
+                               value="{{ form.get('center_name', '') }}"
+                               required>
+
+                    </div>
+
+
+                    <!-- AREA -->
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Area
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <select name="area_id"
+                                class="form-select"
+                                required>
+
+                            <option value="">Select Area</option>
+
+                            {% for area in areas %}
+
+                                <option value="{{ area.area_id }}"
+                                    {% if form.get('area_id', '')|string
+                                          == area.area_id|string %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ area.area_name }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- START DATE -->
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Start Date
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="date"
+                               name="start_date"
+                               class="form-control"
+                               value="{{ form.get('start_date', '') }}"
+                               required>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             ORGANISATIONAL ASSIGNMENT
+        ====================================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+                <h5 class="mb-0">Organisational Assignment</h5>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row g-3">
+
+                    <!-- SEGMENT -->
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Segment
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <select name="segment_id"
+                                id="segment_id"
+                                class="form-select"
+                                required>
+
+                            <option value="">Select Segment</option>
+
+                            {% for segment in segments %}
+
+                                <option value="{{ segment.segment_id }}"
+                                    {% if form.get('segment_id', '')|string
+                                          == segment.segment_id|string %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ segment.segment_name }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- CLUSTER -->
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Cluster
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <select name="cluster_id"
+                                id="cluster_id"
+                                class="form-select"
+                                required>
+
+                            <option value="">Select Cluster</option>
+
+                            {% for cluster in clusters %}
+
+                                <option value="{{ cluster.cluster_id }}"
+                                        data-segment="{{ cluster.segment_id }}"
+                                    {% if form.get('cluster_id', '')|string
+                                          == cluster.cluster_id|string %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ cluster.cluster_name }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                        <div class="form-text">
+                            Only clusters belonging to the selected segment are shown.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             REMARKS
+        ====================================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+                <h5 class="mb-0">Remarks</h5>
+            </div>
+
+            <div class="card-body">
+
+                <textarea name="remarks"
+                          class="form-control"
+                          rows="3"
+                          placeholder="Optional remarks">{{ form.get('remarks', '') }}</textarea>
+
+            </div>
+
+        </div>
+
+
+        <!-- ACTIONS -->
+        <div class="d-flex justify-content-end gap-2">
+
+            <a href="{{ url_for('manage_avlcs') }}"
+               class="btn btn-outline-secondary">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                Create AVLC
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =========================================================
+     FILTER CLUSTERS BY SEGMENT
+========================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const segmentSelect = document.getElementById("segment_id");
+    const clusterSelect = document.getElementById("cluster_id");
+
+    const clusterOptions = Array.from(
+        clusterSelect.querySelectorAll("option[data-segment]")
+    );
+
+    function filterClusters() {
+
+        const selectedSegment = segmentSelect.value;
+        const currentCluster = clusterSelect.value;
+
+        clusterOptions.forEach(function (option) {
+
+            option.hidden =
+                !selectedSegment ||
+                option.dataset.segment !== selectedSegment;
+
+        });
+
+        const selectedOption =
+            clusterSelect.options[clusterSelect.selectedIndex];
+
+        if (
+            selectedOption &&
+            selectedOption.dataset.segment &&
+            selectedOption.dataset.segment !== selectedSegment
+        ) {
+            clusterSelect.value = "";
+        }
+
+    }
+
+    segmentSelect.addEventListener("change", filterClusters);
+
+    filterClusters();
+
+});
+
+</script>
+
+{% endblock %}
