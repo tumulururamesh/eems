@@ -276,9 +276,9 @@
         <!-- CC CENTRE CONTEXT MENU -->
         <!-- ===================================== -->
 
-        {% if session.get("role") == "cluster_incharge"
-              and centre_context
-              and centre_id %}
+        {% if session.get("role") in ["cluster_incharge", "segment_incharge"]
+                and centre_context
+                and centre_id %}
 
             <li class="nav-item">
 

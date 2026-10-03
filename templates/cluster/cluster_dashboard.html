@@ -11,6 +11,16 @@ Cluster Coordinator Dashboard
 
 <div class="container-fluid">
 
+    {% if session.get("role") == "segment_incharge" %}
+    <div class="d-flex justify-content-end mb-3">
+        <a href="/segment/{{ session.get('segment') }}"
+        class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to My Segment
+        </a>
+    </div>
+    {% endif %}
+
     <!-- ===================================================== -->
     <!-- Page Heading -->
     <!-- ===================================================== -->
