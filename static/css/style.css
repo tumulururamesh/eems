@@ -3218,6 +3218,55 @@ REPORT COLUMN WIDTHS
 
 }
 
+/* =========================================================
+   STUDENT LIST TABLE
+   ========================================================= */
+
+.student-list-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.student-list-table th:nth-child(1),
+.student-list-table td:nth-child(1) {
+    width: 4%;
+}
+
+.student-list-table th:nth-child(2),
+.student-list-table td:nth-child(2) {
+    width: 14%;
+}
+
+.student-list-table th:nth-child(3),
+.student-list-table td:nth-child(3) {
+    width: 25%;
+}
+
+.student-list-table th:nth-child(4),
+.student-list-table td:nth-child(4) {
+    width: 14%;
+}
+
+.student-list-table th:nth-child(5),
+.student-list-table td:nth-child(5) {
+    width: 9%;
+}
+
+.student-list-table th:nth-child(6),
+.student-list-table td:nth-child(6) {
+    width: 8%;
+}
+
+.student-list-table th:nth-child(7),
+.student-list-table td:nth-child(7) {
+    width: 14%;
+}
+
+.student-list-table th:nth-child(8),
+.student-list-table td:nth-child(8) {
+    width: 12%;
+}
+
 /***********************************************************************
 DEVELOPER NOTES
 

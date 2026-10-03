@@ -449,10 +449,19 @@
 
             <span class="me-3">
                 <strong>Role:</strong>
+
                 {% if session.get("role") == "operational_head" %}
                     Operations Head
+
+                {% elif session.get("role") == "cluster_incharge" %}
+                    Cluster Coordinator
+
+                {% elif session.get("role") == "segment_incharge" %}
+                    Segment Incharge
+
                 {% else %}
                     {{ session.get("role") | replace("_", " ") | title }}
+
                 {% endif %}
             </span>
 

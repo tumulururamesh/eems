@@ -151,16 +151,16 @@ Students
                         <i class="bi bi-people-fill"></i>
 
                         <div class="group-name">
-                            Total Students
+                            Enrollments
                         </div>
 
                         <div class="group-count">
-                            {{ total_stats["total"] }}
+                            {{ total_enrollments }}
 
-                            {% if total_stats["total"] == 1 %}
-                                Student
+                            {% if total_enrollments == 1 %}
+                                Enrollment
                             {% else %}
-                                Students
+                                Enrollments
                             {% endif %}
                         </div>
 
@@ -176,6 +176,10 @@ Students
                                 {{ total_stats["girls"] }} Girls
                             </span>
 
+                        </div>
+
+                        <div class="mt-2 small">
+                            Inactive: <strong>{{ inactive_count }}</strong>
                         </div>
 
                     </div>
@@ -244,22 +248,33 @@ Students
 
             <div class="row g-3">
 
-                {% for class_no in range(1, 7) %}
+                {% set class_buckets = [
+                    ("lower", "Lower Class"),
+                    (1, "Class 1"),
+                    (2, "Class 2"),
+                    (3, "Class 3"),
+                    (4, "Class 4"),
+                    (5, "Class 5"),
+                    (6, "Class 6"),
+                    ("higher", "Higher Class")
+                ] %}
 
-                <div class="col-12 col-sm-6 col-lg-2">
+                {% for class_key, class_label in class_buckets %}
+
+                <div class="col-12 col-sm-6 col-md-3">
 
                     <div class="class-summary-card">
 
                         <i class="bi bi-mortarboard-fill"></i>
 
                         <div class="class-name">
-                            Class {{ class_no }}
+                            {{ class_label }}
                         </div>
 
                         <div class="class-count">
-                            {{ class_stats[class_no]["total"] }}
+                            {{ class_stats[class_key]["total"] }}
 
-                            {% if class_stats[class_no]["total"] == 1 %}
+                            {% if class_stats[class_key]["total"] == 1 %}
                                 Student
                             {% else %}
                                 Students
@@ -269,11 +284,11 @@ Students
                         <div class="gender-summary">
 
                             <span>
-                                {{ class_stats[class_no]["boys"] }} Boys
+                                {{ class_stats[class_key]["boys"] }} Boys
                             </span>
 
                             <span>
-                                {{ class_stats[class_no]["girls"] }} Girls
+                                {{ class_stats[class_key]["girls"] }} Girls
                             </span>
 
                         </div>
@@ -569,22 +584,20 @@ function showStudents(groupCode) {
 
         <div class="table-responsive">
 
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0 student-list-table">
 
                 <thead>
 
                     <tr>
 
                         <th>#</th>
-
                         <th>Student Code</th>
-
                         <th>Student Name</th>
-
-                        <th>Gender</th>
-
+                        <th>Contact No.</th>
+                        <th>GS/NS</th>
+                        <th>G/P</th>
+                        <th>Medium</th>
                         <th>Class</th>
-
                     </tr>
 
                 </thead>
@@ -601,7 +614,18 @@ function showStudents(groupCode) {
             student.class_studying === undefined
                 ? "-"
                 : student.class_studying;
+        const schoolingStatus =
+            student.schooling_status || "NA";
 
+        const schoolType =
+            schoolingStatus === "NS"
+                ? "NA"
+                : (student.school_type || "NA");
+
+        const medium =
+            schoolingStatus === "NS"
+                ? "NA"
+                : (student.medium || "NA");
 
         html += `
 
@@ -620,7 +644,19 @@ function showStudents(groupCode) {
                 </td>
 
                 <td>
-                    ${student.gender || "-"}
+                    ${student.mobile_no || "NA"}
+                </td>
+
+                <td>
+                    ${schoolingStatus}
+                </td>
+
+                <td>
+                    ${schoolType}
+                </td>
+
+                <td>
+                    ${medium}
                 </td>
 
                 <td>

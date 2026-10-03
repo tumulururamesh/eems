@@ -1448,12 +1448,17 @@ def login():
                         with conn.cursor(cursor_factory=RealDictCursor) as cur:
 
                             cur.execute("""
-                                SELECT
+                               SELECT
                                     upa.cc_id,
-                                    cca.cluster_id
+                                    cca.cluster_id,
+                                    cm.cluster_name
                                 FROM public.user_person_assignment upa
+
                                 JOIN public.cluster_coordinator_assignment cca
                                     ON cca.cc_id = upa.cc_id
+
+                                JOIN public.cluster_master cm
+                                    ON cm.cluster_id = cca.cluster_id
                                 WHERE upa.user_id = %s
                                   AND upa.active_flag = TRUE
                                   AND cca.academic_year_id = 3
@@ -1473,7 +1478,7 @@ def login():
                     # Store CC and cluster context in session
                     session["cc_id"] = cc_assignment["cc_id"]
                     session["cluster_id"] = cc_assignment["cluster_id"]
-
+                    session["cluster"] = cc_assignment["cluster_name"]
                     # Existing cluster dashboard route currently
                     # expects the CC ID.
                     return redirect(
@@ -2353,10 +2358,15 @@ def centre_dashboard(centre_id):
                 SELECT
                     tc.center_id,
                     tc.center_code,
-                    tc.center_name
+                    tc.center_name,
+                    am.area_name
                 FROM public.tuition_center tc
+
+                LEFT JOIN public.area_master am
+                    ON am.area_id = tc.area_id
+
                 WHERE tc.center_id = %s
-                  AND tc.status = 'ACTIVE'
+                AND tc.status = 'ACTIVE'
             """, (centre_id,))
 
             centre = cur.fetchone()
@@ -2527,6 +2537,30 @@ def centre_dashboard(centre_id):
             """, (centre_id,))
 
             strength = cur.fetchone()
+
+                        # -----------------------------------------
+            # INACTIVE ENROLLMENTS
+            # -----------------------------------------
+
+            cur.execute("""
+                SELECT
+                    COUNT(*) AS inactive_enrollments
+                FROM public.student_center_assignment sca
+
+                JOIN public.student_master sm
+                    ON sm.student_id = sca.student_id
+
+                WHERE sca.center_id = %s
+                  AND sca.academic_year_id = 3
+                  AND sca.active_flag = TRUE
+                  AND sm.active_flag = FALSE
+            """, (centre_id,))
+
+            inactive_row = cur.fetchone()
+
+            inactive_enrollments = (
+                inactive_row["inactive_enrollments"] or 0
+            )
 
             # -----------------------------------------
             # 5. STUDENT LIST
@@ -2758,6 +2792,8 @@ def centre_dashboard(centre_id):
             centre["total_students"] = (
                 strength["total_students"] or 0
             )
+            
+            centre["inactive_enrollments"] = inactive_enrollments
 
             centre["boys"] = (
                 strength["boys"] or 0
@@ -5164,13 +5200,19 @@ def centre_students(centre_id):
             sm.student_code,
             sm.student_name,
             sm.gender,
+            sm.mobile_no,
+            sm.active_flag,
 
             say.class_studying,
             say.status,
+            say.schooling_status,
+            say.school_type,
+            say.medium,
 
             cgm.group_id,
             cgm.group_code,
             cgm.group_name
+
 
         FROM student_center_assignment sca
 
@@ -5196,6 +5238,20 @@ def centre_students(centre_id):
     """, (3, centre_id, 3))
 
     students = cur.fetchall()
+
+    # ---------------------------------------------------------
+    # Enrollment statistics
+    # ---------------------------------------------------------
+
+    total_enrollments = len(students)
+
+    inactive_students = [
+        student
+        for student in students
+        if student["active_flag"] is False
+    ]
+
+    inactive_count = len(inactive_students)
 
     # ---------------------------------------------------------
     # Group students by AVF curriculum group
@@ -5278,43 +5334,87 @@ def centre_students(centre_id):
 
         students_by_class[class_no].append(student)
 
+        # ---------------------------------------------------------
+    # Class-wise distribution
+    #
+    # Lower Class  : -2, -1, 0
+    # Classes      : 1 to 6
+    # Higher Class : 7 to 10
+    # NS students have no class and are not included here.
+    # ---------------------------------------------------------
+
     class_stats = {}
 
+    # Lower Class (-2, -1, 0)
+    lower_class_students = [
+        student
+        for student in students
+        if student["class_studying"] in (-2, -1, 0)
+    ]
+
+    class_stats["lower"] = {
+        "total": len(lower_class_students),
+        "boys": sum(
+            1 for student in lower_class_students
+            if str(student["gender"]).strip().upper() == "BOY"
+        ),
+        "girls": sum(
+            1 for student in lower_class_students
+            if str(student["gender"]).strip().upper() == "GIRL"
+        )
+    }
+
+    # Classes 1 to 6
     for class_no in range(1, 7):
 
         class_students = students_by_class.get(class_no, [])
 
-        boys = sum(
-            1
-            for student in class_students
-            if str(student["gender"]).strip().upper() == "BOY"
-        )
-
-        girls = sum(
-            1
-            for student in class_students
-            if str(student["gender"]).strip().upper() == "GIRL"
-        )
-
         class_stats[class_no] = {
             "total": len(class_students),
-            "boys": boys,
-            "girls": girls
+            "boys": sum(
+                1 for student in class_students
+                if str(student["gender"]).strip().upper() == "BOY"
+            ),
+            "girls": sum(
+                1 for student in class_students
+                if str(student["gender"]).strip().upper() == "GIRL"
+            )
         }
 
+    # Higher Class (7 to 10)
+    higher_class_students = [
+        student
+        for student in students
+        if student["class_studying"] in (7, 8, 9, 10)
+    ]
+
+    class_stats["higher"] = {
+        "total": len(higher_class_students),
+        "boys": sum(
+            1 for student in higher_class_students
+            if str(student["gender"]).strip().upper() == "BOY"
+        ),
+        "girls": sum(
+            1 for student in higher_class_students
+            if str(student["gender"]).strip().upper() == "GIRL"
+        )
+    }
     cur.close()
     conn.close()
 
     return render_template(
-        "students/centre_students.html",
-        centre=centre,
-        students=students,
-        students_by_group=students_by_group,
-        group_stats=group_stats,
-        total_stats=total_stats,
-        students_by_class=students_by_class,
-        class_stats=class_stats
-    )
+    "students/centre_students.html",
+    centre=centre,
+    students=students,
+    students_by_group=students_by_group,
+    group_stats=group_stats,
+    total_stats=total_stats,
+    students_by_class=students_by_class,
+    class_stats=class_stats,
+    total_enrollments=total_enrollments,
+    inactive_students=inactive_students,
+    inactive_count=inactive_count
+)
 # ============================================================
 # CENTRE ATTENDANCE
 # ============================================================

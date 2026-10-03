@@ -102,11 +102,11 @@ Centre Dashboard
 
                             <tr>
                                 <th>
-                                    Ward
+                                    Area
                                 </th>
 
-                                <td class="text-muted">
-                                    —
+                                <td>
+                                    {{ centre.area_name or "—" }}
                                 </td>
                             </tr>
 
@@ -169,7 +169,7 @@ Centre Dashboard
 
             <i class="bi bi-people-fill me-2"></i>
 
-            Student Distribution
+            Enrollment Distribution
 
         </div>
 
@@ -260,7 +260,7 @@ Centre Dashboard
                         </h2>
 
                         <h6 class="text-muted">
-                            Total Students
+                            Enrollments
                         </h6>
 
                         <div class="group-gender-summary">
@@ -275,6 +275,10 @@ Centre Dashboard
                                 {{ centre.girls }} Girls
                             </span>
 
+                        </div>
+
+                        <div class="mt-2 small">
+                            Inactive: <strong>{{ centre.inactive_enrollments }}</strong>
                         </div>
 
                     </div>
