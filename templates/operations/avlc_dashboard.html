@@ -209,7 +209,16 @@
             </div>
 
         </div>
-
+        <!-- Drill down to selected Segment -->
+        {% if selected_segment %}
+        <div class="mt-4">
+            <a href="{{ url_for('segment_dashboard',
+                                segment_id=selected_segment.segment_id) }}"
+               class="btn btn-primary">
+                View {{ selected_segment.segment_name }} Segment →
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     {% endif %}

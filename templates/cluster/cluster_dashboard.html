@@ -14,11 +14,20 @@ Cluster Coordinator Dashboard
     {% if session.get("role") == "segment_incharge" %}
     <div class="d-flex justify-content-end mb-3">
         <a href="/segment/{{ session.get('segment') }}"
-        class="btn btn-outline-secondary">
+           class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>
             Back to My Segment
         </a>
     </div>
+
+    {% elif session.get("role") == "operational_head" %}
+        <div class="d-flex justify-content-end mb-3">
+            <a href="/segment/{{ cluster.segment_id }}"
+            class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Segment
+            </a>
+        </div>
     {% endif %}
 
     <!-- ===================================================== -->

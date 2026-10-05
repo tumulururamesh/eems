@@ -1589,7 +1589,9 @@ def cluster_dashboard(cc_id):
                     cc.cc_id,
                     cc.cc_name,
                     cca.cluster_id,
-                    cm.cluster_name
+                    cm.cluster_name,
+                    cm.segment_id
+
                 FROM public.cluster_coordinator cc
                 JOIN public.cluster_coordinator_assignment cca
                     ON cca.cc_id = cc.cc_id
@@ -1811,14 +1813,15 @@ def cluster_dashboard(cc_id):
     # ---------------------------------------------------------
 
     cluster = {
-        "name": coordinator["cc_name"],
-        "cluster_name": coordinator["cluster_name"],
-        "centres": len(centres),
-        "students": total_students,
-        "attendance": f"{attendance_percentage}%",
-        "present": total_present,
-        "absent": total_absent
-    }
+    "name": coordinator["cc_name"],
+    "cluster_name": coordinator["cluster_name"],
+    "segment_id": coordinator["segment_id"],
+    "centres": len(centres),
+    "students": total_students,
+    "attendance": f"{attendance_percentage}%",
+    "present": total_present,
+    "absent": total_absent
+}
 
     # ---------------------------------------------------------
     # Calculate daily attendance percentages for trend

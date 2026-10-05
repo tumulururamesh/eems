@@ -4,6 +4,16 @@
 
 <div class="container-fluid">
 
+    {% if session.get("role") == "operational_head" %}
+    <div class="d-flex justify-content-end mb-3">
+        <a href="/avlc-dashboard"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to AVLC Dashboard
+        </a>
+    </div>
+    {% endif %}
+
     <!-- ===================================================== -->
     <!-- Segment Header -->
     <!-- ===================================================== -->
@@ -642,7 +652,7 @@
 
     </div>
 
-</div>
+</div> sssq`         
 
 
     <!-- ===================================================== -->
