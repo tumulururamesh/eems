@@ -171,6 +171,24 @@ def mobile_attendance():
             cc_id = cc["cc_id"]
             display_name = cc["cc_name"]
 
+            # Back destination for Cluster Coordinator
+            cur.execute("""
+                SELECT cluster_id
+                FROM public.cluster_coordinator_assignment
+                WHERE cc_id = %s
+                AND academic_year_id = %s
+                AND active_flag = TRUE
+                ORDER BY assigned_from DESC NULLS LAST
+                LIMIT 1
+            """, (cc_id, academic_year_id))
+
+            cluster_assignment = cur.fetchone()
+
+            if not cluster_assignment:
+                return redirect("/dashboard")
+
+            back_url = f"/cluster-dashboard/{cluster_assignment['cluster_id']}"
+
             # ------------------------------------------------
             # AVLCs belonging to CC's active cluster
             # ------------------------------------------------
@@ -237,6 +255,8 @@ def mobile_attendance():
 
             if not segment_id:
                 return redirect("/dashboard")
+
+            back_url = f"/segment/{segment_id}"
 
             # ------------------------------------------------
             # Get SI display name
@@ -325,7 +345,8 @@ def mobile_attendance():
         return render_template(
             "mobile/attendance.html",
             cc_name=display_name,
-            centres=centres
+            centres=centres,
+            back_url=back_url
         )
 
     except Exception as e:
