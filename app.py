@@ -4261,6 +4261,11 @@ def segment_dashboard(segment_id):
 
             })
 
+        # ---------------------------------------------------------
+        # Attendance date
+        # ---------------------------------------------------------
+
+        attendance_date = datetime.today().date()
 
         # =====================================================
         # 18. RENDER SEGMENT DASHBOARD
@@ -4273,6 +4278,8 @@ def segment_dashboard(segment_id):
             segment=segment,
 
             clusters=clusters,
+
+            attendance_date=attendance_date,
 
             weekly_cluster_attendance=
                 weekly_cluster_attendance,
