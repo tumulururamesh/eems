@@ -146,7 +146,10 @@ Students
 
                 <div class="col-12 col-md-4">
 
-                    <div class="group-card total-card w-100">
+                    <button
+                        type="button"
+                        class="group-card total-card w-100"
+                        data-group="ALL">
 
                         <i class="bi bi-people-fill"></i>
 
@@ -182,7 +185,7 @@ Students
                             Inactive: <strong>{{ inactive_count }}</strong>
                         </div>
 
-                    </div>
+                    </button>
 
                 </div>
 
@@ -487,6 +490,9 @@ Students
 const studentsByGroup =
     {{ students_by_group | tojson }};
 
+const allStudents =
+    {{ students | tojson }};
+
 
 /* =========================================================
    SHOW STUDENTS FOR SELECTED GROUP
@@ -495,7 +501,9 @@ const studentsByGroup =
 function showStudents(groupCode) {
 
     const students =
-        studentsByGroup[groupCode] || [];
+        groupCode === "ALL"
+            ? allStudents
+            : (studentsByGroup[groupCode] || []);
 
 
     /*
@@ -532,10 +540,11 @@ function showStudents(groupCode) {
      */
 
     const groupName =
-        groupCode === "A"
-            ? "Group A"
-            : "Group B";
-
+        groupCode === "ALL"
+            ? "All Students"
+            : groupCode === "A"
+                ? "Group A"
+                : "Group B";
 
     document.getElementById(
         "student-table-title"

@@ -5,8 +5,14 @@ from flask import (
     request,
     send_file,
     session,
-    url_for
+    url_for,
+    abort,
+    make_response
 )
+
+import secrets
+import string
+
 from io import BytesIO
 
 from database import (
@@ -26,6 +32,17 @@ app.secret_key = "aems-demo-secret-key"
 
 
 from functools import wraps
+
+def get_csrf_token():
+    if "_csrf_token" not in session:
+        session["_csrf_token"] = secrets.token_urlsafe(32)
+
+    return session["_csrf_token"]
+
+
+@app.context_processor
+def inject_csrf_token():
+    return {"csrf_token": get_csrf_token}
 
 
 def login_required(view):
@@ -1257,8 +1274,9 @@ def login():
                         u.username,
                         u.password_hash,
                         u.full_name,
-                        r.role_code,
-                        r.role_name
+                        u.must_change_password,
+                        u.session_version,
+                        r.role_code
                     FROM public.aems_user u
                     JOIN public.user_role ur
                         ON ur.user_id = u.user_id
@@ -1340,6 +1358,12 @@ def login():
                 # Canonical role from new security model
                 session["role_code"] = db_user["role_code"]
 
+                # Password security information
+                session["session_version"] = db_user["session_version"]
+                session["must_change_password"] = db_user["must_change_password"]
+
+                
+                
                 # -------------------------------------------------
                 # Compatibility role
                 #
@@ -1382,6 +1406,14 @@ def login():
                     session["access_cluster_id"] = None
                     session["access_center_id"] = None
 
+
+                # -------------------------------------------------
+                # Mandatory password change after Admin reset
+                # -------------------------------------------------
+
+                if db_user["must_change_password"]:
+                    return redirect("/change-password")
+
                 # -------------------------------------------------
                 # ADMIN
                 # -------------------------------------------------
@@ -1389,6 +1421,7 @@ def login():
                 if db_user["role_code"] == "ADMIN":
                     return redirect("/dashboard")
 
+                
                 # -------------------------------------------------
                 # OPERATIONS HEAD
                 # -------------------------------------------------
@@ -1528,6 +1561,258 @@ def logout():
     session.clear()
 
     return redirect("/login")
+
+@app.before_request
+def enforce_password_security():
+
+
+        # CSRF protection for password management
+    if request.method == "POST" and request.endpoint in (
+        "change_password",
+        "admin_reset_password"
+    ):
+        submitted_token = request.form.get("csrf_token", "")
+        expected_token = session.get("_csrf_token", "")
+
+        if (
+            not submitted_token
+            or not expected_token
+            or not secrets.compare_digest(
+                submitted_token, expected_token
+            )
+        ):
+            abort(400)
+
+    # Allow login, logout and static resources
+    if request.endpoint in (
+        "login",
+        "logout",
+        "static"
+    ):
+        return None
+
+    # No authenticated user
+    if not session.get("user_id"):
+        return None
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT active_flag,
+                       must_change_password,
+                       session_version
+                FROM public.aems_user
+                WHERE user_id = %s
+            """, (session["user_id"],))
+
+            user = cur.fetchone()
+
+    finally:
+        conn.close()
+
+    # Invalid or inactive user
+    if not user or not user["active_flag"]:
+        session.clear()
+        return redirect("/login")
+
+    # Invalidate sessions created before a password reset
+    if session.get("session_version") != user["session_version"]:
+        session.clear()
+        return redirect("/login")
+
+    # Force password change before accessing other pages
+    if user["must_change_password"]:
+        if request.endpoint != "change_password":
+            return redirect("/change-password")
+
+    return None
+
+
+@app.route("/change-password", methods=["GET", "POST"])
+def change_password():
+
+    if not session.get("user_id"):
+        return redirect("/login")
+
+    error = None
+    success = None
+
+    if request.method == "POST":
+
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not current_password or not new_password or not confirm_password:
+            error = "All password fields are required."
+
+        elif new_password != confirm_password:
+            error = "New password and confirmation do not match."
+
+        elif len(new_password) < 12:
+            error = "New password must contain at least 12 characters."
+
+        elif new_password == current_password:
+            error = "New password must be different from the current password."
+
+        else:
+
+            conn = get_connection()
+
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                    cur.execute("""
+                        SELECT password_hash
+                        FROM public.aems_user
+                        WHERE user_id = %s
+                          AND active_flag = TRUE
+                    """, (session["user_id"],))
+
+                    user = cur.fetchone()
+
+                    if not user or not check_password_hash(
+                        user["password_hash"], current_password
+                    ):
+                        error = "Current password is incorrect."
+
+                    else:
+                        new_hash = generate_password_hash(new_password)
+
+                        cur.execute("""
+                            UPDATE public.aems_user
+                            SET password_hash = %s,
+                                must_change_password = FALSE,
+                                session_version = session_version + 1
+                            WHERE user_id = %s
+                        """, (new_hash, session["user_id"]))
+
+                        conn.commit()
+
+                        session.clear()
+
+                        return redirect("/login")
+
+            except Exception:
+                conn.rollback()
+                raise
+
+            finally:
+                conn.close()
+
+    return render_template(
+        "auth/change_password.html",
+        error=error,
+        success=success
+    )
+
+@app.route("/admin/reset-password", methods=["GET", "POST"])
+def admin_reset_password():
+
+    if not session.get("user_id"):
+        return redirect("/login")
+
+    if session.get("role_code") != "ADMIN":
+        abort(403)
+
+    error = None
+    temporary_password = None
+    reset_user = None
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+            if request.method == "POST":
+
+                target_user_id = request.form.get(
+                    "target_user_id", type=int
+                )
+
+                if not target_user_id:
+                    error = "Please select a user."
+
+                elif target_user_id == session["user_id"]:
+                    error = "Use Change My Password for your own account."
+
+                else:
+
+                    cur.execute("""
+                        SELECT user_id, username, full_name
+                        FROM public.aems_user
+                        WHERE user_id = %s
+                          AND active_flag = TRUE
+                        FOR UPDATE
+                    """, (target_user_id,))
+
+                    reset_user = cur.fetchone()
+
+                    if not reset_user:
+                        error = "User not found or inactive."
+
+                    else:
+
+                        alphabet = string.ascii_letters + string.digits
+
+                        temporary_password = "".join(
+                            secrets.choice(alphabet)
+                            for _ in range(16)
+                        )
+
+                        password_hash = generate_password_hash(
+                            temporary_password
+                        )
+
+                        cur.execute("""
+                            UPDATE public.aems_user
+                            SET password_hash = %s,
+                                must_change_password = TRUE,
+                                session_version = session_version + 1
+                            WHERE user_id = %s
+                        """, (password_hash, target_user_id))
+
+                        cur.execute("""
+                            INSERT INTO public.password_reset_audit
+                                (target_user_id, reset_by_user_id)
+                            VALUES (%s, %s)
+                        """, (
+                            target_user_id,
+                            session["user_id"]
+                        ))
+
+                        conn.commit()
+
+            cur.execute("""
+                SELECT user_id, username, full_name
+                FROM public.aems_user
+                WHERE active_flag = TRUE
+                ORDER BY full_name
+            """)
+
+            users = cur.fetchall()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    response = make_response(render_template(
+        "auth/admin_reset_password.html",
+        users=users,
+        error=error,
+        temporary_password=temporary_password,
+        reset_user=reset_user
+    ))
+
+    response.headers["Cache-Control"] = "no-store"
+
+    return response
+
 
 @app.route("/dashboard")
 @login_required
@@ -2398,7 +2683,52 @@ def centre_dashboard(centre_id):
             if not centre:
                 return redirect("/dashboard")
 
+# -----------------------------------------
+# CENTRE SEGMENT AND CLUSTER COORDINATOR
+# -----------------------------------------
 
+            cur.execute("""
+                SELECT
+                    sm.segment_name,
+                    cco.cc_name
+
+                FROM public.cluster_center cc
+
+                JOIN public.cluster_master cm
+                    ON cm.cluster_id = cc.cluster_id
+
+                JOIN public.segment_master sm
+                    ON sm.segment_id = cm.segment_id
+
+                LEFT JOIN public.cluster_coordinator_assignment cca
+                    ON cca.cluster_id = cc.cluster_id
+                AND cca.academic_year_id = 3
+                AND cca.active_flag = TRUE
+
+                LEFT JOIN public.cluster_coordinator cco
+                    ON cco.cc_id = cca.cc_id
+                AND cco.active_flag = TRUE
+
+                WHERE cc.center_id = %s
+                AND cc.academic_year_id = 3
+                AND cc.active_flag = TRUE
+
+                LIMIT 1
+            """, (centre_id,))
+
+            centre_hierarchy = cur.fetchone()
+
+            centre["segment_name"] = (
+                centre_hierarchy["segment_name"]
+                if centre_hierarchy
+                else None
+            )
+
+            centre["cc_name"] = (
+                centre_hierarchy["cc_name"]
+                if centre_hierarchy
+                else None
+            )
             # -----------------------------------------
             # 2. VERIFY USER ACCESS TO THIS CENTRE
             # -----------------------------------------

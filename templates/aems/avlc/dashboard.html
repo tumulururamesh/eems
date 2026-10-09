@@ -83,7 +83,6 @@ Centre Dashboard
 
                 </div>
 
-
                 <div class="col-md-9">
 
                     <table class="table table-borderless mb-0">
@@ -102,11 +101,11 @@ Centre Dashboard
 
                             <tr>
                                 <th>
-                                    Area
+                                    Segment
                                 </th>
 
                                 <td>
-                                    {{ centre.area_name or "—" }}
+                                    {{ centre.segment_name or "—" }}
                                 </td>
                             </tr>
 
@@ -128,6 +127,22 @@ Centre Dashboard
                                 <td>
                                     {% if centre.tutor_name %}
                                         {{ centre.tutor_name }}
+                                    {% else %}
+                                        <span class="text-muted">
+                                            Not assigned
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>
+                                    Cluster Coordinator
+                                </th>
+
+                                <td>
+                                    {% if centre.cc_name %}
+                                        {{ centre.cc_name }}
                                     {% else %}
                                         <span class="text-muted">
                                             Not assigned

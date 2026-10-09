@@ -293,32 +293,29 @@
 
                                 {% if cluster.status == "RED" %}
 
-                                    <span class="text-danger fw-semibold">
-                                        RED
-                                    </span>
+                                    <span class="d-inline-block rounded-circle bg-danger"
+                                        style="width: 14px; height: 14px;"
+                                        title="Red"></span>
 
                                 {% elif cluster.status == "AMBER" %}
 
-                                    <span class="text-warning fw-semibold">
-                                        AMBER
-                                    </span>
+                                    <span class="d-inline-block rounded-circle bg-warning"
+                                        style="width: 14px; height: 14px;"
+                                        title="Amber"></span>
 
                                 {% elif cluster.status == "GREEN" %}
 
-                                    <span class="text-success fw-semibold">
-                                        GREEN
-                                    </span>
+                                    <span class="d-inline-block rounded-circle bg-success"
+                                        style="width: 14px; height: 14px;"
+                                        title="Green"></span>
 
                                 {% else %}
 
-                                    <span class="text-muted">
-                                        —
-                                    </span>
+                                    <span class="text-muted">—</span>
 
                                 {% endif %}
 
                             </td>
-
 
                             <td class="text-center">
 
