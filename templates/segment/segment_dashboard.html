@@ -4,7 +4,8 @@
 
 <div class="container-fluid">
 
-    {% if session.get("role") == "operational_head" %}
+    {% if session.get("role") == "operational_head"
+      or session.get("role_code") == "ADMIN" %}
     <div class="d-flex justify-content-end mb-3">
         <a href="/avlc-dashboard"
            class="btn btn-outline-secondary">

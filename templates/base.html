@@ -140,11 +140,11 @@
         <!-- DASHBOARD -->
         <!-- ===================================== -->
 
-        {% if session.get("role") == "management" %}
+        {% if session.get("role") == "management"
+             or session.get("role_code") == "ADMIN" %}
 
             <li class="nav-item">
-                <a class="nav-link" href="/dashboard">
-
+                <a class="nav-link" href="/operations-dashboard">
                     <i class="bi bi-speedometer2"></i>
                     Dashboard
 
@@ -215,111 +215,98 @@
 
         {% endif %}
 
+{% if session.get("role") in [
+    "management",
+    "operational_head",
+    "segment_incharge",
+    "cluster_incharge"
+] or session.get("role_code") == "ADMIN" %}
 
-        <!-- ===================================== -->
-        <!-- TUTOR SPACE -->
-        <!-- ===================================== -->
+    {# CC sees Tutor Space only at Cluster level #}
 
-        {% if session.get("role") in [
-            "management",
-            "operational_head",
-            "segment_incharge",
-            "cluster_incharge"
-        ] %}
+    {% if session.get("role") != "cluster_incharge"
+          or not centre_context %}
 
-            {# CC sees Tutor Space only at Cluster level #}
+        <li class="nav-item">
 
-            {% if session.get("role") != "cluster_incharge"
-                  or not centre_context %}
+            {% if session.get("role") in [
+                "cluster_incharge",
+                "segment_incharge"
+            ] %}
 
-                <li class="nav-item">
+                <a class="nav-link" href="/tutor-space">
 
-                    {% if session.get("role") == "cluster_incharge" %}
+            {% else %}
 
-                        <a class="nav-link"
-                           href="/tutor-space">
-
-                    {% elif session.get("role") == "segment_incharge" %}
-
-                        <a class="nav-link"
-                           href="/tutor-space">
-
-                    {% else %}
-
-                        <a class="nav-link"
-                           href="/zone-tutor-space">
-
-                    {% endif %}
-
-                        <i class="bi bi-person-workspace"></i>
-                        Tutor Space
-
-                    </a>
-
-                </li>
-
-
-                {% if session.get("role") == "operational_head" %}
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('manage') }}">
-                    <i class="fas fa-cogs"></i> Manage
-                </a>
-            </li>
-            {% endif %}
+                <a class="nav-link" href="/zone-tutor-space">
 
             {% endif %}
 
-        {% endif %}
+                <i class="bi bi-person-workspace"></i>
+                Tutor Space
+            </a>
+
+        </li>
+
+    {% endif %}
+
+    {# Manage is available to Operations Head and ADMIN #}
+
+    {% if session.get("role") == "operational_head"
+          or session.get("role_code") == "ADMIN" %}
+
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('manage') }}">
+                <i class="fas fa-cogs"></i>
+                Manage
+            </a>
+        </li>
+
+    {% endif %}
+
+{% endif %}
 
 
-        <!-- ===================================== -->
-        <!-- CC CENTRE CONTEXT MENU -->
-        <!-- ===================================== -->
+<!-- ===================================== -->
+<!-- CENTRE CONTEXT MENU -->
+<!-- ===================================== -->
 
-        {% if session.get("role") in ["cluster_incharge", "segment_incharge"]
-                and centre_context
-                and centre_id %}
+{% if centre_context
+      and centre_id
+      and (
+          session.get("role") in [
+              "operational_head",
+              "segment_incharge",
+              "cluster_incharge"
+          ]
+          or session.get("role_code") == "ADMIN"
+      ) %}
 
-            <li class="nav-item">
+    <li class="nav-item">
+        <a class="nav-link"
+           href="/students/{{ centre_id }}">
+            <i class="bi bi-people-fill"></i>
+            Students
+        </a>
+    </li>
 
-                <a class="nav-link"
-                   href="/students/{{ centre_id }}">
+    <li class="nav-item">
+        <a class="nav-link"
+           href="/attendance/{{ centre_id }}">
+            <i class="bi bi-calendar-check-fill"></i>
+            Attendance
+        </a>
+    </li>
 
-                    <i class="bi bi-people-fill"></i>
-                    Students
+    <li class="nav-item">
+        <a class="nav-link"
+           href="/performance/{{ centre_id }}">
+            <i class="bi bi-clipboard-data-fill"></i>
+            Performance
+        </a>
+    </li>
 
-                </a>
-
-            </li>
-
-
-            <li class="nav-item">
-
-                <a class="nav-link"
-                   href="/attendance/{{ centre_id }}">
-
-                    <i class="bi bi-calendar-check-fill"></i>
-                    Attendance
-
-                </a>
-
-            </li>
-
-
-            <li class="nav-item">
-
-                <a class="nav-link"
-                   href="/performance/{{ centre_id }}">
-
-                    <i class="bi bi-clipboard-data-fill"></i>
-                    Performance
-
-                </a>
-
-            </li>
-
-        {% endif %}
-
+{% endif %}
 
         <!-- ===================================== -->
         <!-- TUTOR CENTRE MENU -->
@@ -465,7 +452,8 @@
                 {% endif %}
             </span>
 
-                {% if session.get("role") == "management" %}
+                {% if session.get("role") == "management"
+                    or session.get("role_code") == "ADMIN" %}
 
                     <span>
                         <strong>Scope:</strong> Entire AVF

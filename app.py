@@ -1419,7 +1419,7 @@ def login():
                 # -------------------------------------------------
 
                 if db_user["role_code"] == "ADMIN":
-                    return redirect("/dashboard")
+                    return redirect("/operations-dashboard")
 
                 
                 # -------------------------------------------------
@@ -1651,7 +1651,7 @@ def change_password():
         elif new_password != confirm_password:
             error = "New password and confirmation do not match."
 
-        elif len(new_password) < 12:
+        elif len(new_password) < 8:
             error = "New password must contain at least 12 characters."
 
         elif new_password == current_password:
